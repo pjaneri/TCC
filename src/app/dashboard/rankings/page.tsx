@@ -73,7 +73,7 @@ export default function RankingsPage() {
                 <p className="text-sm font-medium">Progresso para a próxima patente: {nextRank.name}</p>
                 <Progress value={progressToNextRank} className="w-full" />
                 <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>{currentRank.points.toLocaleString()} pts</span>
+                    <span>{userPoints.toLocaleString()} pts</span>
                     <span>{nextRank.points.toLocaleString()} pts</span>
                 </div>
                 <p className="text-center text-sm text-muted-foreground mt-2">
@@ -120,5 +120,3 @@ export default function RankingsPage() {
     </div>
   );
 }
-
-    
