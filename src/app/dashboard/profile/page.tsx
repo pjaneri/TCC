@@ -120,7 +120,10 @@ export default function ProfilePage() {
                 birthday: userProfile.birthday ? new Date(userProfile.birthday) : undefined,
             });
         }
-        if (user) {
+        // Only set the email form's default value here once.
+        // If we set it inside the `if (user)` block without a guard,
+        // it will reset the user's input on every render.
+        if (user && !emailForm.getValues().newEmail) {
           emailForm.reset({ newEmail: user.email || '' })
         }
     }, [user, userProfile, profileForm, emailForm]);
@@ -142,9 +145,11 @@ export default function ProfilePage() {
         }
 
         try {
-            await updateProfile(user, {
-                displayName: data.username,
-            });
+            if (user && user.displayName !== data.username) {
+                await updateProfile(user, {
+                    displayName: data.username,
+                });
+            }
             updateDoc(userDocRef, updateData).catch(e => {
                 const permissionError = new FirestorePermissionError({
                     path: userDocRef.path,
@@ -177,6 +182,7 @@ export default function ProfilePage() {
       try {
         await reauthenticateWithCredential(user, credential);
         setIsReauthenticatedForEmail(true);
+        emailForm.reset({ newEmail: user.email || "" }); // Set current email on success
         toast({
           title: "Autenticação confirmada",
           description: "Agora você pode alterar seu e-mail.",
@@ -240,6 +246,7 @@ export default function ProfilePage() {
     const onPasswordSubmit = async (data: PasswordFormValues) => {
       if (!user || !user.email) return;
 
+      passwordForm.clearErrors();
       try {
         const credential = EmailAuthProvider.credential(user.email, data.currentPassword);
         await reauthenticateWithCredential(user, credential);
@@ -254,7 +261,7 @@ export default function ProfilePage() {
         let description = "Não foi possível alterar sua senha. Tente novamente.";
         if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
           description = "A senha atual está incorreta.";
-          passwordForm.setError("currentPassword", { type: "manual", message: "A senha atual está incorreta." });
+          passwordForm.setError("currentPassword", { type: "manual", message: description });
         } else {
              console.error("Password change error:", error);
         }
@@ -537,5 +544,6 @@ export default function ProfilePage() {
     </div>
   );
 }
+
 
     
