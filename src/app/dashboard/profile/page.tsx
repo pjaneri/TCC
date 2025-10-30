@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useUser, useFirestore, useDoc, useMemoFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
 import { doc, updateDoc } from "firebase/firestore";
-import { updateProfile } from "firebase/auth";
+import { updateProfile, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import {
   Form,
@@ -36,11 +36,21 @@ import { useEffect } from "react";
 
 const profileSchema = z.object({
     username: z.string().min(3, { message: "O nome de usuário deve ter pelo menos 3 caracteres." }),
-    photoUrl: z.string().url({ message: "Por favor, insira uma URL válida." }).or(z.literal("")),
     birthday: z.date().optional(),
 });
 
+const passwordSchema = z.object({
+  currentPassword: z.string().min(1, { message: "A senha atual é obrigatória." }),
+  newPassword: z.string().min(6, { message: "A nova senha deve ter pelo menos 6 caracteres." }),
+  confirmPassword: z.string()
+}).refine(data => data.newPassword === data.confirmPassword, {
+  message: "As novas senhas não correspondem.",
+  path: ["confirmPassword"],
+});
+
+
 type ProfileFormValues = z.infer<typeof profileSchema>;
+type PasswordFormValues = z.infer<typeof passwordSchema>;
 
 export default function ProfilePage() {
     const { user, isUserLoading } = useUser();
@@ -53,37 +63,42 @@ export default function ProfilePage() {
     }, [firestore, user]);
     const { data: userProfile, isLoading: isProfileLoading } = useDoc(userProfileRef);
 
-    const form = useForm<ProfileFormValues>({
+    const profileForm = useForm<ProfileFormValues>({
         resolver: zodResolver(profileSchema),
         defaultValues: {
             username: "",
-            photoUrl: "",
             birthday: undefined,
         },
     });
 
+    const passwordForm = useForm<PasswordFormValues>({
+      resolver: zodResolver(passwordSchema),
+      defaultValues: {
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: ""
+      }
+    });
+
     useEffect(() => {
         if (userProfile) {
-            form.reset({
+            profileForm.reset({
                 username: userProfile.username || '',
-                photoUrl: userProfile.photoUrl || '',
                 birthday: userProfile.birthday ? new Date(userProfile.birthday) : undefined,
             });
         }
-    }, [userProfile, form]);
+    }, [userProfile, profileForm]);
 
-    const onSubmit = async (data: ProfileFormValues) => {
+    const onProfileSubmit = async (data: ProfileFormValues) => {
         if (!user || !firestore) return;
     
         const userDocRef = doc(firestore, "users", user.uid);
 
         const updateData: {
             username: string;
-            photoUrl: string;
             birthday?: string;
         } = {
             username: data.username,
-            photoUrl: data.photoUrl,
         };
 
         if (data.birthday) {
@@ -93,7 +108,6 @@ export default function ProfilePage() {
         try {
             await updateProfile(user, {
                 displayName: data.username,
-                photoURL: data.photoUrl,
             });
             updateDoc(userDocRef, updateData).catch(e => {
                 const permissionError = new FirestorePermissionError({
@@ -118,110 +132,184 @@ export default function ProfilePage() {
         }
     };
     
+    const onPasswordSubmit = async (data: PasswordFormValues) => {
+      if (!user) return;
+
+      try {
+        const credential = EmailAuthProvider.credential(user.email!, data.currentPassword);
+        await reauthenticateWithCredential(user, credential);
+        await updatePassword(user, data.newPassword);
+        
+        toast({
+          title: "Senha alterada!",
+          description: "Sua senha foi atualizada com sucesso.",
+        });
+        passwordForm.reset();
+      } catch (error: any) {
+        console.error("Password change error:", error);
+        let description = "Não foi possível alterar sua senha. Tente novamente.";
+        if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+          description = "A senha atual está incorreta.";
+        }
+        toast({
+          variant: "destructive",
+          title: "Erro ao alterar senha",
+          description,
+        });
+      }
+    };
+
     if (isUserLoading || isProfileLoading) {
         return <div className="flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin" /></div>
     }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Perfil de Usuário</CardTitle>
-        <CardDescription>Gerencie as informações da sua conta.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center gap-4 mb-8">
-            <Avatar className="h-20 w-20">
-                <AvatarImage src={form.watch('photoUrl') || user?.photoURL || undefined} />
-                <AvatarFallback>{user?.displayName?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
-            </Avatar>
-            <div>
-                <h2 className="text-2xl font-bold">{form.watch('username')}</h2>
-                <p className="text-muted-foreground">{user?.email}</p>
-            </div>
-        </div>
+    <div className="grid gap-8 md:grid-cols-1">
+      <Card>
+        <CardHeader>
+          <CardTitle>Informações do Perfil</CardTitle>
+          <CardDescription>Gerencie seus dados pessoais.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center gap-4 mb-8">
+              <Avatar className="h-20 w-20">
+                  <AvatarImage src={user?.photoURL || undefined} />
+                  <AvatarFallback>{user?.displayName?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+              </Avatar>
+              <div>
+                  <h2 className="text-2xl font-bold">{profileForm.watch('username')}</h2>
+                  <p className="text-muted-foreground">{user?.email}</p>
+              </div>
+          </div>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="username"
-              render={({ field }) => (
-                <FormItem>
-                  <Label>Nome de usuário</Label>
-                  <FormControl>
-                    <Input placeholder="Seu nome de usuário" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="photoUrl"
-              render={({ field }) => (
-                <FormItem>
-                  <Label>URL da Foto de Perfil</Label>
-                  <FormControl>
-                    <Input placeholder="https://exemplo.com/sua-foto.jpg" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormField
-                control={form.control}
-                name="birthday"
+          <Form {...profileForm}>
+            <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
+              <FormField
+                control={profileForm.control}
+                name="username"
                 render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                    <Label>Data de Nascimento</Label>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                        <FormControl>
-                            <Button
-                            variant={"outline"}
-                            className={cn(
-                                "w-[240px] pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                            )}
-                            >
-                            {field.value ? (
-                                format(field.value, "dd/MM/yyyy")
-                            ) : (
-                                <span>Escolha uma data</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
-                        </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) =>
-                                date > new Date() || date < new Date("1900-01-01")
-                            }
-                            initialFocus
-                        />
-                        </PopoverContent>
-                    </Popover>
+                  <FormItem>
+                    <Label>Nome de usuário</Label>
+                    <FormControl>
+                      <Input placeholder="Seu nome de usuário" {...field} />
+                    </FormControl>
                     <FormMessage />
-                    </FormItem>
+                  </FormItem>
                 )}
-            />
-            <Button
-              type="submit"
-              className="font-bold"
-              disabled={form.formState.isSubmitting}
-              style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }}
-            >
-              {form.formState.isSubmitting ? "Salvando..." : "Salvar Alterações"}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+              />
+              <FormField
+                  control={profileForm.control}
+                  name="birthday"
+                  render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                      <Label>Data de Nascimento</Label>
+                      <Popover>
+                          <PopoverTrigger asChild>
+                          <FormControl>
+                              <Button
+                              variant={"outline"}
+                              className={cn(
+                                  "w-[240px] pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                              )}
+                              >
+                              {field.value ? (
+                                  format(field.value, "dd/MM/yyyy")
+                              ) : (
+                                  <span>Escolha uma data</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                          </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              disabled={(date) =>
+                                  date > new Date() || date < new Date("1900-01-01")
+                              }
+                              initialFocus
+                          />
+                          </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                      </FormItem>
+                  )}
+              />
+              <Button
+                type="submit"
+                className="font-bold"
+                disabled={profileForm.formState.isSubmitting}
+                style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }}
+              >
+                {profileForm.formState.isSubmitting ? "Salvando..." : "Salvar Alterações"}
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Segurança da Conta</CardTitle>
+          <CardDescription>Altere sua senha de acesso.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...passwordForm}>
+            <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-6">
+               <FormField
+                control={passwordForm.control}
+                name="currentPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <Label>Senha Atual</Label>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={passwordForm.control}
+                name="newPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <Label>Nova Senha</Label>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={passwordForm.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <Label>Confirmar Nova Senha</Label>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button
+                type="submit"
+                className="font-bold"
+                disabled={passwordForm.formState.isSubmitting}
+              >
+                {passwordForm.formState.isSubmitting ? "Alterando..." : "Alterar Senha"}
+              </Button>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
-    

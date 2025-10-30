@@ -1,0 +1,263 @@
+{
+  "entities": {
+    "UserProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "UserProfile",
+      "type": "object",
+      "description": "Represents a user profile in the Recycle+ application.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the UserProfile entity."
+        },
+        "username": {
+          "type": "string",
+          "description": "User's username for login."
+        },
+        "email": {
+          "type": "string",
+          "description": "User's email address.",
+          "format": "email"
+        },
+        "registrationDate": {
+          "type": "string",
+          "description": "Date and time when the user registered.",
+          "format": "date-time"
+        },
+        "totalPoints": {
+          "type": "number",
+          "description": "Total points accumulated by the user through recycling."
+        },
+        "birthday": {
+          "type": "string",
+          "description": "User's birthday.",
+          "format": "date"
+        }
+      },
+      "required": [
+        "id",
+        "username",
+        "email",
+        "registrationDate",
+        "totalPoints"
+      ]
+    },
+    "RecyclingRecord": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "RecyclingRecord",
+      "type": "object",
+      "description": "Represents a record of a user's recycling activity.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the RecyclingRecord entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N RecyclingRecord)"
+        },
+        "materialType": {
+          "type": "string",
+          "description": "Type of material recycled (e.g., plastic, paper, glass)."
+        },
+        "quantity": {
+          "type": "number",
+          "description": "Quantity of material recycled (e.g., in kg or number of items)."
+        },
+        "recyclingDate": {
+          "type": "string",
+          "description": "Date and time when the recycling occurred.",
+          "format": "date-time"
+        },
+        "pointsEarned": {
+          "type": "number",
+          "description": "Points earned for this recycling activity."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "materialType",
+        "quantity",
+        "recyclingDate",
+        "pointsEarned"
+      ]
+    },
+    "Reward": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Reward",
+      "type": "object",
+      "description": "Represents a reward that users can redeem with their points.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Reward entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the reward."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the reward."
+        },
+        "requiredPoints": {
+          "type": "number",
+          "description": "Number of points required to redeem this reward."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL of the image representing the reward.",
+          "format": "uri"
+        },
+        "material": {
+          "type": "string",
+          "description": "Reward material. Should be 'plastic'."
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "description",
+        "requiredPoints",
+        "imageUrl",
+        "material"
+      ]
+    },
+    "Redemption": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Redemption",
+      "type": "object",
+      "description": "Represents a user's redemption of a reward.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Redemption entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to UserProfile. (Relationship: UserProfile 1:N Redemption)"
+        },
+        "rewardId": {
+          "type": "string",
+          "description": "Reference to Reward. (Relationship: Reward 1:N Redemption)"
+        },
+        "redemptionDate": {
+          "type": "string",
+          "description": "Date and time when the reward was redeemed.",
+          "format": "date-time"
+        },
+        "pointsDeducted": {
+          "type": "number",
+          "description": "Number of points deducted from the user's account for this redemption."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "rewardId",
+        "redemptionDate",
+        "pointsDeducted"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "UserProfile",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Stores user profile information. Path-based ownership for simplified security rules.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/recycling_records/{recordId}",
+        "definition": {
+          "entityName": "RecyclingRecord",
+          "schema": {
+            "$ref": "#/backend/entities/RecyclingRecord"
+          },
+          "description": "Stores recycling records for each user. Path-based ownership for simplified security rules.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "recordId",
+              "description": "The unique identifier for the recycling record."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/rewards/{rewardId}",
+        "definition": {
+          "entityName": "Reward",
+          "schema": {
+            "$ref": "#/backend/entities/Reward"
+          },
+          "description": "Stores information about available rewards. All rewards are plastic.",
+          "params": [
+            {
+              "name": "rewardId",
+              "description": "The unique identifier for the reward."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/redemptions/{redemptionId}",
+        "definition": {
+          "entityName": "Redemption",
+          "schema": {
+            "$ref": "#/backend/entities/Redemption"
+          },
+          "description": "Stores redemption records for each user. Path-based ownership for simplified security rules.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "redemptionId",
+              "description": "The unique identifier for the redemption."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "AdminRole",
+          "schema": {
+            "$ref": "#/backend/entities/UserProfile"
+          },
+          "description": "Collection to store admin user IDs. Existence of a document indicates admin privileges.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the admin user."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to ensure authorization independence, clarity, and scalability for the Recycle+ application. User profiles and their associated data (recycling records, redemptions) are structured under the `/users/{userId}` path, providing clear ownership and simplifying security rules. Rewards are stored in a separate top-level collection, `/rewards`, with enforced data integrity for the 'material' field.\n\n*   **Authorization Independence:** The structure avoids hierarchical authorization dependencies by placing user-related data directly under their respective user IDs, eliminating the need for `get()` calls in security rules to check parent document attributes.  Each user's recycling records and redemptions are located under `/users/{userId}/recycling_records` and `/users/{userId}/redemptions` respectively.\n*   **QAPs (Rules are not Filters):** Segregation is used to ensure secure list operations. The `/rewards` collection is designed for global access (read for all users, create/update/delete for admins – implemented via a separate `/roles_admin/{uid}` collection), while user-specific data resides under the `/users/{userId}` path, allowing secure listing of rewards without exposing personal user data. The path-based ownership (`/users/{userId}/...`) ensures that listing recycling records or redemptions only returns data belonging to the requesting user, preventing unauthorized data access. All rewards are plastic to satisfy the user request."
+  }
+}

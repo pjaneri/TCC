@@ -7,6 +7,7 @@ import {
   LogOut,
   PlusCircle,
   Recycle,
+  Shield,
   Trophy,
   UserCircle,
 } from "lucide-react";
@@ -33,6 +34,7 @@ const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Visão Geral" },
   { href: "/dashboard/log", icon: PlusCircle, label: "Registrar Reciclagem" },
   { href: "/dashboard/rewards", icon: Trophy, label: "Resgatar Prêmios" },
+  { href: "/dashboard/rankings", icon: Shield, label: "Rankings" },
   { href: "/dashboard/profile", icon: UserCircle, label: "Perfil" },
 ];
 
@@ -132,5 +134,3 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     </SidebarProvider>
   );
 }
-
-    
