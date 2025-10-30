@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { Coins, Package, FileText, GlassWater, Wrench, Gift } from "lucide-react";
 import {
   Card,
@@ -41,10 +42,12 @@ export default function DashboardPage() {
 
   const recentActivitiesQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
-    // This query now looks across all subcollections named 'recycling_records' and 'redemptions'
-    // for the current user.
+    // This query now looks across all subcollections named 'recycling_records'
+    // for the current user. This won't work as intended with collectionGroup
+    // as it doesn't filter by a parent document.
+    // Let's query recycling_records directly.
     return query(
-      collectionGroup(firestore, 'recycling_records'),
+      collection(firestore, 'users', user.uid, 'recycling_records'),
       orderBy('recyclingDate', 'desc'),
       limit(5)
     );
