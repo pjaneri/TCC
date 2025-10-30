@@ -10,6 +10,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,17 @@ import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useEffect } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 
 const profileSchema = z.object({
@@ -149,15 +161,37 @@ export default function ProfilePage() {
         let description = "Não foi possível alterar sua senha. Tente novamente.";
         if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
           description = "A senha atual está incorreta.";
-        } else {
-            // Log only unexpected errors
-            console.error("Password change error:", error);
         }
+        
         toast({
           variant: "destructive",
           title: "Erro ao alterar senha",
           description,
         });
+        // Only log unexpected errors
+        if (error.code !== 'auth/wrong-password' && error.code !== 'auth/invalid-credential') {
+             console.error("Password change error:", error);
+        }
+      }
+    };
+
+    const handleResetPoints = async () => {
+      if (!user || !firestore) return;
+
+      const userDocRef = doc(firestore, "users", user.uid);
+      try {
+        await updateDoc(userDocRef, { totalPoints: 0 });
+        toast({
+          title: "Pontos resetados!",
+          description: "Sua pontuação foi zerada com sucesso.",
+        });
+      } catch (error) {
+        const permissionError = new FirestorePermissionError({
+          path: userDocRef.path,
+          operation: 'update',
+          requestResourceData: { totalPoints: 0 }
+        });
+        errorEmitter.emit('permission-error', permissionError);
       }
     };
 
@@ -311,6 +345,44 @@ export default function ProfilePage() {
           </Form>
         </CardContent>
       </Card>
+
+      <Card className="border-destructive">
+        <CardHeader>
+          <CardTitle className="text-destructive">Zona de Perigo</CardTitle>
+          <CardDescription>
+            Ações permanentes que não podem ser desfeitas.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-2 text-sm font-medium">Resetar Pontuação</p>
+          <p className="text-sm text-muted-foreground mb-4">
+            Isso irá zerar todos os seus pontos de reciclagem acumulados. Seus registros de atividades permanecerão.
+          </p>
+        </CardContent>
+        <CardFooter className="bg-destructive/10">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button variant="destructive">Resetar Meus Pontos</Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Esta ação não pode ser desfeita. Isso irá resetar permanentemente
+                  sua pontuação para <strong>0</strong>.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleResetPoints} className={cn(buttonVariants({variant: "destructive"}))}>
+                  Sim, resetar meus pontos
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </CardFooter>
+      </Card>
+
     </div>
   );
 }
