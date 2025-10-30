@@ -25,16 +25,28 @@
       "imageHint": "lunch box"
     },
     {
-      "id": "reward-5",
-      "description": "Capa de telefone biodegradável feita de plástico à base de plantas, protegendo seu telefone e o planeta.",
-      "imageUrl": "https://images.unsplash.com/photo-1592320402243-605cc3e935f7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxwaG9uZSUyMGNhc2V8ZW58MHx8fHwxNzYxODM4NzI3fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "phone case"
+      "id": "reward-7",
+      "description": "Conjunto de talheres de viagem reutilizáveis (garfo, faca, colher) em um estojo compacto, tudo de plástico reciclado.",
+      "imageUrl": "https://images.unsplash.com/photo-1666475877314-4df0b366a51c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxyZXVzYWJsZSUyMGN1dGxlcnl8ZW58MHx8fHwxNzYxODU3NjA4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "reusable cutlery"
     },
     {
-      "id": "reward-6",
-      "description": "Um Frisbee divertido para atividades ao ar livre, feito de plástico reciclado colorido.",
-      "imageUrl": "https://images.unsplash.com/photo-1606583287991-cbc2a7794b5c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxmcmlzYmVlfGVufDB8fHx8MTc2MTg1NzMzNHww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "frisbee"
+      "id": "reward-8",
+      "description": "Kit com 3 potes de armazenamento de alimentos de tamanhos variados, feitos de plástico reciclado e seguros para alimentos.",
+      "imageUrl": "https://images.unsplash.com/photo-1569419904069-081571452242?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxmb29kJTIwY29udGFpbmVyc3xlbnwwfHx8fDE3NjE4NTc2MDh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "food containers"
+    },
+    {
+      "id": "reward-9",
+      "description": "Um pente de cabelo resistente e elegante, fabricado a partir de plásticos reciclados.",
+      "imageUrl": "https://images.unsplash.com/photo-1702569258559-e0b4d469b2c2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxoYWlyJTIwY29tYnxlbnwwfHx8fDE3NjE4NTc2MDh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "hair comb"
+    },
+    {
+      "id": "reward-10",
+      "description": "Organizador de mesa com compartimentos para canetas e clipes, feito de plástico reciclado para um escritório mais verde.",
+      "imageUrl": "https://images.unsplash.com/photo-1644463589256-02679b9c0767?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkZXNrJTIwb3JnYW5pemVyfGVufDB8fHx8MTc2MTgzMjA3OXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "desk organizer"
     }
   ]
 }

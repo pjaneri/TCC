@@ -14,7 +14,7 @@ import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Coins } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from "@/firebase";
-import { collection, query, where, doc, runTransaction } from "firebase/firestore";
+import { collection, query, where, doc, runTransaction, getDocs, writeBatch } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -27,6 +27,20 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useEffect } from "react";
+
+// Hardcoded rewards data
+const rewardsData = [
+    { id: "reward-1", name: "Garrafa de Água", requiredPoints: 1000, material: "plastic" },
+    { id: "reward-2", name: "Porta-copos Reciclados", requiredPoints: 500, material: "plastic" },
+    { id: "reward-3", name: "Vaso de Planta", requiredPoints: 750, material: "plastic" },
+    { id: "reward-4", name: "Lancheira Ecológica", requiredPoints: 1200, material: "plastic" },
+    { id: "reward-7", name: "Kit de Talheres de Viagem", requiredPoints: 800, material: "plastic" },
+    { id: "reward-8", name: "Potes de Armazenamento (Kit com 3)", requiredPoints: 1500, material: "plastic" },
+    { id: "reward-9", name: "Pente de Cabelo Reciclado", requiredPoints: 400, material: "plastic" },
+    { id: "reward-10", name: "Organizador de Mesa", requiredPoints: 900, material: "plastic" },
+];
+
 
 export default function RewardsPage() {
   const firestore = useFirestore();
@@ -39,6 +53,27 @@ export default function RewardsPage() {
   }, [firestore]);
 
   const { data: rewards, isLoading: rewardsLoading } = useCollection(rewardsQuery);
+
+  // Function to seed rewards data
+  useEffect(() => {
+    const seedRewards = async () => {
+      if (!firestore) return;
+      const rewardsCollectionRef = collection(firestore, "rewards");
+      const snapshot = await getDocs(rewardsCollectionRef);
+      if (snapshot.empty) {
+        console.log("No rewards found, seeding database...");
+        const batch = writeBatch(firestore);
+        rewardsData.forEach((reward) => {
+          const docRef = doc(rewardsCollectionRef, reward.id);
+          batch.set(docRef, reward);
+        });
+        await batch.commit();
+        console.log("Rewards have been seeded.");
+      }
+    };
+    seedRewards();
+  }, [firestore]);
+
 
   const userProfileRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -166,9 +201,9 @@ export default function RewardsPage() {
             </CardFooter>
           </Card>
         ))}
-         {rewardsWithData.length === 0 && (
+         {rewardsWithData.length === 0 && !rewardsLoading && (
             <div className="col-span-full text-center text-muted-foreground">
-              <p>Nenhum prêmio de plástico disponível no momento.</p>
+              <p>Nenhum prêmio de plástico disponível no momento. Novos prêmios estão sendo adicionados!</p>
             </div>
           )}
       </div>
