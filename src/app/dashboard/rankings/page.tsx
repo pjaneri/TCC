@@ -3,7 +3,7 @@
 
 import { useUser, useFirestore, useDoc, useMemoFirebase } from "@/firebase";
 import { doc } from "firebase/firestore";
-import { Flame, Leaf, Seedling, ShieldCheck, Sprout, Star, Sun, TreePine } from "lucide-react";
+import { Flame, Leaf, Shield, ShieldCheck, Sprout, Star, Sun, TreePine } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -15,28 +15,26 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 
 const ranks = [
-  { level: 0, name: "Novato", points: 0, icon: <Seedling className="h-6 w-6" /> },
-  { level: 1, name: "Aprendiz", points: 500, icon: <Sprout className="h-6 w-6" /> },
-  { level: 2, name: "Coletor", points: 1500, icon: <Leaf className="h-6 w-6" /> },
-  { level: 3, name: "Guardião", points: 3000, icon: <TreePine className="h-6 w-6" /> },
-  { level: 4, name: "Defensor", points: 5000, icon: <ShieldCheck className="h-6 w-6" /> },
-  { level: 5, name: "Campeão", points: 10000, icon: <Sun className="h-6 w-6" /> },
-  { level: 6, name: "Herói", points: 20000, icon: <Star className="h-6 w-6" /> },
   { level: 7, name: "Lenda", points: 50000, icon: <Flame className="h-6 w-6" /> },
-].sort((a, b) => b.points - a.points); // Sort from highest to lowest
+  { level: 6, name: "Herói", points: 20000, icon: <Star className="h-6 w-6" /> },
+  { level: 5, name: "Campeão", points: 10000, icon: <Sun className="h-6 w-6" /> },
+  { level: 4, name: "Defensor", points: 5000, icon: <ShieldCheck className="h-6 w-6" /> },
+  { level: 3, name: "Guardião", points: 3000, icon: <TreePine className="h-6 w-6" /> },
+  { level: 2, name: "Coletor", points: 1500, icon: <Leaf className="h-6 w-6" /> },
+  { level: 1, name: "Aprendiz", points: 500, icon: <Sprout className="h-6 w-6" /> },
+  { level: 0, name: "Novato", points: 0, icon: <Shield className="h-6 w-6" /> },
+].sort((a, b) => b.level - a.level);
 
 const getCurrentRank = (points: number) => {
-  for (const rank of ranks) {
-    if (points >= rank.points) {
-      return rank;
-    }
-  }
-  return ranks[ranks.length - 1]; // Should be Novato
+  // Ranks are sorted descending, so find the first one the user qualifies for.
+  return ranks.find(rank => points >= rank.points) || ranks[ranks.length - 1];
 };
 
 const getNextRank = (currentLevel: number) => {
-  const nextLevel = currentLevel + 1;
-  return ranks.find(r => r.level === nextLevel);
+  // Since ranks are sorted descending by level, the next rank is the one with a higher level.
+  // We need to find the rank with level + 1. The array is sorted from high to low level.
+  const reversedRanks = [...ranks].reverse(); // from 0 to 7
+  return reversedRanks.find(r => r.level === currentLevel + 1);
 };
 
 export default function RankingsPage() {
@@ -84,6 +82,11 @@ export default function RankingsPage() {
             </div>
           </CardContent>
         )}
+        {!nextRank && currentRank && (
+            <CardContent>
+                <p className="text-center font-semibold text-primary">Parabéns! Você alcançou a patente máxima de {currentRank.name}!</p>
+            </CardContent>
+        )}
       </Card>
       
       <Card className="transform-gpu transition-all duration-300 ease-out hover:shadow-xl">
@@ -95,7 +98,7 @@ export default function RankingsPage() {
         </CardHeader>
         <CardContent>
           <ul className="space-y-4">
-            {ranks.map((rank) => (
+            {[...ranks].reverse().map((rank) => (
               <li key={rank.level} className={`flex items-center justify-between rounded-lg p-4 transition-colors ${currentRank.level === rank.level ? 'bg-accent/50 border border-accent' : 'bg-muted/30'}`}>
                 <div className="flex items-center gap-4">
                   <div className="text-primary">{rank.icon}</div>
@@ -117,3 +120,5 @@ export default function RankingsPage() {
     </div>
   );
 }
+
+    
