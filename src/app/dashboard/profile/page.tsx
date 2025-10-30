@@ -13,7 +13,7 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input, PasswordInput } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useUser, useFirestore, useDoc, useMemoFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
 import { doc, updateDoc } from "firebase/firestore";
@@ -181,6 +181,7 @@ export default function ProfilePage() {
           title: "Autenticação confirmada",
           description: "Agora você pode alterar seu e-mail.",
         });
+        reauthForm.reset();
       } catch (error: any) {
         let description = "Não foi possível autenticar. Tente novamente.";
         if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
@@ -253,6 +254,7 @@ export default function ProfilePage() {
         let description = "Não foi possível alterar sua senha. Tente novamente.";
         if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
           description = "A senha atual está incorreta.";
+          passwordForm.setError("currentPassword", { type: "manual", message: "A senha atual está incorreta." });
         } else {
              console.error("Password change error:", error);
         }
@@ -394,7 +396,7 @@ export default function ProfilePage() {
                       <FormItem>
                         <Label>Senha Atual</Label>
                         <FormControl>
-                          <Input type="password" placeholder="Digite sua senha para confirmar" {...field} />
+                          <PasswordInput placeholder="Digite sua senha para confirmar" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -451,7 +453,7 @@ export default function ProfilePage() {
                     <FormItem>
                       <Label>Senha Atual</Label>
                       <FormControl>
-                        <Input type="password" {...field} />
+                        <PasswordInput {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -464,7 +466,7 @@ export default function ProfilePage() {
                     <FormItem>
                       <Label>Nova Senha</Label>
                       <FormControl>
-                        <Input type="password" {...field} />
+                        <PasswordInput {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -477,7 +479,7 @@ export default function ProfilePage() {
                     <FormItem>
                       <Label>Confirmar Nova Senha</Label>
                       <FormControl>
-                        <Input type="password" {...field} />
+                        <PasswordInput {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
