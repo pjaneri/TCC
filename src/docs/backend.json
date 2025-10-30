@@ -33,11 +33,6 @@
           "type": "string",
           "description": "User's birthday.",
           "format": "date"
-        },
-        "lastRecyclingLogDate": {
-          "type": "string",
-          "format": "date-time",
-          "description": "Timestamp of the user's last recycling log to enforce a cooldown."
         }
       },
       "required": [
@@ -249,6 +244,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to ensure authorization independence, clarity, and scalability for the Recycle+ application. User profiles and their associated data (recycling records, redemptions) are structured under the `/users/{userId}` path, providing clear ownership and simplifying security rules. A 'lastRecyclingLogDate' field was added to UserProfile to support a cooldown security feature. Rewards are stored in a separate top-level collection, `/rewards`. All admin-related collections have been removed for simplification."
+    "reasoning": "The Firestore data structure is designed to ensure authorization independence, clarity, and scalability for the Recycle+ application. User profiles and their associated data (recycling records, redemptions) are structured under the `/users/{userId}` path, providing clear ownership and simplifying security rules. Rewards are stored in a separate top-level collection, `/rewards`. All admin-related collections and cooldown-related fields have been removed for simplification."
   }
 }
