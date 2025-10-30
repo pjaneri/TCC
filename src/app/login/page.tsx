@@ -95,11 +95,11 @@ export default function LoginPage() {
 
   return (
     <AuthLayout>
-      <Card>
+      <Card className="w-full max-w-sm">
         <CardHeader className="space-y-1 text-center">
-          <CardTitle className="font-headline text-2xl">Acessar Conta</CardTitle>
+          <CardTitle className="font-headline text-3xl">Acessar Conta</CardTitle>
           <CardDescription>
-            Entre com seu email e senha
+            Entre com seu email e senha para continuar
           </CardDescription>
         </CardHeader>
         <Form {...form}>
@@ -139,18 +139,13 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
-               <Button type="submit" className="w-full" disabled={form.formState.isSubmitting} style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }}>
+               <Button type="submit" className="w-full font-bold" disabled={form.formState.isSubmitting} style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }}>
                 {form.formState.isSubmitting ? "Entrando..." : "Entrar"}
               </Button>
             </CardContent>
           </form>
         </Form>
         <CardFooter className="flex flex-col gap-4 text-center text-sm">
-          <Link href="/reset-password" passHref>
-             <span className="cursor-pointer text-muted-foreground underline-offset-4 hover:text-primary hover:underline">
-              Esqueceu sua senha?
-            </span>
-          </Link>
           <div className="text-muted-foreground">
             Não tem uma conta?{" "}
             <Link href="/signup" passHref>

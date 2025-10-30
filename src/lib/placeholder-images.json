@@ -2,39 +2,39 @@
   "placeholderImages": [
     {
       "id": "reward-1",
-      "description": "Garrafa de água ecológica",
-      "imageUrl": "https://images.unsplash.com/photo-1544003484-3cd181d17917?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx3YXRlciUyMGJvdHRsZXxlbnwwfHx8fDE3NjE3ODc3NDd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "description": "Uma garrafa de água esportiva reutilizável feita de plástico reciclado, perfeita para se manter hidratado.",
+      "imageUrl": "https://images.unsplash.com/photo-1602143407151-7111542de6e8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHx3YXRlciUyMGJvdHRsZXxlbnwwfHx8fDE3NjE3ODc3NDd8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "water bottle"
     },
     {
       "id": "reward-2",
-      "description": "Camiseta de material reciclado",
-      "imageUrl": "https://images.unsplash.com/photo-1696086152504-4843b2106ab4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8dC1zaGlydHxlbnwwfHx8fDE3NjE3NDE2MDJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "t-shirt"
+      "description": "Um conjunto de 4 porta-copos elegantes feitos de plástico reciclado, protegendo suas superfícies com estilo.",
+      "imageUrl": "https://images.unsplash.com/photo-1573767647942-8a4d367d7aa1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8Y29hc3RlcnN8ZW58MHx8fHwxNzYxODU3MzM1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "coasters"
     },
     {
       "id": "reward-3",
-      "description": "Doação para plantar uma árvore",
-      "imageUrl": "https://images.unsplash.com/photo-1520262494112-9fe481d36ec3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHx0cmVlfGVufDB8fHx8MTc2MTc1NTg0Nnww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "tree"
+      "description": "Vaso de planta pequeno e moderno, ideal para suculentas, feito 100% de plástico reciclado.",
+      "imageUrl": "https://images.unsplash.com/photo-1528475563668-e15742001b92?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxwbGFudCUyMHBvdHxlbnwwfHx8fDE3NjE4MzM0MzN8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "plant pot"
     },
     {
       "id": "reward-4",
-      "description": "Sacola de compras reutilizável",
-      "imageUrl": "https://images.unsplash.com/photo-1677753727712-c79ce4c420c1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxzaG9wcGluZyUyMGJhZ3xlbnwwfHx8fDE3NjE4NTU2MzR8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "shopping bag"
+      "description": "Uma lancheira durável e ecológica feita de plástico reciclado, com compartimentos para seus lanches.",
+      "imageUrl": "https://images.unsplash.com/photo-1508170754725-6e9a5cfbcabf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxsdW5jaCUyMGJveHxlbnwwfHx8fDE3NjE3NTE2MTB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "lunch box"
     },
     {
       "id": "reward-5",
-      "description": "Kit de talheres de bambu",
-      "imageUrl": "https://images.unsplash.com/photo-1686800553912-3e4c4efc48fe?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxiYW1ib28lMjBjdXRsZXJ5fGVufDB8fHx8MTc2MTg1NTYzNHww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "bamboo cutlery"
+      "description": "Capa de telefone biodegradável feita de plástico à base de plantas, protegendo seu telefone e o planeta.",
+      "imageUrl": "https://images.unsplash.com/photo-1592320402243-605cc3e935f7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxwaG9uZSUyMGNhc2V8ZW58MHx8fHwxNzYxODM4NzI3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "phone case"
     },
     {
       "id": "reward-6",
-      "description": "Caderno de papel reciclado",
-      "imageUrl": "https://images.unsplash.com/photo-1581431886211-6b932f8367f2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxub3RlYm9va3xlbnwwfHx8fDE3NjE3OTU1NzN8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "notebook"
+      "description": "Um Frisbee divertido para atividades ao ar livre, feito de plástico reciclado colorido.",
+      "imageUrl": "https://images.unsplash.com/photo-1606583287991-cbc2a7794b5c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxmcmlzYmVlfGVufDB8fHx8MTc2MTg1NzMzNHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "frisbee"
     }
   ]
 }

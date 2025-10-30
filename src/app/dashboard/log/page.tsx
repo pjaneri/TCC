@@ -14,8 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Package, FileText, GlassWater, Wrench } from "lucide-react";
-import { useUser, useFirestore, addDocumentNonBlocking, updateDocumentNonBlocking } from "@/firebase";
-import { collection, doc, serverTimestamp } from "firebase/firestore";
+import { useUser, useFirestore } from "@/firebase";
+import { collection, doc, runTransaction } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import {
   Form,
@@ -24,7 +24,6 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form";
-import { runTransaction } from "firebase/firestore";
 
 const recyclableCategories = [
   {
@@ -96,7 +95,7 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
   });
 
   const onSubmit = async (data: LogFormValues) => {
-    if (!user) {
+    if (!user || !firestore) {
       toast({
         variant: "destructive",
         title: "Erro",
@@ -147,7 +146,7 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
   };
 
   return (
-    <Card>
+    <Card className="transition-transform duration-300 ease-in-out hover:scale-105 hover:shadow-xl">
       <CardHeader className="flex flex-row items-start gap-4 space-y-0">
         <div className="mt-1">{category.icon}</div>
         <div>
@@ -184,7 +183,7 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
             />
             <Button
               type="submit"
-              className="w-full"
+              className="w-full font-bold"
               disabled={form.formState.isSubmitting}
               style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }}
             >

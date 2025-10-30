@@ -41,7 +41,7 @@ export default function RewardsPage() {
   const { data: rewards, isLoading: rewardsLoading } = useCollection(rewardsQuery);
 
   const userProfileRef = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || !firestore) return null;
     return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
 
@@ -96,29 +96,27 @@ export default function RewardsPage() {
     }
   };
 
-
   const rewardsWithData = rewards
-  ? rewards.map((reward) => {
-      const placeholder = PlaceHolderImages.find((p) => p.id === reward.id);
-      return { ...reward, ...placeholder };
-    })
-  : [];
-
+    ? rewards.map((reward) => {
+        const placeholder = PlaceHolderImages.find((p) => p.id === reward.id);
+        return { ...reward, ...placeholder };
+      })
+    : [];
 
   return (
     <div className="flex flex-col gap-6">
       <div>
         <h1 className="font-headline text-3xl font-bold">Resgatar Prêmios</h1>
         <p className="text-muted-foreground">
-          Use seus pontos para resgatar prêmios incríveis! (Somente itens de plástico são mostrados)
+          Use seus pontos para resgatar prêmios incríveis feitos de plástico!
         </p>
       </div>
       {rewardsLoading || userLoading ? (
         <p>Carregando prêmios...</p>
       ) : (
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {rewardsWithData.map((reward) => (
-          <Card key={reward.id} className="flex flex-col">
+          <Card key={reward.id} className="flex flex-col transition-transform duration-300 ease-in-out hover:scale-105 hover:shadow-xl">
             <CardHeader className="p-0">
               {reward.imageUrl && (
                 <Image
@@ -126,17 +124,17 @@ export default function RewardsPage() {
                   alt={reward.name || "Prêmio"}
                   width={400}
                   height={300}
-                  className="rounded-t-lg object-cover"
+                  className="aspect-[4/3] rounded-t-lg object-cover"
                   data-ai-hint={reward.imageHint}
                 />
               )}
             </CardHeader>
-            <CardContent className="flex-1 p-4">
+            <CardContent className="flex flex-1 flex-col p-4">
               <CardTitle className="font-headline text-lg">
                 {reward.name}
               </CardTitle>
-              <CardDescription>{reward.description}</CardDescription>
-              <div className="mt-2 flex items-center">
+              <CardDescription className="flex-1">{reward.description}</CardDescription>
+              <div className="mt-4 flex items-center">
                  <Badge variant="outline" className="flex items-center gap-1 border-amber-500 bg-amber-50 text-amber-800 dark:bg-amber-950 dark:text-amber-300">
                   <Coins className="h-4 w-4" />
                   <span>{reward.requiredPoints.toLocaleString("pt-BR")} pontos</span>
@@ -146,7 +144,7 @@ export default function RewardsPage() {
             <CardFooter className="p-4 pt-0">
                <AlertDialog>
                 <AlertDialogTrigger asChild>
-                    <Button className="w-full" style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }} disabled={(userProfile?.totalPoints || 0) < reward.requiredPoints}>
+                    <Button className="w-full font-bold" style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }} disabled={(userProfile?.totalPoints || 0) < reward.requiredPoints}>
                         {(userProfile?.totalPoints || 0) < reward.requiredPoints ? "Pontos insuficientes" : "Resgatar"}
                     </Button>
                 </AlertDialogTrigger>
@@ -168,6 +166,11 @@ export default function RewardsPage() {
             </CardFooter>
           </Card>
         ))}
+         {rewardsWithData.length === 0 && (
+            <div className="col-span-full text-center text-muted-foreground">
+              <p>Nenhum prêmio de plástico disponível no momento.</p>
+            </div>
+          )}
       </div>
       )}
     </div>
