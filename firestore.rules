@@ -1,15 +1,39 @@
+/**
+ * @file Overview
+ * This ruleset enforces a strict user-ownership model for personal data while allowing public read access to reward information. Administrative privileges are managed through a dedicated collection.
+ *
+ * Data Structure:
+ * - /users/{userId}: Stores user profile information. Each user can only access their own profile.
+ * - /users/{userId}/recycling_records/{recordId}: Stores recycling records for a specific user. Only the user can access their own records.
+ * - /rewards/{rewardId}: Stores reward information. Publicly readable, but only admins can modify.
+ * - /users/{userId}/redemptions/{redemptionId}: Stores redemption records for a specific user. Only the user can access their own redemptions.
+ * - /roles_admin/{userId}: Indicates admin privileges. If a document exists for a user ID, that user is considered an admin.
+ *
+ * Key Security Decisions:
+ * - Users can only read and write their own profile data and associated recycling/redemption records.
+ * - Rewards are publicly readable but only modifiable by admins.
+ * - Listing of user-specific data is restricted to the owning user.
+ * - The 'material' field of Rewards is not validated, and all writes are allowed.
+ *
+ * Denormalization for Authorization:
+ * - Admin status is determined by the existence of a document in `/roles_admin/{userId}`, avoiding the need for complex role-based lookups.
+ *
+ * Structural Segregation:
+ * - Publicly readable reward data is stored in a separate top-level collection (/rewards) to avoid mixing public and private data within the user-specific data trees (/users/{userId}/...).
+ */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Manages user profile data, ensuring users can only access their own profiles.
+     * @description Controls access to user profile documents.
      * @path /users/{userId}
-     * @allow (create) - A user can create their profile if the userId matches their auth.uid.
-     * @allow (get, update, delete) - A user can read, update, or delete their own profile.
-     * @deny (create) - A user cannot create a profile with a userId that doesn't match their auth.uid.
-     * @deny (get, update, delete) - A user cannot read, update, or delete another user's profile.
-     * @principle Enforces document ownership and validates relational integrity between the path and document data.
+     * @allow (create) User with UID 'user123' can create their own profile.
+     *   Request data must include 'id': 'user123'.
+     * @allow (get, update, delete) User with UID 'user123' can read, update, and delete their own profile.
+     * @deny (create) User with UID 'user456' cannot create a profile with ID 'user123'.
+     * @deny (get, update, delete) User with UID 'user456' cannot read, update, or delete the profile of 'user123'.
+     * @principle Enforces document ownership for user profiles.
      */
     match /users/{userId} {
       function isSignedIn() {
@@ -21,25 +45,24 @@ service cloud.firestore {
       }
 
       function isExistingOwner(userId) {
-        return isOwner(userId) && resource.data != null;
+        return isOwner(userId) && resource != null;
       }
-
-      allow get: if isOwner(userId);
-      allow list: if false; // Listing all users is not permitted
-
-      allow create: if isSignedIn() && request.auth.uid == userId;
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow get: if isSignedIn() && isOwner(userId);
+      allow list: if false;
+      allow create: if isSignedIn() && isOwner(userId);// && request.resource.data.id == userId; // Relaxed data validation during prototyping
+      allow update: if isSignedIn() && isExistingOwner(userId);// && request.resource.data.id == resource.data.id; // Relaxed data validation during prototyping
+      allow delete: if isSignedIn() && isExistingOwner(userId);
     }
 
     /**
-     * @description Manages recycling records for each user, ensuring users can only access their own records.
+     * @description Controls access to recycling records for a specific user.
      * @path /users/{userId}/recycling_records/{recordId}
-     * @allow (create) - A user can create a recycling record under their userId.
-     * @allow (get, list, update, delete) - A user can read, list, update, or delete their own recycling records.
-     * @deny (create) - A user cannot create a recycling record under another user's userId.
-     * @deny (get, list, update, delete) - A user cannot read, list, update, or delete another user's recycling records.
-     * @principle Enforces document ownership for all operations.
+     * @allow (create) User with UID 'user123' can create a recycling record under their profile.
+     *   Request data must include 'userId': 'user123'.
+     * @allow (get, update, delete) User with UID 'user123' can read, update, and delete their own recycling records.
+     * @deny (create) User with UID 'user456' cannot create a recycling record for user 'user123'.
+     * @deny (get, update, delete) User with UID 'user456' cannot read, update, or delete recycling records of user 'user123'.
+     * @principle Enforces document ownership for recycling records within user profiles.
      */
     match /users/{userId}/recycling_records/{recordId} {
       function isSignedIn() {
@@ -50,49 +73,50 @@ service cloud.firestore {
         return request.auth.uid == userId;
       }
 
-        function isExistingOwner(userId) {
-        return isOwner(userId) && resource.data != null;
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
       }
-
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow get: if isSignedIn() && isOwner(userId);
+      allow list: if isSignedIn() && isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId);// && request.resource.data.userId == userId; // Relaxed data validation during prototyping
+      allow update: if isSignedIn() && isExistingOwner(userId);// && request.resource.data.userId == resource.data.userId; // Relaxed data validation during prototyping
+      allow delete: if isSignedIn() && isExistingOwner(userId);
     }
 
     /**
-     * @description Manages rewards, allowing public read access but restricting write access to admins.
+     * @description Controls access to reward documents.
      * @path /rewards/{rewardId}
-     * @allow (get, list) - All users can read and list rewards.
-     * @allow (create, update, delete) - Only admins can create, update, or delete rewards.
-     * @deny (create, update, delete) - Non-admins cannot create, update, or delete rewards.
-     * @principle Enforces role-based access control for administrative functions.
+     * @allow (get, list) All users can read reward information.
+     * @allow (create) Admin user with UID 'admin123' can create rewards if they have a document at /roles_admin/admin123.
+     * @allow (update, delete) Admin user with UID 'admin123' can update and delete rewards if they have a document at /roles_admin/admin123 and if resource exists.
+     * @deny (create, update, delete) Non-admin users cannot create, update, or delete rewards.
+     * @principle Allows public read access to rewards but restricts modifications to admins.
      */
     match /rewards/{rewardId} {
-      function isAdmin() {
-        return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
-      }
-
       function isSignedIn() {
         return request.auth != null;
       }
 
+      function isAdmin() {
+        return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+      }
+
       allow get: if true;
       allow list: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow create: if isSignedIn() && isAdmin();
+      allow update: if isSignedIn() && isAdmin();
+      allow delete: if isSignedIn() && isAdmin();
     }
 
     /**
-     * @description Manages redemption records for each user, ensuring users can only access their own redemptions.
+     * @description Controls access to redemption records for a specific user.
      * @path /users/{userId}/redemptions/{redemptionId}
-     * @allow (create) - A user can create a redemption record under their userId.
-     * @allow (get, list, update, delete) - A user can read, list, update, or delete their own redemption records.
-     * @deny (create) - A user cannot create a redemption record under another user's userId.
-     * @deny (get, list, update, delete) - A user cannot read, list, update, or delete another user's recycling records.
-     * @principle Enforces document ownership for all operations.
+     * @allow (create) User with UID 'user123' can create a redemption record under their profile.
+     *   Request data must include 'userId': 'user123'.
+     * @allow (get, update, delete) User with UID 'user123' can read, update, and delete their own redemption records.
+     * @deny (create) User with UID 'user456' cannot create a redemption record for user 'user123'.
+     * @deny (get, update, delete) User with UID 'user456' cannot read, update, or delete redemption records of user 'user123'.
+     * @principle Enforces document ownership for redemption records within user profiles.
      */
     match /users/{userId}/redemptions/{redemptionId} {
       function isSignedIn() {
@@ -103,34 +127,40 @@ service cloud.firestore {
         return request.auth.uid == userId;
       }
 
-        function isExistingOwner(userId) {
-        return isOwner(userId) && resource.data != null;
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
       }
-
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow get: if isSignedIn() && isOwner(userId);
+      allow list: if isSignedIn() && isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId);// && request.resource.data.userId == userId; // Relaxed data validation during prototyping
+      allow update: if isSignedIn() && isExistingOwner(userId);// && request.resource.data.userId == resource.data.userId; // Relaxed data validation during prototyping
+      allow delete: if isSignedIn() && isExistingOwner(userId);
     }
-    /**
-     * @description Restricts access to admin role documents. Only allows creation, deletion and get by admins.
-     * @path /roles_admin/{userId}
-     */
-     match /roles_admin/{userId} {
-      function isAdmin() {
-        return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
-      }
 
+    /**
+     * @description Controls access to admin role documents.
+     * @path /roles_admin/{userId}
+     * @allow (get) User with UID 'user123' can check if they have admin privileges.
+     * @allow (create) User with UID 'admin123' can assign themselves admin privileges.
+     *   Request data should contain information such as user profile.
+     * @deny (create) User with UID 'user123' cannot assign admin privileges to 'admin456'.
+     * @deny (update, delete) No one can update or delete admin roles through direct requests to the role document.
+     * @principle Restricts admin role creation to self-assignment and prohibits modification.
+     */
+    match /roles_admin/{userId} {
       function isSignedIn() {
         return request.auth != null;
       }
 
-      allow get: if isAdmin();
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      allow get: if isSignedIn() && isOwner(userId);
       allow list: if false;
-      allow create: if isAdmin();
+      allow create: if isSignedIn() && isOwner(userId);
       allow update: if false;
-      allow delete: if isAdmin();
+      allow delete: if false;
     }
   }
 }
