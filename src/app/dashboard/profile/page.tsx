@@ -120,13 +120,10 @@ export default function ProfilePage() {
                 birthday: userProfile.birthday ? new Date(userProfile.birthday) : undefined,
             });
         }
-        // Only set the email form's default value here once.
-        // If we set it inside the `if (user)` block without a guard,
-        // it will reset the user's input on every render.
-        if (user && !emailForm.getValues().newEmail) {
-          emailForm.reset({ newEmail: user.email || '' })
+        if (user && !isReauthenticatedForEmail) {
+            emailForm.reset({ newEmail: user.email || '' });
         }
-    }, [user, userProfile, profileForm, emailForm]);
+    }, [user, userProfile, profileForm, emailForm, isReauthenticatedForEmail]);
 
     const onProfileSubmit = async (data: ProfileFormValues) => {
         if (!user || !firestore) return;
@@ -182,7 +179,7 @@ export default function ProfilePage() {
       try {
         await reauthenticateWithCredential(user, credential);
         setIsReauthenticatedForEmail(true);
-        emailForm.reset({ newEmail: user.email || "" }); // Set current email on success
+        emailForm.reset({ newEmail: "" }); // Clear field for new email input
         toast({
           title: "Autenticação confirmada",
           description: "Agora você pode alterar seu e-mail.",
@@ -545,5 +542,3 @@ export default function ProfilePage() {
   );
 }
 
-
-    
