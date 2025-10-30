@@ -13,8 +13,8 @@ import { Button } from "@/components/ui/button";
 import placeholderImagesData from "@/lib/placeholder-images.json";
 import { Coins } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
-import { collection, query, where, doc, runTransaction, getDocs, writeBatch } from "firebase/firestore";
+import { useUser, useFirestore, useDoc, useMemoFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
+import { collection, doc, runTransaction } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -27,55 +27,29 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useEffect } from "react";
 
 const { placeholderImages } = placeholderImagesData;
 
-// Hardcoded rewards data
+// Hardcoded rewards data with all details
 const rewardsData = [
-    { id: "reward-1", name: "Garrafa de Água", requiredPoints: 1000, material: "plastic" },
-    { id: "reward-2", name: "Porta-copos Reciclados", requiredPoints: 500, material: "plastic" },
-    { id: "reward-3", name: "Vaso de Planta", requiredPoints: 750, material: "plastic" },
-    { id: "reward-4", name: "Lancheira Ecológica", requiredPoints: 1200, material: "plastic" },
-    { id: "reward-7", name: "Kit de Talheres de Viagem", requiredPoints: 800, material: "plastic" },
-    { id: "reward-8", name: "Potes de Armazenamento (Kit com 3)", requiredPoints: 1500, material: "plastic" },
-    { id: "reward-9", name: "Pente de Cabelo Reciclado", requiredPoints: 400, material: "plastic" },
-    { id: "reward-10", name: "Organizador de Mesa", requiredPoints: 900, material: "plastic" },
-];
+    { id: "reward-1", name: "Garrafa de Água", requiredPoints: 1000, description: "Uma garrafa de água esportiva reutilizável feita de plástico reciclado, perfeita para se manter hidratado." },
+    { id: "reward-2", name: "Porta-copos Reciclados", requiredPoints: 500, description: "Um conjunto de 4 porta-copos elegantes feitos de plástico reciclado, protegendo suas superfícies com estilo." },
+    { id: "reward-3", name: "Vaso de Planta", requiredPoints: 750, description: "Vaso de planta pequeno e moderno, ideal para suculentas, feito 100% de plástico reciclado." },
+    { id: "reward-4", name: "Lancheira Ecológica", requiredPoints: 1200, description: "Uma lancheira durável e ecológica feita de plástico reciclado, com compartimentos para seus lanches." },
+    { id: "reward-7", name: "Kit de Talheres de Viagem", requiredPoints: 800, description: "Conjunto de talheres de viagem reutilizáveis (garfo, faca, colher) em um estojo compacto, tudo de plástico reciclado." },
+    { id: "reward-8", name: "Potes de Armazenamento (Kit com 3)", requiredPoints: 1500, description: "Kit com 3 potes de armazenamento de alimentos de tamanhos variados, feitos de plástico reciclado e seguros para alimentos." },
+    { id: "reward-9", name: "Pente de Cabelo Reciclado", requiredPoints: 400, description: "Um pente de cabelo resistente e elegante, fabricado a partir de plásticos reciclados." },
+    { id: "reward-10", name: "Organizador de Mesa", requiredPoints: 900, description: "Organizador de mesa com compartimentos para canetas e clipes, feito de plástico reciclado para um escritório mais verde." },
+].map(reward => {
+    const placeholder = placeholderImages.find(p => p.id === reward.id);
+    return { ...reward, ...placeholder };
+});
 
 
 export default function RewardsPage() {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
-
-  const rewardsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, "rewards"), where("material", "==", "plastic"));
-  }, [firestore]);
-
-  const { data: rewards, isLoading: rewardsLoading } = useCollection(rewardsQuery);
-
-  // Function to seed rewards data
-  useEffect(() => {
-    const seedRewards = async () => {
-      if (!firestore) return;
-      const rewardsCollectionRef = collection(firestore, "rewards");
-      const snapshot = await getDocs(rewardsCollectionRef);
-      if (snapshot.empty) {
-        console.log("No rewards found, seeding database...");
-        const batch = writeBatch(firestore);
-        rewardsData.forEach((reward) => {
-          const docRef = doc(rewardsCollectionRef, reward.id);
-          batch.set(docRef, reward);
-        });
-        await batch.commit();
-        console.log("Rewards have been seeded.");
-      }
-    };
-    seedRewards();
-  }, [firestore]);
-
 
   const userProfileRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -143,13 +117,6 @@ export default function RewardsPage() {
     });
   };
 
-  const rewardsWithData = rewards
-    ? rewards.map((reward) => {
-        const placeholder = placeholderImages.find((p) => p.id === reward.id);
-        return { ...reward, ...placeholder };
-      })
-    : [];
-
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -158,11 +125,11 @@ export default function RewardsPage() {
           Use seus pontos para resgatar prêmios incríveis feitos de plástico!
         </p>
       </div>
-      {rewardsLoading || userLoading ? (
-        <p>Carregando prêmios...</p>
+      {userLoading ? (
+        <p>Carregando...</p>
       ) : (
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {rewardsWithData.map((reward) => (
+        {rewardsData.map((reward) => (
           <Card key={reward.id} className="flex flex-col transition-transform duration-300 ease-in-out hover:scale-105 hover:shadow-xl">
             <CardHeader className="p-0">
               {reward.imageUrl && (
@@ -213,7 +180,7 @@ export default function RewardsPage() {
             </CardFooter>
           </Card>
         ))}
-         {rewardsWithData.length === 0 && !rewardsLoading && (
+         {rewardsData.length === 0 && (
             <div className="col-span-full text-center text-muted-foreground">
               <p>Nenhum prêmio de plástico disponível no momento. Novos prêmios estão sendo adicionados!</p>
             </div>
