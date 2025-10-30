@@ -8,6 +8,7 @@ import {
   PlusCircle,
   Recycle,
   Trophy,
+  UserCircle,
 } from "lucide-react";
 import { ReactNode, useEffect } from "react";
 import { getAuth, signOut } from "firebase/auth";
@@ -26,11 +27,13 @@ import {
 } from "@/components/ui/sidebar";
 import { useUser } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Visão Geral" },
   { href: "/dashboard/log", icon: PlusCircle, label: "Registrar Reciclagem" },
   { href: "/dashboard/rewards", icon: Trophy, label: "Resgatar Prêmios" },
+  { href: "/dashboard/profile", icon: UserCircle, label: "Perfil" },
 ];
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
@@ -107,10 +110,17 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <SidebarInset>
         <header className="flex h-14 items-center justify-between gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6">
           <SidebarTrigger className="md:hidden" />
-          <div className="w-full flex-1">
+          <div className="flex w-full flex-1 items-center justify-between">
             <h1 className="font-headline text-xl font-semibold">
                 {navItems.find(item => item.href === pathname)?.label}
             </h1>
+            <div className="flex items-center gap-2">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={user?.photoURL || undefined} alt={user?.displayName || 'User'}/>
+                <AvatarFallback>{user?.displayName?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+              </Avatar>
+              <span className="hidden text-sm font-medium md:block">{user?.displayName}</span>
+            </div>
           </div>
         </header>
         <main className="flex flex-1 justify-center p-4 md:p-6">
@@ -122,3 +132,5 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     </SidebarProvider>
   );
 }
+
+    

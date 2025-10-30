@@ -27,6 +27,16 @@
         "totalPoints": {
           "type": "number",
           "description": "Total points accumulated by the user through recycling."
+        },
+        "photoUrl": {
+          "type": "string",
+          "description": "URL for the user's profile picture.",
+          "format": "uri"
+        },
+        "birthday": {
+          "type": "string",
+          "description": "User's birthday.",
+          "format": "date"
         }
       },
       "required": [
@@ -256,3 +266,4 @@
     "reasoning": "The Firestore data structure is designed to ensure authorization independence, clarity, and scalability for the Recycle+ application. User profiles and their associated data (recycling records, redemptions) are structured under the `/users/{userId}` path, providing clear ownership and simplifying security rules. Rewards are stored in a separate top-level collection, `/rewards`, with enforced data integrity for the 'material' field.\n\n*   **Authorization Independence:** The structure avoids hierarchical authorization dependencies by placing user-related data directly under their respective user IDs, eliminating the need for `get()` calls in security rules to check parent document attributes.  Each user's recycling records and redemptions are located under `/users/{userId}/recycling_records` and `/users/{userId}/redemptions` respectively.\n*   **QAPs (Rules are not Filters):** Segregation is used to ensure secure list operations. The `/rewards` collection is designed for global access (read for all users, create/update/delete for admins – implemented via a separate `/roles_admin/{uid}` collection), while user-specific data resides under the `/users/{userId}` path, allowing secure listing of rewards without exposing personal user data. The path-based ownership (`/users/{userId}/...`) ensures that listing recycling records or redemptions only returns data belonging to the requesting user, preventing unauthorized data access. All rewards are plastic to satisfy the user request."
   }
 }
+    
