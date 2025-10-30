@@ -72,11 +72,6 @@
         "pointsEarned": {
           "type": "number",
           "description": "Points earned for this recycling activity."
-        },
-        "status": {
-          "type": "string",
-          "description": "Status of the recycling record.",
-          "enum": ["pending", "approved", "rejected"]
         }
       },
       "required": [
@@ -85,7 +80,7 @@
         "materialType",
         "quantity",
         "recyclingDate",
-        "status"
+        "pointsEarned"
       ]
     },
     "Reward": {
@@ -246,40 +241,8 @@
             }
           ]
         }
-      },
-      {
-        "path": "/roles_admin/{userId}",
-        "definition": {
-          "entityName": "AdminRole",
-          "schema": {
-            "$ref": "#/backend/entities/UserProfile"
-          },
-          "description": "Collection to store admin user IDs. Existence of a document indicates admin privileges.",
-          "params": [
-            {
-              "name": "userId",
-              "description": "The unique identifier for the admin user."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/recycling_records_all/{recordId}",
-        "definition": {
-          "entityName": "RecyclingRecord",
-          "schema": {
-            "$ref": "#/backend/entities/RecyclingRecord"
-          },
-          "description": "Stores all recycling records from all users for admin review. Only admins can read/write.",
-          "params": [
-            {
-              "name": "recordId",
-              "description": "The unique identifier for the recycling record."
-            }
-          ]
-        }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to ensure authorization independence, clarity, and scalability for the Recycle+ application. User profiles and their associated data (recycling records, redemptions) are structured under the `/users/{userId}` path, providing clear ownership and simplifying security rules. Rewards are stored in a separate top-level collection, `/rewards`. A new top-level collection `/recycling_records_all` has been added for admin review of recycling submissions. Admins have read/write access to this collection, while users can only create new records. This prevents users from manipulating their points directly and adds a necessary layer of security."
+    "reasoning": "The Firestore data structure is designed to ensure authorization independence, clarity, and scalability for the Recycle+ application. User profiles and their associated data (recycling records, redemptions) are structured under the `/users/{userId}` path, providing clear ownership and simplifying security rules. Rewards are stored in a separate top-level collection, `/rewards`, with enforced data integrity for the 'material' field. All admin-related collections have been removed for simplification."
   }
 }

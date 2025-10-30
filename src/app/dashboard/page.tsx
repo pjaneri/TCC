@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from "@/firebase";
-import { collection, query, orderBy, limit, doc, Timestamp, where } from "firebase/firestore";
+import { collection, query, orderBy, limit, doc, Timestamp } from "firebase/firestore";
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -51,8 +51,7 @@ export default function DashboardPage() {
   const recentActivitiesQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
     return query(
-      collection(firestore, 'recycling_records_all'),
-      where('userId', '==', user.uid),
+      collection(firestore, 'users', user.uid, 'recycling_records'),
       orderBy('recyclingDate', 'desc'),
       limit(5)
     );
@@ -83,19 +82,6 @@ export default function DashboardPage() {
 
   const userPoints = userProfile?.totalPoints || 0;
   const isLoading = recordsLoading || redemptionsLoading;
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'approved':
-        return <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Aprovado</Badge>;
-      case 'pending':
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">Pendente</Badge>;
-      case 'rejected':
-        return <Badge variant="destructive">Rejeitado</Badge>;
-      default:
-        return <Badge variant="outline">N/A</Badge>;
-    }
-  };
 
 
   return (
@@ -134,7 +120,7 @@ export default function DashboardPage() {
                 <TableHead>Item</TableHead>
                 <TableHead className="hidden sm:table-cell">Detalhes</TableHead>
                 <TableHead className="hidden md:table-cell">Data</TableHead>
-                <TableHead>Status / Pontos</TableHead>
+                <TableHead className="text-right">Pontos</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -154,7 +140,9 @@ export default function DashboardPage() {
                           {formatDistanceToNow(activity.date, { addSuffix: true, locale: ptBR })}
                         </TableCell>
                         <TableCell className="text-right">
-                           {getStatusBadge(activity.status)}
+                           <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                             +{activity.pointsEarned}
+                           </Badge>
                         </TableCell>
                       </TableRow>
                     )

@@ -37,6 +37,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore } from "@/firebase";
 import { useEffect, useState } from "react";
 import { Separator } from "@/components/ui/separator";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Por favor, insira um email válido." }),
@@ -147,6 +148,9 @@ export default function LoginPage() {
 
   return (
     <AuthLayout>
+        <div className="absolute top-4 right-4">
+            <ThemeToggle />
+        </div>
       <Card className="w-full max-w-sm">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="font-headline text-3xl">Acessar Conta</CardTitle>

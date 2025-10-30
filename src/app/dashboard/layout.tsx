@@ -7,10 +7,9 @@ import {
   LogOut,
   PlusCircle,
   Recycle,
-  Shield,
-  ShieldCheck,
   Trophy,
   UserCircle,
+  Shield,
 } from "lucide-react";
 import { ReactNode, useEffect } from "react";
 import { getAuth, signOut } from "firebase/auth";
@@ -27,13 +26,12 @@ import {
   SidebarFooter,
   SidebarInset,
 } from "@/components/ui/sidebar";
-import { useUser, useDoc, useFirestore, useMemoFirebase } from "@/firebase";
+import { useUser } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { doc } from "firebase/firestore";
 import { ThemeToggle } from "@/components/theme-toggle";
 
-const baseNavItems = [
+const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Visão Geral" },
   { href: "/dashboard/log", icon: PlusCircle, label: "Registrar Reciclagem" },
   { href: "/dashboard/rewards", icon: Trophy, label: "Resgatar Prêmios" },
@@ -41,25 +39,12 @@ const baseNavItems = [
   { href: "/dashboard/profile", icon: UserCircle, label: "Perfil" },
 ];
 
-const adminNavItem = { href: "/dashboard/admin", icon: ShieldCheck, label: "Admin" };
-
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
   const { toast } = useToast();
   const auth = getAuth();
-
-  const adminRoleRef = useMemoFirebase(() => {
-    if (!user) return null;
-    return doc(firestore, 'roles_admin', user.uid);
-  }, [firestore, user]);
-
-  const { data: adminRole, isLoading: isAdminLoading } = useDoc(adminRoleRef);
-  const isAdmin = adminRole?.exists;
-
-  const navItems = isAdmin ? [...baseNavItems, adminNavItem] : baseNavItems;
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -80,7 +65,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     }
   };
 
-  if (isUserLoading || !user || isAdminLoading) {
+  if (isUserLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <p>Carregando...</p>

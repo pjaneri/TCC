@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Package, FileText, GlassWater, Wrench } from "lucide-react";
 import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
-import { collection, doc, serverTimestamp, setDoc } from "firebase/firestore";
+import { collection, doc, serverTimestamp, runTransaction } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import {
   Form,
@@ -71,7 +71,7 @@ export default function LogRecyclingPage() {
       <div>
          <h2 className="text-2xl font-bold tracking-tight">Registrar Reciclagem</h2>
         <p className="text-muted-foreground">
-          Adicione os itens que você reciclou. Os registros serão revisados por um administrador antes da atribuição dos pontos.
+          Adicione os itens que você reciclou para ganhar pontos.
         </p>
       </div>
       <div className="grid gap-6 md:grid-cols-2">
@@ -96,7 +96,7 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
     },
   });
 
-  const onSubmit = (data: LogFormValues) => {
+  const onSubmit = async (data: LogFormValues) => {
     if (!user || !firestore) {
       toast({
         variant: "destructive",
@@ -106,38 +106,43 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
       return;
     }
 
-    let pointsPerUnit = (category.units as any)[selectedUnit];
-    let quantityInGrams = data.quantity;
-
-    if (selectedUnit === 'kg') {
-        quantityInGrams = data.quantity * 1000;
-        pointsPerUnit = (category.units as any)['gm'];
-    }
-    
     const pointsCalculated = Math.round(data.quantity * (category.units as any)[selectedUnit]);
-
-
-    const recyclingLogColRef = collection(firestore, "recycling_records_all");
+    
+    const userDocRef = doc(firestore, "users", user.uid);
+    const recyclingLogColRef = collection(userDocRef, "recycling_records");
     const newRecordRef = doc(recyclingLogColRef);
+
     const newRecordData = {
         id: newRecordRef.id,
         userId: user.uid,
-        username: user.displayName,
         materialType: category.name,
         quantity: data.quantity,
         unit: selectedUnit,
         recyclingDate: serverTimestamp(),
-        pointsCalculated: pointsCalculated,
-        status: 'pending', // 'pending', 'approved', 'rejected'
+        pointsEarned: pointsCalculated,
     };
+    
+    try {
+        await runTransaction(firestore, async (transaction) => {
+            const userDoc = await transaction.get(userDocRef);
+            if (!userDoc.exists()) {
+                throw "Usuário não encontrado.";
+            }
 
-    setDoc(newRecordRef, newRecordData).then(() => {
+            const currentPoints = userDoc.data().totalPoints || 0;
+            const newTotalPoints = currentPoints + pointsCalculated;
+            
+            transaction.update(userDocRef, { totalPoints: newTotalPoints });
+            transaction.set(newRecordRef, newRecordData);
+        });
+
         toast({
-            title: "Registro Enviado!",
-            description: `Seu registro de ${category.name} foi enviado para aprovação.`,
+            title: "Registro Salvo!",
+            description: `Você ganhou ${pointsCalculated} pontos por reciclar ${category.name}.`,
         });
         form.reset();
-    }).catch((e) => {
+
+    } catch(e) {
         console.error("Error creating record: ", e);
         const permissionError = new FirestorePermissionError({
           path: newRecordRef.path,
@@ -148,9 +153,9 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
         toast({
             variant: "destructive",
             title: "Uh oh! Algo deu errado.",
-            description: "Não foi possível enviar seu registro de reciclagem.",
+            description: "Não foi possível salvar seu registro de reciclagem.",
         });
-    });
+    }
   };
 
   const unitOptions = Object.keys(category.units);
@@ -212,7 +217,7 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
               className="w-full font-bold"
               disabled={form.formState.isSubmitting}
             >
-              {form.formState.isSubmitting ? "Enviando..." : "Enviar para Aprovação"}
+              {form.formState.isSubmitting ? "Salvando..." : "Salvar Registro"}
             </Button>
           </form>
         </Form>
