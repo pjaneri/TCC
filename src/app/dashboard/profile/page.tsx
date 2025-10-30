@@ -27,12 +27,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Loader2 } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
+import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useEffect } from "react";
+import { useEffect, useState, ChangeEvent } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,7 +46,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const profileSchema = z.object({
     username: z.string().min(3, { message: "O nome de usuário deve ter pelo menos 3 caracteres." }),
-    birthday: z.date().optional(),
+    birthday: z.string().optional(),
 });
 
 const passwordSchema = z.object({
@@ -80,7 +77,7 @@ export default function ProfilePage() {
         resolver: zodResolver(profileSchema),
         defaultValues: {
             username: "",
-            birthday: undefined,
+            birthday: "",
         },
     });
     
@@ -97,7 +94,7 @@ export default function ProfilePage() {
         if (userProfile) {
             profileForm.reset({
                 username: userProfile.username || '',
-                birthday: userProfile.birthday ? new Date(userProfile.birthday) : undefined,
+                birthday: userProfile.birthday || '',
             });
         }
     }, [user, userProfile, profileForm]);
@@ -115,7 +112,7 @@ export default function ProfilePage() {
         };
 
         if (data.birthday) {
-            updateData.birthday = data.birthday.toISOString().split('T')[0]; // Store as YYYY-MM-DD
+            updateData.birthday = data.birthday;
         }
 
         try {
@@ -198,6 +195,15 @@ export default function ProfilePage() {
       }
     };
 
+    const handleDateMask = (e: ChangeEvent<HTMLInputElement>) => {
+      let value = e.target.value;
+      value = value.replace(/\D/g, ''); 
+      value = value.replace(/(\d{2})(\d)/, '$1/$2');
+      value = value.replace(/(\d{2})(\d)/, '$1/$2'); 
+      e.target.value = value.slice(0, 10);
+      profileForm.setValue('birthday', e.target.value);
+    }
+
     if (isUserLoading || isProfileLoading) {
         return <div className="flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin" /></div>
     }
@@ -250,39 +256,19 @@ export default function ProfilePage() {
                       control={profileForm.control}
                       name="birthday"
                       render={({ field }) => (
-                          <FormItem className="flex flex-col">
+                          <FormItem>
                           <Label>Data de Nascimento</Label>
-                          <Popover>
-                              <PopoverTrigger asChild>
-                              <FormControl>
-                                  <Button
-                                  variant={"outline"}
-                                  className={cn(
-                                      "w-[240px] pl-3 text-left font-normal",
-                                      !field.value && "text-muted-foreground"
-                                  )}
-                                  >
-                                  {field.value ? (
-                                      format(field.value, "dd/MM/yyyy")
-                                  ) : (
-                                      <span>Escolha uma data</span>
-                                  )}
-                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                  </Button>
-                              </FormControl>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                  mode="single"
-                                  selected={field.value}
-                                  onSelect={field.onChange}
-                                  disabled={(date) =>
-                                      date > new Date() || date < new Date("1900-01-01")
-                                  }
-                                  initialFocus
-                              />
-                              </PopoverContent>
-                          </Popover>
+                            <FormControl>
+                                <Input 
+                                  placeholder="DD/MM/AAAA" 
+                                  {...field}
+                                  onChange={(e) => {
+                                    handleDateMask(e);
+                                    field.onChange(e);
+                                  }}
+                                  maxLength={10}
+                                />
+                            </FormControl>
                           <FormMessage />
                           </FormItem>
                       )}
