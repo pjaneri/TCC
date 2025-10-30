@@ -25,35 +25,37 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useState } from "react";
 
 const recyclableCategories = [
   {
     name: "Plástico",
     description: "Garrafas PET, embalagens, etc.",
     icon: <Package className="h-8 w-8 text-primary" />,
-    unit: "gm",
-    pointsPerUnit: 0.02,
+    units: { gm: 0.02, kg: 20 },
+    defaultUnit: "gm",
   },
   {
     name: "Papel",
     description: "Jornais, revistas, caixas de papelão.",
     icon: <FileText className="h-8 w-8 text-primary" />,
-    unit: "gm",
-    pointsPerUnit: 0.015,
+    units: { gm: 0.015, kg: 15 },
+    defaultUnit: "gm",
   },
   {
     name: "Vidro",
     description: "Garrafas, potes, frascos.",
     icon: <GlassWater className="h-8 w-8 text-primary" />,
-    unit: "unidades",
-    pointsPerUnit: 10,
+    units: { unidades: 10 },
+    defaultUnit: "unidades",
   },
   {
     name: "Metal",
     description: "Latinhas de alumínio, aço.",
     icon: <Wrench className="h-8 w-8 text-primary" />,
-    unit: "gm",
-    pointsPerUnit: 0.075,
+    units: { gm: 0.075, kg: 75 },
+    defaultUnit: "gm",
   },
 ];
 
@@ -84,6 +86,7 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const [selectedUnit, setSelectedUnit] = useState(category.defaultUnit);
 
   const form = useForm<LogFormValues>({
     resolver: zodResolver(logSchema),
@@ -102,7 +105,9 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
       return;
     }
 
-    const pointsEarned = Math.round(data.quantity * category.pointsPerUnit);
+    const pointsPerUnit = (category.units as any)[selectedUnit];
+    const pointsEarned = Math.round(data.quantity * pointsPerUnit);
+
     const userDocRef = doc(firestore, "users", user.uid);
     const recyclingLogColRef = collection(userDocRef, "recycling_records");
     const newRecordRef = doc(recyclingLogColRef);
@@ -111,7 +116,7 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
         userId: user.uid,
         materialType: category.name,
         quantity: data.quantity,
-        unit: category.unit,
+        unit: selectedUnit,
         recyclingDate: new Date().toISOString(),
         pointsEarned: pointsEarned,
         type: 'log'
@@ -129,12 +134,11 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
     }).then(() => {
       toast({
           title: "Sucesso!",
-          description: `${data.quantity} ${category.unit} de ${category.name} registrados. Você ganhou ${pointsEarned} pontos!`,
+          description: `${data.quantity} ${selectedUnit} de ${category.name} registrados. Você ganhou ${pointsEarned} pontos!`,
       });
       form.reset();
     }).catch((e) => {
         if (e instanceof Error && e.name === 'FirebaseError') {
-          // This is likely a permission error, let the global handler manage it.
           const permissionError = new FirestorePermissionError({
             path: newRecordRef.path,
             operation: 'create',
@@ -151,6 +155,9 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
         }
     });
   };
+
+  const unitOptions = Object.keys(category.units);
+  const showUnitSelector = unitOptions.length > 1;
 
   return (
     <Card className="transform-gpu transition-all duration-300 ease-out hover:scale-105 hover:shadow-xl">
@@ -172,18 +179,33 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
               render={({ field }) => (
                 <FormItem>
                   <Label htmlFor={`quantity-${category.name.toLowerCase()}`}>
-                    Quantidade ({category.unit})
+                    Quantidade
                   </Label>
-                  <FormControl>
-                    <Input
-                      id={`quantity-${category.name.toLowerCase()}`}
-                      type="number"
-                      min="0"
-                      step={category.unit === 'gm' ? '10' : '1'}
-                      placeholder={category.unit === 'gm' ? "Ex: 500" : "Ex: 5"}
-                      {...field}
-                    />
-                  </FormControl>
+                  <div className="flex items-center gap-2">
+                    <FormControl>
+                      <Input
+                        id={`quantity-${category.name.toLowerCase()}`}
+                        type="number"
+                        min="0"
+                        step={selectedUnit === 'gm' ? '10' : '0.1'}
+                        placeholder={selectedUnit === 'gm' ? "Ex: 500" : "Ex: 1.5"}
+                        {...field}
+                      />
+                    </FormControl>
+                    {showUnitSelector && (
+                      <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+                          <SelectTrigger className="w-[100px]">
+                              <SelectValue placeholder="Unidade" />
+                          </SelectTrigger>
+                          <SelectContent>
+                              {unitOptions.map(unit => (
+                                  <SelectItem key={unit} value={unit}>{unit}</SelectItem>
+                              ))}
+                          </SelectContent>
+                      </Select>
+                    )}
+                    {!showUnitSelector && <span className="text-sm text-muted-foreground">{selectedUnit}</span>}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}
@@ -201,5 +223,3 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
     </Card>
   );
 }
-
-    

@@ -167,10 +167,24 @@ export default function ProfilePage() {
     const onEmailSubmit = async (data: EmailFormValues) => {
       if (!user || !user.email) return;
 
+      const credential = EmailAuthProvider.credential(user.email, data.password);
+      
       try {
-        const credential = EmailAuthProvider.credential(user.email, data.password);
         await reauthenticateWithCredential(user, credential);
-        
+      } catch (error: any) {
+        let description = "Não foi possível autenticar. Tente novamente.";
+        if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+          description = "A senha atual está incorreta.";
+        }
+        toast({
+          variant: "destructive",
+          title: "Erro de Autenticação",
+          description,
+        });
+        return;
+      }
+      
+      try {
         await updateEmail(user, data.newEmail);
         
         const userDocRef = doc(firestore, "users", user.uid);
@@ -183,9 +197,7 @@ export default function ProfilePage() {
         emailForm.reset({ newEmail: data.newEmail, password: '' });
       } catch (error: any) {
         let description = "Não foi possível alterar seu email. Tente novamente.";
-        if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-          description = "A senha atual está incorreta.";
-        } else if (error.code === 'auth/email-already-in-use') {
+        if (error.code === 'auth/email-already-in-use') {
           description = "Este email já está em uso por outra conta.";
         }
         
@@ -221,7 +233,6 @@ export default function ProfilePage() {
           title: "Erro ao alterar senha",
           description,
         });
-        // Only log unexpected errors
         if (error.code !== 'auth/wrong-password' && error.code !== 'auth/invalid-credential') {
              console.error("Password change error:", error);
         }
@@ -253,7 +264,7 @@ export default function ProfilePage() {
     }
 
   return (
-    <div className="grid gap-8 md:grid-cols-1">
+    <div className="grid gap-8 md:grid-cols-2">
       <Card>
         <CardHeader>
           <CardTitle>Informações do Perfil</CardTitle>
@@ -339,142 +350,141 @@ export default function ProfilePage() {
         </CardContent>
       </Card>
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Segurança da Conta</CardTitle>
-          <CardDescription>Altere seu e-mail e senha de acesso.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-12">
-          <Form {...emailForm}>
-            <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-6">
-              <FormField
-                control={emailForm.control}
-                name="newEmail"
-                render={({ field }) => (
-                  <FormItem>
-                    <Label>Email</Label>
-                    <FormControl>
-                      <Input type="email" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-               <FormField
-                control={emailForm.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <Label>Senha Atual</Label>
-                    <FormControl>
-                      <Input type="password" placeholder="Digite sua senha para confirmar" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button
-                type="submit"
-                className="font-bold"
-                disabled={emailForm.formState.isSubmitting}
-              >
-                {emailForm.formState.isSubmitting ? "Alterando..." : "Alterar Email"}
-              </Button>
-            </form>
-          </Form>
-          
-          <Form {...passwordForm}>
-            <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-6">
-               <FormField
-                control={passwordForm.control}
-                name="currentPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <Label>Senha Atual</Label>
-                    <FormControl>
-                      <Input type="password" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={passwordForm.control}
-                name="newPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <Label>Nova Senha</Label>
-                    <FormControl>
-                      <Input type="password" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-               <FormField
-                control={passwordForm.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <Label>Confirmar Nova Senha</Label>
-                    <FormControl>
-                      <Input type="password" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button
-                type="submit"
-                className="font-bold"
-                disabled={passwordForm.formState.isSubmitting}
-              >
-                {passwordForm.formState.isSubmitting ? "Alterando..." : "Alterar Senha"}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col gap-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Segurança da Conta</CardTitle>
+            <CardDescription>Altere seu e-mail e senha de acesso.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-12">
+            <Form {...emailForm}>
+              <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-6">
+                <FormField
+                  control={emailForm.control}
+                  name="newEmail"
+                  render={({ field }) => (
+                    <FormItem>
+                      <Label>Email</Label>
+                      <FormControl>
+                        <Input type="email" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={emailForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <Label>Senha Atual</Label>
+                      <FormControl>
+                        <Input type="password" placeholder="Digite sua senha para confirmar" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="submit"
+                  className="font-bold"
+                  disabled={emailForm.formState.isSubmitting}
+                >
+                  {emailForm.formState.isSubmitting ? "Alterando..." : "Alterar Email"}
+                </Button>
+              </form>
+            </Form>
+            
+            <Form {...passwordForm}>
+              <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-6">
+                <FormField
+                  control={passwordForm.control}
+                  name="currentPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <Label>Senha Atual</Label>
+                      <FormControl>
+                        <Input type="password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={passwordForm.control}
+                  name="newPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <Label>Nova Senha</Label>
+                      <FormControl>
+                        <Input type="password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={passwordForm.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <Label>Confirmar Nova Senha</Label>
+                      <FormControl>
+                        <Input type="password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button
+                  type="submit"
+                  className="font-bold"
+                  disabled={passwordForm.formState.isSubmitting}
+                >
+                  {passwordForm.formState.isSubmitting ? "Alterando..." : "Alterar Senha"}
+                </Button>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
 
-      <Card className="border-destructive">
-        <CardHeader>
-          <CardTitle className="text-destructive">Zona de Perigo</CardTitle>
-          <CardDescription>
-            Ações permanentes que não podem ser desfeitas.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="mb-2 text-sm font-medium">Resetar Pontuação</p>
-          <p className="text-sm text-muted-foreground mb-4">
-            Isso irá zerar todos os seus pontos de reciclagem acumulados. Seus registros de atividades permanecerão.
-          </p>
-        </CardContent>
-        <CardFooter className="bg-destructive/10">
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive">Resetar Meus Pontos</Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Esta ação não pode ser desfeita. Isso irá resetar permanentemente
-                  sua pontuação para <strong>0</strong>.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleResetPoints} className={cn(buttonVariants({variant: "destructive"}))}>
-                  Sim, resetar meus pontos
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </CardFooter>
-      </Card>
-
+        <Card className="border-destructive">
+          <CardHeader>
+            <CardTitle className="text-destructive">Zona de Perigo</CardTitle>
+            <CardDescription>
+              Ações permanentes que não podem ser desfeitas.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-2 text-sm font-medium">Resetar Pontuação</p>
+            <p className="text-sm text-muted-foreground mb-4">
+              Isso irá zerar todos os seus pontos de reciclagem acumulados. Seus registros de atividades permanecerão.
+            </p>
+          </CardContent>
+          <CardFooter className="bg-destructive/10">
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive">Resetar Meus Pontos</Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta ação não pode ser desfeita. Isso irá resetar permanentemente
+                    sua pontuação para <strong>0</strong>.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleResetPoints} className={cn(buttonVariants({variant: "destructive"}))}>
+                    Sim, resetar meus pontos
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </CardFooter>
+        </Card>
+      </div>
     </div>
   );
 }
-
-    
