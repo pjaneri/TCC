@@ -1,0 +1,136 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Manages user profile data, ensuring users can only access their own profiles.
+     * @path /users/{userId}
+     * @allow (create) - A user can create their profile if the userId matches their auth.uid.
+     * @allow (get, update, delete) - A user can read, update, or delete their own profile.
+     * @deny (create) - A user cannot create a profile with a userId that doesn't match their auth.uid.
+     * @deny (get, update, delete) - A user cannot read, update, or delete another user's profile.
+     * @principle Enforces document ownership and validates relational integrity between the path and document data.
+     */
+    match /users/{userId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource.data != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if false; // Listing all users is not permitted
+
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Manages recycling records for each user, ensuring users can only access their own records.
+     * @path /users/{userId}/recycling_records/{recordId}
+     * @allow (create) - A user can create a recycling record under their userId.
+     * @allow (get, list, update, delete) - A user can read, list, update, or delete their own recycling records.
+     * @deny (create) - A user cannot create a recycling record under another user's userId.
+     * @deny (get, list, update, delete) - A user cannot read, list, update, or delete another user's recycling records.
+     * @principle Enforces document ownership for all operations.
+     */
+    match /users/{userId}/recycling_records/{recordId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+        function isExistingOwner(userId) {
+        return isOwner(userId) && resource.data != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Manages rewards, allowing public read access but restricting write access to admins.
+     * @path /rewards/{rewardId}
+     * @allow (get, list) - All users can read and list rewards.
+     * @allow (create, update, delete) - Only admins can create, update, or delete rewards.
+     * @deny (create, update, delete) - Non-admins cannot create, update, or delete rewards.
+     * @principle Enforces role-based access control for administrative functions.
+     */
+    match /rewards/{rewardId} {
+      function isAdmin() {
+        return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+      }
+
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      allow get: if true;
+      allow list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    /**
+     * @description Manages redemption records for each user, ensuring users can only access their own redemptions.
+     * @path /users/{userId}/redemptions/{redemptionId}
+     * @allow (create) - A user can create a redemption record under their userId.
+     * @allow (get, list, update, delete) - A user can read, list, update, or delete their own redemption records.
+     * @deny (create) - A user cannot create a redemption record under another user's userId.
+     * @deny (get, list, update, delete) - A user cannot read, list, update, or delete another user's recycling records.
+     * @principle Enforces document ownership for all operations.
+     */
+    match /users/{userId}/redemptions/{redemptionId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+        function isExistingOwner(userId) {
+        return isOwner(userId) && resource.data != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+    /**
+     * @description Restricts access to admin role documents. Only allows creation, deletion and get by admins.
+     * @path /roles_admin/{userId}
+     */
+     match /roles_admin/{userId} {
+      function isAdmin() {
+        return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+      }
+
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      allow get: if isAdmin();
+      allow list: if false;
+      allow create: if isAdmin();
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+  }
+}
