@@ -44,6 +44,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
 const profileSchema = z.object({
@@ -202,194 +203,206 @@ export default function ProfilePage() {
     }
 
   return (
-    <div className="grid gap-8 md:grid-cols-2">
-      <Card>
-        <CardHeader>
-          <CardTitle>Informações do Perfil</CardTitle>
-          <CardDescription>Gerencie seus dados pessoais.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4 mb-8">
-              <Avatar className="h-20 w-20">
-                  <AvatarImage src={user?.photoURL || undefined} />
-                  <AvatarFallback>{user?.displayName?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
-              </Avatar>
-              <div>
-                  <h2 className="text-2xl font-bold">{profileForm.watch('username')}</h2>
-                  <p className="text-muted-foreground">{user?.email}</p>
-              </div>
-          </div>
+    <div className="flex w-full flex-col gap-8">
+        <div className="flex flex-col items-center gap-4 rounded-xl bg-gradient-to-r from-primary to-green-400 p-8 text-primary-foreground md:flex-row">
+            <Avatar className="h-24 w-24 border-4 border-background/50">
+                <AvatarImage src={user?.photoURL || undefined} />
+                <AvatarFallback className="text-4xl font-bold text-primary">
+                {user?.displayName?.charAt(0).toUpperCase() || 'U'}
+                </AvatarFallback>
+            </Avatar>
+            <div className="text-center md:text-left">
+                <h2 className="text-3xl font-bold">{profileForm.watch('username')}</h2>
+                <p className="text-lg opacity-90">{user?.email}</p>
+            </div>
+        </div>
 
-          <Form {...profileForm}>
-            <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
-              <FormField
-                control={profileForm.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <Label>Nome de usuário</Label>
-                    <FormControl>
-                      <Input placeholder="Seu nome de usuário" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                  control={profileForm.control}
-                  name="birthday"
-                  render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                      <Label>Data de Nascimento</Label>
-                      <Popover>
-                          <PopoverTrigger asChild>
-                          <FormControl>
-                              <Button
-                              variant={"outline"}
-                              className={cn(
-                                  "w-[240px] pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                              )}
-                              >
-                              {field.value ? (
-                                  format(field.value, "dd/MM/yyyy")
-                              ) : (
-                                  <span>Escolha uma data</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                          </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              disabled={(date) =>
-                                  date > new Date() || date < new Date("1900-01-01")
-                              }
-                              initialFocus
-                          />
-                          </PopoverContent>
-                      </Popover>
-                      <FormMessage />
+      <Tabs defaultValue="profile" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="profile">Perfil</TabsTrigger>
+          <TabsTrigger value="security">Segurança</TabsTrigger>
+          <TabsTrigger value="danger">Zona de Perigo</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="profile" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Informações do Perfil</CardTitle>
+              <CardDescription>Gerencie seus dados pessoais.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...profileForm}>
+                <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className="space-y-6">
+                  <FormField
+                    control={profileForm.control}
+                    name="username"
+                    render={({ field }) => (
+                      <FormItem>
+                        <Label>Nome de usuário</Label>
+                        <FormControl>
+                          <Input placeholder="Seu nome de usuário" {...field} />
+                        </FormControl>
+                        <FormMessage />
                       </FormItem>
-                  )}
-              />
-              <Button
-                type="submit"
-                className="font-bold"
-                disabled={profileForm.formState.isSubmitting}
-              >
-                {profileForm.formState.isSubmitting ? "Salvando..." : "Salvar Alterações"}
-              </Button>
-            </form>
-          </Form>
-        </CardContent>
-      </Card>
-      
-      <div className="flex flex-col gap-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Segurança da Conta</CardTitle>
-            <CardDescription>Altere sua senha de acesso.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-12">
-            <Form {...passwordForm}>
-              <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-6">
-                 <p className="text-sm font-medium">Alterar Senha</p>
-                <FormField
-                  control={passwordForm.control}
-                  name="currentPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <Label>Senha Atual</Label>
-                      <FormControl>
-                        <PasswordInput {...field} placeholder="Sua senha atual"/>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={passwordForm.control}
-                  name="newPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <Label>Nova Senha</Label>
-                      <FormControl>
-                        <PasswordInput {...field} placeholder="Pelo menos 6 caracteres"/>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={passwordForm.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem>
-                      <Label>Confirmar Nova Senha</Label>
-                      <FormControl>
-                        <PasswordInput {...field} placeholder="Repita a nova senha"/>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <Button
-                  type="submit"
-                  className="font-bold"
-                  disabled={passwordForm.formState.isSubmitting}
-                >
-                  {passwordForm.formState.isSubmitting ? "Alterando..." : "Alterar Senha"}
-                </Button>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
-
-        <Card className="border-destructive">
-          <CardHeader>
-            <CardTitle className="text-destructive">Zona de Perigo</CardTitle>
-            <CardDescription>
-              Ações permanentes que não podem ser desfeitas.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="mb-2 text-sm font-medium">Resetar Pontuação</p>
-            <p className="text-sm text-muted-foreground mb-4">
-              Isso irá zerar todos os seus pontos de reciclagem acumulados. Seus registros de atividades permanecerão.
-            </p>
-          </CardContent>
-          <CardFooter className="bg-destructive/10">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive">Resetar Meus Pontos</Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Esta ação não pode ser desfeita. Isso irá resetar permanentemente
-                    sua pontuação para <strong>0</strong>.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleResetPoints} className={cn(buttonVariants({variant: "destructive"}))}>
-                    Sim, resetar meus pontos
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </CardFooter>
-        </Card>
-      </div>
+                    )}
+                  />
+                  <FormField
+                      control={profileForm.control}
+                      name="birthday"
+                      render={({ field }) => (
+                          <FormItem className="flex flex-col">
+                          <Label>Data de Nascimento</Label>
+                          <Popover>
+                              <PopoverTrigger asChild>
+                              <FormControl>
+                                  <Button
+                                  variant={"outline"}
+                                  className={cn(
+                                      "w-[240px] pl-3 text-left font-normal",
+                                      !field.value && "text-muted-foreground"
+                                  )}
+                                  >
+                                  {field.value ? (
+                                      format(field.value, "dd/MM/yyyy")
+                                  ) : (
+                                      <span>Escolha uma data</span>
+                                  )}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                  </Button>
+                              </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                  mode="single"
+                                  selected={field.value}
+                                  onSelect={field.onChange}
+                                  disabled={(date) =>
+                                      date > new Date() || date < new Date("1900-01-01")
+                                  }
+                                  initialFocus
+                              />
+                              </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                          </FormItem>
+                      )}
+                  />
+                  <Button
+                    type="submit"
+                    className="font-bold"
+                    disabled={profileForm.formState.isSubmitting}
+                  >
+                    {profileForm.formState.isSubmitting ? "Salvando..." : "Salvar Alterações"}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="security" className="mt-6">
+            <Card>
+            <CardHeader>
+                <CardTitle>Segurança da Conta</CardTitle>
+                <CardDescription>Altere sua senha de acesso.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Form {...passwordForm}>
+                <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-6 max-w-md">
+                    <p className="text-sm font-medium">Alterar Senha</p>
+                    <FormField
+                    control={passwordForm.control}
+                    name="currentPassword"
+                    render={({ field }) => (
+                        <FormItem>
+                        <Label>Senha Atual</Label>
+                        <FormControl>
+                            <PasswordInput {...field} placeholder="Sua senha atual"/>
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={passwordForm.control}
+                    name="newPassword"
+                    render={({ field }) => (
+                        <FormItem>
+                        <Label>Nova Senha</Label>
+                        <FormControl>
+                            <PasswordInput {...field} placeholder="Pelo menos 6 caracteres"/>
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={passwordForm.control}
+                    name="confirmPassword"
+                    render={({ field }) => (
+                        <FormItem>
+                        <Label>Confirmar Nova Senha</Label>
+                        <FormControl>
+                            <PasswordInput {...field} placeholder="Repita a nova senha"/>
+                        </FormControl>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                    <Button
+                    type="submit"
+                    className="font-bold"
+                    disabled={passwordForm.formState.isSubmitting}
+                    >
+                    {passwordForm.formState.isSubmitting ? "Alterando..." : "Alterar Senha"}
+                    </Button>
+                </form>
+                </Form>
+            </CardContent>
+            </Card>
+        </TabsContent>
+        
+        <TabsContent value="danger" className="mt-6">
+            <Card className="border-destructive">
+            <CardHeader>
+                <CardTitle className="text-destructive">Zona de Perigo</CardTitle>
+                <CardDescription>
+                Ações permanentes que não podem ser desfeitas.
+                </CardDescription>
+            </CardHeader>
+            <CardContent>
+                <p className="mb-2 text-sm font-medium">Resetar Pontuação</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                Isso irá zerar todos os seus pontos de reciclagem acumulados. Seus registros de atividades permanecerão.
+                </p>
+            </CardContent>
+            <CardFooter className="bg-destructive/10">
+                <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Button variant="destructive">Resetar Meus Pontos</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Esta ação não pode ser desfeita. Isso irá resetar permanentemente
+                        sua pontuação para <strong>0</strong>.
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleResetPoints} className={cn(buttonVariants({variant: "destructive"}))}>
+                        Sim, resetar meus pontos
+                    </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+                </AlertDialog>
+            </CardFooter>
+            </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
-
-
 
     
