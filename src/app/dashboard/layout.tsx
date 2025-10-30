@@ -8,6 +8,7 @@ import {
   PlusCircle,
   Recycle,
   Shield,
+  ShieldCheck,
   Trophy,
   UserCircle,
 } from "lucide-react";
@@ -26,11 +27,13 @@ import {
   SidebarFooter,
   SidebarInset,
 } from "@/components/ui/sidebar";
-import { useUser } from "@/firebase";
+import { useUser, useDoc, useFirestore, useMemoFirebase } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { doc } from "firebase/firestore";
+import { ThemeToggle } from "@/components/theme-toggle";
 
-const navItems = [
+const baseNavItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Visão Geral" },
   { href: "/dashboard/log", icon: PlusCircle, label: "Registrar Reciclagem" },
   { href: "/dashboard/rewards", icon: Trophy, label: "Resgatar Prêmios" },
@@ -38,12 +41,25 @@ const navItems = [
   { href: "/dashboard/profile", icon: UserCircle, label: "Perfil" },
 ];
 
+const adminNavItem = { href: "/dashboard/admin", icon: ShieldCheck, label: "Admin" };
+
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isUserLoading } = useUser();
+  const firestore = useFirestore();
   const { toast } = useToast();
   const auth = getAuth();
+
+  const adminRoleRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(firestore, 'roles_admin', user.uid);
+  }, [firestore, user]);
+
+  const { data: adminRole, isLoading: isAdminLoading } = useDoc(adminRoleRef);
+  const isAdmin = adminRole?.exists;
+
+  const navItems = isAdmin ? [...baseNavItems, adminNavItem] : baseNavItems;
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -64,7 +80,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     }
   };
 
-  if (isUserLoading || !user) {
+  if (isUserLoading || !user || isAdminLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <p>Carregando...</p>
@@ -112,10 +128,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <SidebarInset>
         <header className="flex h-14 items-center justify-between gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6">
           <SidebarTrigger className="md:hidden" />
-          <div className="flex w-full flex-1 items-center justify-between">
-            <h1 className="font-headline text-xl font-semibold">
+          <div className="flex w-full flex-1 items-center justify-end gap-4">
+            <h1 className="font-headline text-xl font-semibold flex-1">
                 {navItems.find(item => item.href === pathname)?.label}
             </h1>
+            <ThemeToggle />
             <div className="flex items-center gap-2">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={user?.photoURL || undefined} alt={user?.displayName || 'User'}/>

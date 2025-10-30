@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from "@/firebase";
-import { collection, query, orderBy, limit, doc, collectionGroup } from "firebase/firestore";
+import { collection, query, orderBy, limit, doc, Timestamp, where } from "firebase/firestore";
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -28,6 +28,14 @@ const materialIcons: { [key: string]: React.ElementType } = {
   "Papel": FileText,
   "Vidro": GlassWater,
   "Metal": Wrench,
+};
+
+// Helper function to convert Firestore Timestamp or ISO String to Date
+const toDate = (date: Timestamp | string | Date): Date => {
+  if (date instanceof Timestamp) {
+    return date.toDate();
+  }
+  return new Date(date);
 };
 
 export default function DashboardPage() {
@@ -42,12 +50,9 @@ export default function DashboardPage() {
 
   const recentActivitiesQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
-    // This query now looks across all subcollections named 'recycling_records'
-    // for the current user. This won't work as intended with collectionGroup
-    // as it doesn't filter by a parent document.
-    // Let's query recycling_records directly.
     return query(
-      collection(firestore, 'users', user.uid, 'recycling_records'),
+      collection(firestore, 'recycling_records_all'),
+      where('userId', '==', user.uid),
       orderBy('recyclingDate', 'desc'),
       limit(5)
     );
@@ -67,17 +72,31 @@ export default function DashboardPage() {
   const { data: recentRedemptions, isLoading: redemptionsLoading } = useCollection(redemptionsQuery);
 
   const combinedActivities = useMemo(() => {
-    const records = recentRecords?.map(r => ({ ...r, date: r.recyclingDate, type: 'log' })) || [];
-    const redemptions = recentRedemptions?.map(r => ({ ...r, date: r.redemptionDate, type: 'redemption' })) || [];
+    const records = recentRecords?.map(r => ({ ...r, date: toDate(r.recyclingDate), type: 'log' })) || [];
+    const redemptions = recentRedemptions?.map(r => ({ ...r, date: toDate(r.redemptionDate), type: 'redemption' })) || [];
     
     return [...records, ...redemptions]
-      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .sort((a, b) => b.date.getTime() - a.date.getTime())
       .slice(0, 5);
   }, [recentRecords, recentRedemptions]);
 
 
   const userPoints = userProfile?.totalPoints || 0;
   const isLoading = recordsLoading || redemptionsLoading;
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">Aprovado</Badge>;
+      case 'pending':
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">Pendente</Badge>;
+      case 'rejected':
+        return <Badge variant="destructive">Rejeitado</Badge>;
+      default:
+        return <Badge variant="outline">N/A</Badge>;
+    }
+  };
+
 
   return (
     <div className="grid gap-6">
@@ -115,7 +134,7 @@ export default function DashboardPage() {
                 <TableHead>Item</TableHead>
                 <TableHead className="hidden sm:table-cell">Detalhes</TableHead>
                 <TableHead className="hidden md:table-cell">Data</TableHead>
-                <TableHead className="text-right">Pontos</TableHead>
+                <TableHead>Status / Pontos</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -132,12 +151,10 @@ export default function DashboardPage() {
                         </TableCell>
                         <TableCell className="hidden sm:table-cell">{activity.quantity} {activity.unit || 'kg'}</TableCell>
                         <TableCell className="hidden md:table-cell">
-                          {formatDistanceToNow(new Date(activity.date), { addSuffix: true, locale: ptBR })}
+                          {formatDistanceToNow(activity.date, { addSuffix: true, locale: ptBR })}
                         </TableCell>
                         <TableCell className="text-right">
-                           <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                            +{activity.pointsEarned}
-                          </Badge>
+                           {getStatusBadge(activity.status)}
                         </TableCell>
                       </TableRow>
                     )
@@ -153,7 +170,7 @@ export default function DashboardPage() {
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">Prêmio Resgatado</TableCell>
                       <TableCell className="hidden md:table-cell">
-                        {formatDistanceToNow(new Date(activity.date), { addSuffix: true, locale: ptBR })}
+                        {formatDistanceToNow(activity.date, { addSuffix: true, locale: ptBR })}
                       </TableCell>
                       <TableCell className="text-right">
                          <Badge variant="destructive" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">

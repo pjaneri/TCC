@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Package, FileText, GlassWater, Wrench } from "lucide-react";
 import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
-import { collection, doc, runTransaction } from "firebase/firestore";
+import { collection, doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import {
   Form,
@@ -69,8 +69,9 @@ export default function LogRecyclingPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
+         <h2 className="text-2xl font-bold tracking-tight">Registrar Reciclagem</h2>
         <p className="text-muted-foreground">
-          Adicione os itens que você reciclou para ganhar pontos.
+          Adicione os itens que você reciclou. Os registros serão revisados por um administrador antes da atribuição dos pontos.
         </p>
       </div>
       <div className="grid gap-6 md:grid-cols-2">
@@ -105,54 +106,50 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
       return;
     }
 
-    const pointsPerUnit = (category.units as any)[selectedUnit];
-    const pointsEarned = Math.round(data.quantity * pointsPerUnit);
+    let pointsPerUnit = (category.units as any)[selectedUnit];
+    let quantityInGrams = data.quantity;
 
-    const userDocRef = doc(firestore, "users", user.uid);
-    const recyclingLogColRef = collection(userDocRef, "recycling_records");
+    if (selectedUnit === 'kg') {
+        quantityInGrams = data.quantity * 1000;
+        pointsPerUnit = (category.units as any)['gm'];
+    }
+    
+    const pointsCalculated = Math.round(data.quantity * (category.units as any)[selectedUnit]);
+
+
+    const recyclingLogColRef = collection(firestore, "recycling_records_all");
     const newRecordRef = doc(recyclingLogColRef);
     const newRecordData = {
         id: newRecordRef.id,
         userId: user.uid,
+        username: user.displayName,
         materialType: category.name,
         quantity: data.quantity,
         unit: selectedUnit,
-        recyclingDate: new Date().toISOString(),
-        pointsEarned: pointsEarned,
-        type: 'log'
+        recyclingDate: serverTimestamp(),
+        pointsCalculated: pointsCalculated,
+        status: 'pending', // 'pending', 'approved', 'rejected'
     };
 
-    runTransaction(firestore, async (transaction) => {
-        const userDoc = await transaction.get(userDocRef);
-        if (!userDoc.exists()) {
-          throw "Documento do usuário não existe!";
-        }
-
-        const newTotalPoints = (userDoc.data().totalPoints || 0) + pointsEarned;
-        transaction.update(userDocRef, { totalPoints: newTotalPoints });
-        transaction.set(newRecordRef, newRecordData);
-    }).then(() => {
-      toast({
-          title: "Sucesso!",
-          description: `${data.quantity} ${selectedUnit} de ${category.name} registrados. Você ganhou ${pointsEarned} pontos!`,
-      });
-      form.reset();
+    setDoc(newRecordRef, newRecordData).then(() => {
+        toast({
+            title: "Registro Enviado!",
+            description: `Seu registro de ${category.name} foi enviado para aprovação.`,
+        });
+        form.reset();
     }).catch((e) => {
-        if (e instanceof Error && e.name === 'FirebaseError') {
-          const permissionError = new FirestorePermissionError({
-            path: newRecordRef.path,
-            operation: 'create',
-            requestResourceData: newRecordData,
-          });
-          errorEmitter.emit('permission-error', permissionError);
-        } else {
-            console.error("Transaction failed: ", e);
-            toast({
-                variant: "destructive",
-                title: "Uh oh! Algo deu errado.",
-                description: "Não foi possível registrar a reciclagem.",
-            });
-        }
+        console.error("Error creating record: ", e);
+        const permissionError = new FirestorePermissionError({
+          path: newRecordRef.path,
+          operation: 'create',
+          requestResourceData: newRecordData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        toast({
+            variant: "destructive",
+            title: "Uh oh! Algo deu errado.",
+            description: "Não foi possível enviar seu registro de reciclagem.",
+        });
     });
   };
 
@@ -215,7 +212,7 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
               className="w-full font-bold"
               disabled={form.formState.isSubmitting}
             >
-              {form.formState.isSubmitting ? "Registrando..." : "Registrar"}
+              {form.formState.isSubmitting ? "Enviando..." : "Enviar para Aprovação"}
             </Button>
           </form>
         </Form>
