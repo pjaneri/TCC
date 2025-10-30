@@ -10,7 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
+import placeholderImagesData from "@/lib/placeholder-images.json";
 import { Coins } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from "@/firebase";
@@ -28,6 +28,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useEffect } from "react";
+
+const { placeholderImages } = placeholderImagesData;
 
 // Hardcoded rewards data
 const rewardsData = [
@@ -133,7 +135,7 @@ export default function RewardsPage() {
 
   const rewardsWithData = rewards
     ? rewards.map((reward) => {
-        const placeholder = PlaceHolderImages.find((p) => p.id === reward.id);
+        const placeholder = placeholderImages.find((p) => p.id === reward.id);
         return { ...reward, ...placeholder };
       })
     : [];

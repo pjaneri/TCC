@@ -7,4 +7,5 @@ export type ImagePlaceholder = {
   imageHint: string;
 };
 
+// This is being deprecated in favor of directly importing the json
 export const PlaceHolderImages: ImagePlaceholder[] = data.placeholderImages;
