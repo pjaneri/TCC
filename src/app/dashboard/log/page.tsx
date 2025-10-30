@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm, Controller } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Package, FileText, GlassWater, Wrench } from "lucide-react";
-import { useUser, useFirestore } from "@/firebase";
+import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
 import { collection, doc, runTransaction } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -94,7 +94,7 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
     },
   });
 
-  const onSubmit = async (data: LogFormValues) => {
+  const onSubmit = (data: LogFormValues) => {
     if (!user || !firestore) {
       toast({
         variant: "destructive",
@@ -107,42 +107,53 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
     const pointsEarned = Math.round(data.quantity * category.pointsPerUnit);
     const userDocRef = doc(firestore, "users", user.uid);
     const recyclingLogColRef = collection(userDocRef, "recycling_records");
+    const newRecordRef = doc(recyclingLogColRef);
+    const newRecordData = {
+        id: newRecordRef.id,
+        userId: user.uid,
+        materialType: category.name,
+        quantity: data.quantity,
+        unit: category.unit,
+        recyclingDate: new Date().toISOString(),
+        pointsEarned: pointsEarned,
+    };
 
-    try {
-        await runTransaction(firestore, async (transaction) => {
-            const userDoc = await transaction.get(userDocRef);
-            if (!userDoc.exists()) {
-              throw "Documento do usuário não existe!";
+    runTransaction(firestore, async (transaction) => {
+        const userDoc = await transaction.get(userDocRef);
+        if (!userDoc.exists()) {
+          throw "Documento do usuário não existe!";
+        }
+
+        const newTotalPoints = (userDoc.data().totalPoints || 0) + pointsEarned;
+        transaction.update(userDocRef, { totalPoints: newTotalPoints });
+        transaction.set(newRecordRef, newRecordData);
+    }).then(() => {
+      toast({
+          title: "Sucesso!",
+          description: `${data.quantity} ${category.unit} de ${category.name} registrados. Você ganhou ${pointsEarned} pontos!`,
+      });
+      form.reset();
+    }).catch((e) => {
+        if (e instanceof Error && e.name === 'FirebaseError') {
+          // This is likely a permission error, let the global handler manage it.
+          const permissionError = new FirestorePermissionError({
+            path: userDocRef.path,
+            operation: 'write',
+            requestResourceData: { 
+              ...newRecordData,
+              totalPointsUpdate: pointsEarned 
             }
-    
-            const newTotalPoints = (userDoc.data().totalPoints || 0) + pointsEarned;
-            transaction.update(userDocRef, { totalPoints: newTotalPoints });
-
-            const newRecordRef = doc(recyclingLogColRef);
-            transaction.set(newRecordRef, {
-                id: newRecordRef.id,
-                userId: user.uid,
-                materialType: category.name,
-                quantity: data.quantity,
-                unit: category.unit,
-                recyclingDate: new Date().toISOString(),
-                pointsEarned: pointsEarned,
+          });
+          errorEmitter.emit('permission-error', permissionError);
+        } else {
+            console.error("Transaction failed: ", e);
+            toast({
+                variant: "destructive",
+                title: "Uh oh! Algo deu errado.",
+                description: "Não foi possível registrar a reciclagem.",
             });
-        });
-
-        toast({
-            title: "Sucesso!",
-            description: `${data.quantity} ${category.unit} de ${category.name} registrados. Você ganhou ${pointsEarned} pontos!`,
-        });
-        form.reset();
-    } catch (e) {
-        console.error("Transaction failed: ", e);
-        toast({
-            variant: "destructive",
-            title: "Uh oh! Algo deu errado.",
-            description: "Não foi possível registrar a reciclagem.",
-        });
-    }
+        }
+    });
   };
 
   return (

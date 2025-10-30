@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import placeholderImagesData from "@/lib/placeholder-images.json";
 import { Coins } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from "@/firebase";
+import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
 import { collection, query, where, doc, runTransaction, getDocs, writeBatch } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -84,7 +84,7 @@ export default function RewardsPage() {
 
   const { data: userProfile, isLoading: userLoading } = useDoc(userProfileRef);
 
-  const handleRedemption = async (reward: any) => {
+  const handleRedemption = (reward: any) => {
     if (!user || !userProfile || !firestore) {
         toast({ variant: "destructive", title: "Erro", description: "Você precisa estar logado." });
         return;
@@ -96,41 +96,51 @@ export default function RewardsPage() {
 
     const userDocRef = doc(firestore, "users", user.uid);
     const redemptionColRef = collection(userDocRef, "redemptions");
+    const newRedemptionRef = doc(redemptionColRef);
+    const newRedemptionData = {
+        id: newRedemptionRef.id,
+        userId: user.uid,
+        rewardId: reward.id,
+        rewardName: reward.name,
+        redemptionDate: new Date().toISOString(),
+        pointsDeducted: reward.requiredPoints,
+    };
 
-    try {
-        await runTransaction(firestore, async (transaction) => {
-            const userDoc = await transaction.get(userDocRef);
-            if (!userDoc.exists() || (userDoc.data().totalPoints || 0) < reward.requiredPoints) {
-                throw "Pontos insuficientes ou usuário não encontrado.";
-            }
+    runTransaction(firestore, async (transaction) => {
+        const userDoc = await transaction.get(userDocRef);
+        if (!userDoc.exists() || (userDoc.data().totalPoints || 0) < reward.requiredPoints) {
+            throw "Pontos insuficientes ou usuário não encontrado.";
+        }
 
-            const newTotalPoints = (userDoc.data().totalPoints || 0) - reward.requiredPoints;
-            transaction.update(userDocRef, { totalPoints: newTotalPoints });
-
-            const newRedemptionRef = doc(redemptionColRef);
-            transaction.set(newRedemptionRef, {
-                id: newRedemptionRef.id,
-                userId: user.uid,
-                rewardId: reward.id,
-                rewardName: reward.name,
-                redemptionDate: new Date().toISOString(),
-                pointsDeducted: reward.requiredPoints,
-            });
-        });
-
+        const newTotalPoints = (userDoc.data().totalPoints || 0) - reward.requiredPoints;
+        transaction.update(userDocRef, { totalPoints: newTotalPoints });
+        transaction.set(newRedemptionRef, newRedemptionData);
+    }).then(() => {
         toast({
             title: "Prêmio resgatado!",
             description: `Você resgatou "${reward.name}" por ${reward.requiredPoints} pontos.`,
         });
-
-    } catch (e) {
-        console.error("Transaction failed: ", e);
-        toast({
-            variant: "destructive",
-            title: "Uh oh! Algo deu errado.",
-            description: "Não foi possível resgatar o prêmio.",
-        });
-    }
+    }).catch((e) => {
+        if (e instanceof Error && e.name === 'FirebaseError') {
+          // This is likely a permission error, let the global handler manage it.
+          const permissionError = new FirestorePermissionError({
+            path: userDocRef.path,
+            operation: 'write',
+            requestResourceData: {
+                ...newRedemptionData,
+                totalPointsDeducted: reward.requiredPoints
+            }
+          });
+          errorEmitter.emit('permission-error', permissionError);
+        } else {
+            console.error("Transaction failed: ", e);
+            toast({
+                variant: "destructive",
+                title: "Uh oh! Algo deu errado.",
+                description: "Não foi possível resgatar o prêmio.",
+            });
+        }
+    });
   };
 
   const rewardsWithData = rewards
