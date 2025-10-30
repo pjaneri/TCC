@@ -17,7 +17,7 @@ import { Input, PasswordInput } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useUser, useFirestore, useDoc, useMemoFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
 import { doc, updateDoc } from "firebase/firestore";
-import { updateProfile, EmailAuthProvider, reauthenticateWithCredential, updatePassword, updateEmail } from "firebase/auth";
+import { updateProfile, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import {
   Form,
@@ -32,7 +32,7 @@ import { CalendarIcon, Loader2 } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -51,14 +51,6 @@ const profileSchema = z.object({
     birthday: z.date().optional(),
 });
 
-const reauthSchema = z.object({
-  password: z.string().min(1, { message: "A senha é obrigatória." }),
-});
-
-const emailSchema = z.object({
-  newEmail: z.string().email({ message: "Por favor, insira um email válido." }),
-});
-
 const passwordSchema = z.object({
   currentPassword: z.string().min(1, { message: "A senha atual é obrigatória." }),
   newPassword: z.string().min(6, { message: "A nova senha deve ter pelo menos 6 caracteres." }),
@@ -70,15 +62,12 @@ const passwordSchema = z.object({
 
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
-type ReauthFormValues = z.infer<typeof reauthSchema>;
-type EmailFormValues = z.infer<typeof emailSchema>;
 type PasswordFormValues = z.infer<typeof passwordSchema>;
 
 export default function ProfilePage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
-    const [isReauthenticatedForEmail, setIsReauthenticatedForEmail] = useState(false);
 
     const userProfileRef = useMemoFirebase(() => {
         if (!user) return null;
@@ -94,16 +83,6 @@ export default function ProfilePage() {
         },
     });
     
-    const reauthForm = useForm<ReauthFormValues>({
-      resolver: zodResolver(reauthSchema),
-      defaultValues: { password: "" },
-    });
-
-    const emailForm = useForm<EmailFormValues>({
-      resolver: zodResolver(emailSchema),
-      defaultValues: { newEmail: "" }
-    });
-
     const passwordForm = useForm<PasswordFormValues>({
       resolver: zodResolver(passwordSchema),
       defaultValues: {
@@ -120,10 +99,7 @@ export default function ProfilePage() {
                 birthday: userProfile.birthday ? new Date(userProfile.birthday) : undefined,
             });
         }
-        if (user && !isReauthenticatedForEmail) {
-            emailForm.reset({ newEmail: user.email || '' });
-        }
-    }, [user, userProfile, profileForm, emailForm, isReauthenticatedForEmail]);
+    }, [user, userProfile, profileForm]);
 
     const onProfileSubmit = async (data: ProfileFormValues) => {
         if (!user || !firestore) return;
@@ -169,77 +145,7 @@ export default function ProfilePage() {
             });
         }
     };
-
-    const handleReauthentication = async (data: ReauthFormValues) => {
-      if (!user || !user.email) return;
-
-      const credential = EmailAuthProvider.credential(user.email, data.password);
-      
-      reauthForm.clearErrors();
-      try {
-        await reauthenticateWithCredential(user, credential);
-        setIsReauthenticatedForEmail(true);
-        emailForm.reset({ newEmail: "" }); // Clear field for new email input
-        toast({
-          title: "Autenticação confirmada",
-          description: "Agora você pode alterar seu e-mail.",
-        });
-        reauthForm.reset();
-      } catch (error: any) {
-        let description = "Não foi possível autenticar. Tente novamente.";
-        if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-          description = "A senha atual está incorreta.";
-          reauthForm.setError("password", { type: "manual", message: description });
-        }
-        toast({
-          variant: "destructive",
-          title: "Erro de Autenticação",
-          description,
-        });
-        setIsReauthenticatedForEmail(false);
-      }
-    };
     
-    const onEmailSubmit = async (data: EmailFormValues) => {
-      if (!user || !isReauthenticatedForEmail) {
-         toast({
-          variant: "destructive",
-          title: "Erro ao alterar email",
-          description: "A autenticação é necessária. Por favor, verifique sua senha novamente.",
-        });
-        setIsReauthenticatedForEmail(false);
-        return;
-      }
-      
-      try {
-        await updateEmail(user, data.newEmail);
-        
-        const userDocRef = doc(firestore, "users", user.uid);
-        await updateDoc(userDocRef, { email: data.newEmail });
-        
-        toast({
-          title: "Email alterado!",
-          description: "Seu email foi atualizado com sucesso.",
-        });
-        emailForm.reset({ newEmail: data.newEmail });
-        setIsReauthenticatedForEmail(false); // Reset state after successful change
-      } catch (error: any) {
-        let description = "Não foi possível alterar seu email. Tente novamente.";
-        if (error.code === 'auth/email-already-in-use') {
-          description = "Este email já está em uso por outra conta.";
-        } else if (error.code === 'auth/requires-recent-login') {
-            description = "Sua sessão expirou. Por favor, verifique sua senha novamente para continuar.";
-            setIsReauthenticatedForEmail(false);
-        }
-        
-        toast({
-          variant: "destructive",
-          title: "Erro ao alterar email",
-          description,
-        });
-      }
-    };
-
     const onPasswordSubmit = async (data: PasswordFormValues) => {
       if (!user || !user.email) return;
 
@@ -386,70 +292,12 @@ export default function ProfilePage() {
         <Card>
           <CardHeader>
             <CardTitle>Segurança da Conta</CardTitle>
-            <CardDescription>Altere seu e-mail e senha de acesso.</CardDescription>
+            <CardDescription>Altere sua senha de acesso.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-12">
-            {!isReauthenticatedForEmail ? (
-              <Form {...reauthForm}>
-                <form onSubmit={reauthForm.handleSubmit(handleReauthentication)} className="space-y-6">
-                  <p className="text-sm font-medium">Alterar Endereço de E-mail</p>
-                  <FormField
-                    control={reauthForm.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <Label>Senha Atual</Label>
-                        <FormControl>
-                          <PasswordInput placeholder="Digite sua senha para confirmar" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button
-                    type="submit"
-                    className="font-bold"
-                    disabled={reauthForm.formState.isSubmitting}
-                  >
-                    {reauthForm.formState.isSubmitting ? "Verificando..." : "Verificar Senha"}
-                  </Button>
-                </form>
-              </Form>
-            ) : (
-              <Form {...emailForm}>
-                <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-6">
-                   <p className="text-sm font-medium">Alterar Endereço de E-mail</p>
-                  <FormField
-                    control={emailForm.control}
-                    name="newEmail"
-                    render={({ field }) => (
-                      <FormItem>
-                        <Label>Novo Email</Label>
-                        <FormControl>
-                          <Input type="email" placeholder="seu.novo@email.com" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      type="submit"
-                      className="font-bold"
-                      disabled={emailForm.formState.isSubmitting}
-                    >
-                      {emailForm.formState.isSubmitting ? "Alterando..." : "Confirmar Alteração"}
-                    </Button>
-                    <Button variant="outline" onClick={() => setIsReauthenticatedForEmail(false)}>
-                      Cancelar
-                    </Button>
-                  </div>
-                </form>
-              </Form>
-            )}
-            
             <Form {...passwordForm}>
               <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-6">
+                 <p className="text-sm font-medium">Alterar Senha</p>
                 <FormField
                   control={passwordForm.control}
                   name="currentPassword"
@@ -457,7 +305,7 @@ export default function ProfilePage() {
                     <FormItem>
                       <Label>Senha Atual</Label>
                       <FormControl>
-                        <PasswordInput {...field} />
+                        <PasswordInput {...field} placeholder="Sua senha atual"/>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -470,7 +318,7 @@ export default function ProfilePage() {
                     <FormItem>
                       <Label>Nova Senha</Label>
                       <FormControl>
-                        <PasswordInput {...field} />
+                        <PasswordInput {...field} placeholder="Pelo menos 6 caracteres"/>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -483,7 +331,7 @@ export default function ProfilePage() {
                     <FormItem>
                       <Label>Confirmar Nova Senha</Label>
                       <FormControl>
-                        <PasswordInput {...field} />
+                        <PasswordInput {...field} placeholder="Repita a nova senha"/>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -542,3 +390,6 @@ export default function ProfilePage() {
   );
 }
 
+
+
+    
