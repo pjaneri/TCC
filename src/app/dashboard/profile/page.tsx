@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useUser, useFirestore, useDoc, useMemoFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
 import { doc, updateDoc } from "firebase/firestore";
-import { updateProfile, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
+import { updateProfile, EmailAuthProvider, reauthenticateWithCredential, updatePassword, updateEmail } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import {
   Form,
@@ -51,6 +51,11 @@ const profileSchema = z.object({
     birthday: z.date().optional(),
 });
 
+const emailSchema = z.object({
+  newEmail: z.string().email({ message: "Por favor, insira um email válido." }),
+  password: z.string().min(1, { message: "A senha é obrigatória." }),
+});
+
 const passwordSchema = z.object({
   currentPassword: z.string().min(1, { message: "A senha atual é obrigatória." }),
   newPassword: z.string().min(6, { message: "A nova senha deve ter pelo menos 6 caracteres." }),
@@ -62,6 +67,7 @@ const passwordSchema = z.object({
 
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
+type EmailFormValues = z.infer<typeof emailSchema>;
 type PasswordFormValues = z.infer<typeof passwordSchema>;
 
 export default function ProfilePage() {
@@ -83,6 +89,14 @@ export default function ProfilePage() {
         },
     });
 
+    const emailForm = useForm<EmailFormValues>({
+      resolver: zodResolver(emailSchema),
+      defaultValues: {
+        newEmail: "",
+        password: ""
+      }
+    });
+
     const passwordForm = useForm<PasswordFormValues>({
       resolver: zodResolver(passwordSchema),
       defaultValues: {
@@ -99,7 +113,13 @@ export default function ProfilePage() {
                 birthday: userProfile.birthday ? new Date(userProfile.birthday) : undefined,
             });
         }
-    }, [userProfile, profileForm]);
+        if (user) {
+          emailForm.reset({
+            newEmail: user.email || '',
+            password: ''
+          })
+        }
+    }, [user, userProfile, profileForm, emailForm]);
 
     const onProfileSubmit = async (data: ProfileFormValues) => {
         if (!user || !firestore) return;
@@ -144,6 +164,39 @@ export default function ProfilePage() {
         }
     };
     
+    const onEmailSubmit = async (data: EmailFormValues) => {
+      if (!user || !user.email) return;
+
+      try {
+        const credential = EmailAuthProvider.credential(user.email, data.password);
+        await reauthenticateWithCredential(user, credential);
+        
+        await updateEmail(user, data.newEmail);
+        
+        const userDocRef = doc(firestore, "users", user.uid);
+        await updateDoc(userDocRef, { email: data.newEmail });
+        
+        toast({
+          title: "Email alterado!",
+          description: "Seu email foi atualizado com sucesso.",
+        });
+        emailForm.reset({ newEmail: data.newEmail, password: '' });
+      } catch (error: any) {
+        let description = "Não foi possível alterar seu email. Tente novamente.";
+        if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+          description = "A senha atual está incorreta.";
+        } else if (error.code === 'auth/email-already-in-use') {
+          description = "Este email já está em uso por outra conta.";
+        }
+        
+        toast({
+          variant: "destructive",
+          title: "Erro ao alterar email",
+          description,
+        });
+      }
+    };
+
     const onPasswordSubmit = async (data: PasswordFormValues) => {
       if (!user || !user.email) return;
 
@@ -278,7 +331,6 @@ export default function ProfilePage() {
                 type="submit"
                 className="font-bold"
                 disabled={profileForm.formState.isSubmitting}
-                style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }}
               >
                 {profileForm.formState.isSubmitting ? "Salvando..." : "Salvar Alterações"}
               </Button>
@@ -290,9 +342,47 @@ export default function ProfilePage() {
       <Card>
         <CardHeader>
           <CardTitle>Segurança da Conta</CardTitle>
-          <CardDescription>Altere sua senha de acesso.</CardDescription>
+          <CardDescription>Altere seu e-mail e senha de acesso.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-12">
+          <Form {...emailForm}>
+            <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-6">
+              <FormField
+                control={emailForm.control}
+                name="newEmail"
+                render={({ field }) => (
+                  <FormItem>
+                    <Label>Email</Label>
+                    <FormControl>
+                      <Input type="email" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={emailForm.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <Label>Senha Atual</Label>
+                    <FormControl>
+                      <Input type="password" placeholder="Digite sua senha para confirmar" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button
+                type="submit"
+                className="font-bold"
+                disabled={emailForm.formState.isSubmitting}
+              >
+                {emailForm.formState.isSubmitting ? "Alterando..." : "Alterar Email"}
+              </Button>
+            </form>
+          </Form>
+          
           <Form {...passwordForm}>
             <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-6">
                <FormField
@@ -386,3 +476,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    

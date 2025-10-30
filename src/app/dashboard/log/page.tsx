@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -30,15 +31,15 @@ const recyclableCategories = [
     name: "Plástico",
     description: "Garrafas PET, embalagens, etc.",
     icon: <Package className="h-8 w-8 text-primary" />,
-    unit: "kg",
-    pointsPerUnit: 20,
+    unit: "gm",
+    pointsPerUnit: 0.02,
   },
   {
     name: "Papel",
     description: "Jornais, revistas, caixas de papelão.",
     icon: <FileText className="h-8 w-8 text-primary" />,
-    unit: "kg",
-    pointsPerUnit: 15,
+    unit: "gm",
+    pointsPerUnit: 0.015,
   },
   {
     name: "Vidro",
@@ -51,8 +52,8 @@ const recyclableCategories = [
     name: "Metal",
     description: "Latinhas de alumínio, aço.",
     icon: <Wrench className="h-8 w-8 text-primary" />,
-    unit: "kg",
-    pointsPerUnit: 75,
+    unit: "gm",
+    pointsPerUnit: 0.075,
   },
 ];
 
@@ -178,8 +179,8 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
                       id={`quantity-${category.name.toLowerCase()}`}
                       type="number"
                       min="0"
-                      step="0.1"
-                      placeholder="Ex: 2.5"
+                      step={category.unit === 'gm' ? '10' : '1'}
+                      placeholder={category.unit === 'gm' ? "Ex: 500" : "Ex: 5"}
                       {...field}
                     />
                   </FormControl>
@@ -191,7 +192,6 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
               type="submit"
               className="w-full font-bold"
               disabled={form.formState.isSubmitting}
-              style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }}
             >
               {form.formState.isSubmitting ? "Registrando..." : "Registrar"}
             </Button>
@@ -201,3 +201,5 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
     </Card>
   );
 }
+
+    
