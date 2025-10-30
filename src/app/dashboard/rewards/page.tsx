@@ -33,7 +33,7 @@ const { placeholderImages } = placeholderImagesData;
 // Hardcoded rewards data with all details
 const rewardsData = [
     { id: "reward-1", name: "Garrafa de Água", requiredPoints: 1000, description: "Uma garrafa de água esportiva reutilizável feita de plástico reciclado, perfeita para se manter hidratado." },
-    { id: "reward-2", name: "Porta-copos Reciclados", requiredPoints: 500, description: "Um conjunto de 4 porta-copos elegantes feitos de plástico reciclado, protegendo suas superfícies com estilo." },
+    { id: "reward-2", name: "Frisbee Reciclado", requiredPoints: 600, description: "Um frisbee divertido e durável, feito 100% de plástico reciclado, perfeito para jogar ao ar livre." },
     { id: "reward-3", name: "Vaso de Planta", requiredPoints: 750, description: "Vaso de planta pequeno e moderno, ideal para suculentas, feito 100% de plástico reciclado." },
     { id: "reward-4", name: "Lancheira Ecológica", requiredPoints: 1200, description: "Uma lancheira durável e ecológica feita de plástico reciclado, com compartimentos para seus lanches." },
     { id: "reward-7", name: "Kit de Talheres de Viagem", requiredPoints: 800, description: "Conjunto de talheres de viagem reutilizáveis (garfo, faca, colher) em um estojo compacto, tudo de plástico reciclado." },

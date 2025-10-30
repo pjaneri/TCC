@@ -8,9 +8,9 @@
     },
     {
       "id": "reward-2",
-      "description": "Um conjunto de 4 porta-copos elegantes feitos de plástico reciclado, protegendo suas superfícies com estilo.",
-      "imageUrl": "https://images.unsplash.com/photo-1616464916566-d9b8b3a4a7a8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxwbGFzdGljJTIwY29hc3RlcnN8ZW58MHx8fHwxNzYyMDkzNTAyfDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "plastic coasters"
+      "description": "Um frisbee divertido e durável, feito 100% de plástico reciclado, perfeito para jogar ao ar livre.",
+      "imageUrl": "https://images.unsplash.com/photo-1596706225212-323a01397d9a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxmcmlzYmVlfGVufDB8fHx8MTc2MjA5MzYxN3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "recycled frisbee"
     },
     {
       "id": "reward-3",
