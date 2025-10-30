@@ -7,12 +7,6 @@
       "imageHint": "water bottle"
     },
     {
-      "id": "reward-2",
-      "description": "Um frisbee divertido e durável, feito 100% de plástico reciclado, perfeito para jogar ao ar livre.",
-      "imageUrl": "https://images.unsplash.com/photo-1596706225212-323a01397d9a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxmcmlzYmVlfGVufDB8fHx8MTc2MjA5MzYxN3ww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "recycled frisbee"
-    },
-    {
       "id": "reward-3",
       "description": "Vaso de planta pequeno e moderno, ideal para suculentas, feito 100% de plástico reciclado.",
       "imageUrl": "https://images.unsplash.com/photo-1528475563668-e15742001b92?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxwbGFudCUyMHBvdHxlbnwwfHx8fDE3NjE4MzM0MzN8MA&ixlib=rb-4.1.0&q=80&w=1080",
@@ -33,20 +27,26 @@
     {
       "id": "reward-8",
       "description": "Kit com 3 potes de armazenamento de alimentos de tamanhos variados, feitos de plástico reciclado e seguros para alimentos.",
-      "imageUrl": "https://images.unsplash.com/photo-1569419904069-081571452242?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxmb29kJTIwY29udGFpbmVyc3xlbnwwfHx8fDE3NjE4NTc2MDh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1569419904069-081571452242?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxmb29kJTIwY29udGFpbmVyc3xlbnwwfHx8fDE3NjE4NTc2MDh8MA&ixlibrb-4.1.0&q=80&w=1080",
       "imageHint": "food containers"
     },
     {
       "id": "reward-9",
       "description": "Um pente de cabelo resistente e elegante, fabricado a partir de plásticos reciclados.",
-      "imageUrl": "https://images.unsplash.com/photo-1702569258559-e0b4d469b2c2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxoYWlyJTIwY29tYnxlbnwwfHx8fDE3NjE4NTc2MDh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1702569258559-e0b4d469b2c2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxoYWlyJTIwY29tYnxlbnwwfHx8fDE3NjE4NTc2MDh8MA&ixlib.rb-4.1.0&q=80&w=1080",
       "imageHint": "hair comb"
     },
     {
       "id": "reward-10",
       "description": "Organizador de mesa com compartimentos para canetas e clipes, feito de plástico reciclado para um escritório mais verde.",
-      "imageUrl": "https://images.unsplash.com/photo-1644463589256-02679b9c0767?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkZXNrJTIwb3JnYW5pemVyfGVufDB8fHx8MTc2MTgzMjA3OXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1644463589256-02679b9c0767?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkZXNrJTIwb3JnYW5pemVyfGVufDB8fHx8MTc2MTgzMjA3OXww&ixlib.rb-4.1.0&q=80&w=1080",
       "imageHint": "desk organizer"
+    },
+    {
+      "id": "reward-2",
+      "description": "Um frisbee divertido e durável, feito 100% de plástico reciclado, perfeito para jogar ao ar livre.",
+      "imageUrl": "https://images.unsplash.com/photo-1596706225212-323a01397d9a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxmcmlzYmVlfGVufDB8fHx8MTc2MjA5MzYxN3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "recycled frisbee"
     }
   ]
 }
