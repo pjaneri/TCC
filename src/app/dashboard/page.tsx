@@ -1,7 +1,9 @@
+
 "use client";
 
-import { useMemo } from "react";
-import { Coins, Package, FileText, GlassWater, Wrench, Gift } from "lucide-react";
+import { useMemo, useState } from "react";
+import Image from "next/image";
+import { Coins, Package, FileText, GlassWater, Wrench, Gift, Image as ImageIcon } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -22,6 +24,13 @@ import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from "@
 import { collection, query, orderBy, limit, doc, Timestamp } from "firebase/firestore";
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 const materialIcons: { [key: string]: React.ElementType } = {
   "Plástico": Package,
@@ -31,7 +40,8 @@ const materialIcons: { [key: string]: React.ElementType } = {
 };
 
 // Helper function to convert Firestore Timestamp or ISO String to Date
-const toDate = (date: Timestamp | string | Date): Date => {
+const toDate = (date: Timestamp | string | Date | undefined): Date | null => {
+  if (!date) return null;
   if (date instanceof Timestamp) {
     return date.toDate();
   }
@@ -46,7 +56,7 @@ export default function DashboardPage() {
     if (!user) return null;
     return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
-  const { data: userProfile } = useDoc(userProfileRef);
+  const { data: userProfile, isLoading: profileLoading } = useDoc(userProfileRef);
 
   const recentActivitiesQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -71,17 +81,18 @@ export default function DashboardPage() {
   const { data: recentRedemptions, isLoading: redemptionsLoading } = useCollection(redemptionsQuery);
 
   const combinedActivities = useMemo(() => {
-    const records = recentRecords?.map(r => ({ ...r, date: toDate(r.recyclingDate), type: 'log' })) || [];
-    const redemptions = recentRedemptions?.map(r => ({ ...r, date: toDate(r.redemptionDate), type: 'redemption' })) || [];
+    const records = (recentRecords || []).map(r => ({ ...r, date: toDate(r.recyclingDate), type: 'log' as const }));
+    const redemptions = (recentRedemptions || []).map(r => ({ ...r, date: toDate(r.redemptionDate), type: 'redemption' as const }));
     
     return [...records, ...redemptions]
-      .sort((a, b) => b.date.getTime() - a.date.getTime())
+      .filter(activity => activity.date !== null)
+      .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0))
       .slice(0, 5);
   }, [recentRecords, recentRedemptions]);
 
 
   const userPoints = userProfile?.totalPoints || 0;
-  const isLoading = recordsLoading || redemptionsLoading;
+  const isLoading = profileLoading || recordsLoading || redemptionsLoading;
 
 
   return (
@@ -113,18 +124,22 @@ export default function DashboardPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading ? <p>Carregando atividades...</p> : (
+          {isLoading && (!combinedActivities || combinedActivities.length === 0) ? <p>Carregando atividades...</p> : (
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Item</TableHead>
                 <TableHead className="hidden sm:table-cell">Detalhes</TableHead>
                 <TableHead className="hidden md:table-cell">Data</TableHead>
+                <TableHead>Comprovante</TableHead>
                 <TableHead className="text-right">Pontos</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {combinedActivities && combinedActivities.map((activity) => {
+                 const activityDate = activity.date;
+                 if (!activityDate) return null;
+
                  if (activity.type === 'log') {
                     const Icon = materialIcons[activity.materialType] || Package;
                     return (
@@ -135,9 +150,30 @@ export default function DashboardPage() {
                             <span className="font-medium">{activity.materialType}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="hidden sm:table-cell">{activity.quantity} {activity.unit || 'kg'}</TableCell>
+                        <TableCell className="hidden sm:table-cell">{activity.quantity} {activity.unit || 'un'}</TableCell>
                         <TableCell className="hidden md:table-cell">
-                          {formatDistanceToNow(activity.date, { addSuffix: true, locale: ptBR })}
+                          {formatDistanceToNow(activityDate, { addSuffix: true, locale: ptBR })}
+                        </TableCell>
+                        <TableCell>
+                          {activity.photoUrl ? (
+                             <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <ImageIcon className="h-4 w-4"/>
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-md">
+                                  <DialogHeader>
+                                    <DialogTitle>Comprovante de Reciclagem</DialogTitle>
+                                  </DialogHeader>
+                                  <div className="mt-4">
+                                     <Image src={activity.photoUrl} alt={`Comprovante para ${activity.materialType}`} width={500} height={500} className="rounded-md object-contain"/>
+                                  </div>
+                                </DialogContent>
+                              </Dialog>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">-</span>
+                          )}
                         </TableCell>
                         <TableCell className="text-right">
                            <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
@@ -158,7 +194,10 @@ export default function DashboardPage() {
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">Prêmio Resgatado</TableCell>
                       <TableCell className="hidden md:table-cell">
-                        {formatDistanceToNow(activity.date, { addSuffix: true, locale: ptBR })}
+                        {formatDistanceToNow(activityDate, { addSuffix: true, locale: ptBR })}
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-xs text-muted-foreground">-</span>
                       </TableCell>
                       <TableCell className="text-right">
                          <Badge variant="destructive" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
@@ -170,9 +209,9 @@ export default function DashboardPage() {
                 }
                 return null;
               })}
-              {(!combinedActivities || combinedActivities.length === 0) && (
+              {(!isLoading && (!combinedActivities || combinedActivities.length === 0)) && (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center">Nenhuma atividade recente.</TableCell>
+                  <TableCell colSpan={5} className="text-center">Nenhuma atividade recente.</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -183,3 +222,6 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+
+    
