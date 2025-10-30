@@ -1,4 +1,10 @@
+"use client";
+
 import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { sendPasswordResetEmail, getAuth, AuthError } from "firebase/auth";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -9,11 +15,56 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { AuthLayout } from "@/components/auth-layout";
+import { useToast } from "@/hooks/use-toast";
+
+const resetSchema = z.object({
+  email: z.string().email({ message: "Por favor, insira um email válido." }),
+});
+
+type ResetFormValues = z.infer<typeof resetSchema>;
 
 export default function ResetPasswordPage() {
+  const { toast } = useToast();
+  const auth = getAuth();
+
+  const form = useForm<ResetFormValues>({
+    resolver: zodResolver(resetSchema),
+    defaultValues: {
+      email: "",
+    },
+  });
+
+  const onSubmit = async (data: ResetFormValues) => {
+    try {
+      await sendPasswordResetEmail(auth, data.email);
+      toast({
+        title: "Link enviado!",
+        description: "Verifique sua caixa de entrada para redefinir sua senha.",
+      });
+    } catch (error) {
+      const authError = error as AuthError;
+      let message = "Ocorreu um erro. Tente novamente.";
+      if (authError.code === "auth/user-not-found") {
+        message = "Nenhum usuário encontrado com este email.";
+      }
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: message,
+      });
+    }
+  };
+
   return (
     <AuthLayout>
       <Card>
@@ -23,13 +74,32 @@ export default function ResetPasswordPage() {
             Digite seu email para receber um link de redefinição
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="seu@email.com" />
-          </div>
-           <Button className="w-full" style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }}>Enviar Link</Button>
-        </CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <CardContent className="grid gap-4">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="seu@email.com"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting} style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }}>
+                {form.formState.isSubmitting ? "Enviando..." : "Enviar Link"}
+              </Button>
+            </CardContent>
+          </form>
+        </Form>
         <CardFooter className="flex justify-center text-sm">
           <Link href="/login" passHref>
             <span className="cursor-pointer text-muted-foreground underline-offset-4 hover:text-primary hover:underline">

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   LogOut,
@@ -9,7 +9,8 @@ import {
   Recycle,
   Trophy,
 } from "lucide-react";
-import type { ReactNode } from "react";
+import { ReactNode, useEffect } from "react";
+import { getAuth, signOut } from "firebase/auth";
 
 import {
   SidebarProvider,
@@ -23,7 +24,8 @@ import {
   SidebarFooter,
   SidebarInset,
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
+import { useUser } from "@/firebase";
+import { useToast } from "@/hooks/use-toast";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Visão Geral" },
@@ -33,6 +35,37 @@ const navItems = [
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, isUserLoading } = useUser();
+  const { toast } = useToast();
+  const auth = getAuth();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.replace("/login");
+    }
+  }, [user, isUserLoading, router]);
+
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+      router.push("/login");
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Erro ao sair",
+        description: "Não foi possível fazer logout. Tente novamente.",
+      });
+    }
+  };
+
+  if (isUserLoading || !user) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <p>Carregando...</p>
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider>
@@ -65,12 +98,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
-          <Link href="/login" passHref>
-            <SidebarMenuButton tooltip="Sair">
-              <LogOut />
-              <span>Sair</span>
-            </SidebarMenuButton>
-          </Link>
+          <SidebarMenuButton tooltip="Sair" onClick={handleSignOut}>
+            <LogOut />
+            <span>Sair</span>
+          </SidebarMenuButton>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset className="max-w-screen-2xl">
