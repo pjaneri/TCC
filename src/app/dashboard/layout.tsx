@@ -104,14 +104,20 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </SidebarMenuButton>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset className="max-w-screen-2xl">
-        <header className="flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6">
+      <SidebarInset>
+        <header className="flex h-14 items-center justify-between gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6">
           <SidebarTrigger className="md:hidden" />
           <div className="w-full flex-1">
-            {/* Can add a search bar here later */}
+            <h1 className="font-headline text-xl font-semibold">
+                {navItems.find(item => item.href === pathname)?.label}
+            </h1>
           </div>
         </header>
-        <main className="flex-1 p-4 md:p-6">{children}</main>
+        <main className="flex flex-1 justify-center p-4 md:p-6">
+          <div className="w-full max-w-4xl animate-fade-in-up">
+            {children}
+          </div>
+        </main>
       </SidebarInset>
     </SidebarProvider>
   );

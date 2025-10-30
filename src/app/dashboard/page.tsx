@@ -54,9 +54,8 @@ export default function DashboardPage() {
 
   return (
     <div className="grid gap-6">
-      <h1 className="font-headline text-3xl font-bold">Visão Geral</h1>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <Card className="bg-primary text-primary-foreground">
+        <Card className="bg-primary text-primary-foreground transform-gpu transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Total de Pontos
@@ -74,7 +73,7 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      <Card>
+      <Card className="transform-gpu transition-all duration-300 ease-out hover:shadow-xl">
         <CardHeader>
           <CardTitle className="font-headline">Atividade Recente</CardTitle>
           <CardDescription>
@@ -96,7 +95,7 @@ export default function DashboardPage() {
               {recentActivities && recentActivities.map((activity) => {
                  const Icon = materialIcons[activity.materialType] || Package;
                  return (
-                  <TableRow key={activity.id}>
+                  <TableRow key={activity.id} className="transition-colors hover:bg-muted/50">
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Icon className="h-4 w-4 text-muted-foreground" />

@@ -66,9 +66,6 @@ export default function LogRecyclingPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="font-headline text-3xl font-bold">
-          Registrar Reciclagem
-        </h1>
         <p className="text-muted-foreground">
           Adicione os itens que você reciclou para ganhar pontos.
         </p>
@@ -157,7 +154,7 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
   };
 
   return (
-    <Card className="transition-transform duration-300 ease-in-out hover:scale-105 hover:shadow-xl">
+    <Card className="transform-gpu transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl">
       <CardHeader className="flex flex-row items-start gap-4 space-y-0">
         <div className="mt-1">{category.icon}</div>
         <div>
