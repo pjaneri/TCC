@@ -51,10 +51,12 @@ export default function ResetPasswordPage() {
         title: "Link enviado!",
         description: "Verifique sua caixa de entrada para redefinir sua senha.",
       });
+      form.reset();
     } catch (error) {
       const authError = error as AuthError;
       let message = "Ocorreu um erro. Tente novamente.";
-      if (authError.code === "auth/user-not-found") {
+      // This error code may not exist on the type, but it is a possible value.
+      if (authError.code === "auth/user-not-found" || (authError as any).code === 'auth/invalid-credential') {
         message = "Nenhum usuário encontrado com este email.";
       }
       toast({

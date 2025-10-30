@@ -34,6 +34,7 @@ export default function RewardsPage() {
   const { toast } = useToast();
 
   const rewardsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
     return query(collection(firestore, "rewards"), where("material", "==", "plastic"));
   }, [firestore]);
 
@@ -47,7 +48,7 @@ export default function RewardsPage() {
   const { data: userProfile, isLoading: userLoading } = useDoc(userProfileRef);
 
   const handleRedemption = async (reward: any) => {
-    if (!user || !userProfile) {
+    if (!user || !userProfile || !firestore) {
         toast({ variant: "destructive", title: "Erro", description: "Você precisa estar logado." });
         return;
     }
@@ -62,11 +63,11 @@ export default function RewardsPage() {
     try {
         await runTransaction(firestore, async (transaction) => {
             const userDoc = await transaction.get(userDocRef);
-            if (!userDoc.exists() || userDoc.data().totalPoints < reward.requiredPoints) {
+            if (!userDoc.exists() || (userDoc.data().totalPoints || 0) < reward.requiredPoints) {
                 throw "Pontos insuficientes ou usuário não encontrado.";
             }
 
-            const newTotalPoints = userDoc.data().totalPoints - reward.requiredPoints;
+            const newTotalPoints = (userDoc.data().totalPoints || 0) - reward.requiredPoints;
             transaction.update(userDocRef, { totalPoints: newTotalPoints });
 
             const newRedemptionRef = doc(redemptionColRef);
