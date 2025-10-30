@@ -73,6 +73,11 @@
         "pointsEarned": {
           "type": "number",
           "description": "Points earned for this recycling activity."
+        },
+        "photoUrl": {
+          "type": "string",
+          "description": "URL of the uploaded photo proof.",
+          "format": "uri"
         }
       },
       "required": [
@@ -81,7 +86,8 @@
         "materialType",
         "quantity",
         "recyclingDate",
-        "pointsEarned"
+        "pointsEarned",
+        "photoUrl"
       ]
     },
     "Reward": {
@@ -247,3 +253,5 @@
     "reasoning": "The Firestore data structure is designed to ensure authorization independence, clarity, and scalability for the Recycle+ application. User profiles and their associated data (recycling records, redemptions) are structured under the `/users/{userId}` path, providing clear ownership and simplifying security rules. Rewards are stored in a separate top-level collection, `/rewards`. All admin-related collections and cooldown-related fields have been removed for simplification."
   }
 }
+
+    
