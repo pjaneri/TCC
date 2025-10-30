@@ -173,6 +173,7 @@ export default function ProfilePage() {
 
       const credential = EmailAuthProvider.credential(user.email, data.password);
       
+      reauthForm.clearErrors();
       try {
         await reauthenticateWithCredential(user, credential);
         setIsReauthenticatedForEmail(true);
@@ -184,6 +185,7 @@ export default function ProfilePage() {
         let description = "Não foi possível autenticar. Tente novamente.";
         if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
           description = "A senha atual está incorreta.";
+          reauthForm.setError("password", { type: "manual", message: description });
         }
         toast({
           variant: "destructive",
@@ -195,7 +197,15 @@ export default function ProfilePage() {
     };
     
     const onEmailSubmit = async (data: EmailFormValues) => {
-      if (!user || !isReauthenticatedForEmail) return;
+      if (!user || !isReauthenticatedForEmail) {
+         toast({
+          variant: "destructive",
+          title: "Erro ao alterar email",
+          description: "A autenticação é necessária. Por favor, verifique sua senha novamente.",
+        });
+        setIsReauthenticatedForEmail(false);
+        return;
+      }
       
       try {
         await updateEmail(user, data.newEmail);
@@ -213,6 +223,9 @@ export default function ProfilePage() {
         let description = "Não foi possível alterar seu email. Tente novamente.";
         if (error.code === 'auth/email-already-in-use') {
           description = "Este email já está em uso por outra conta.";
+        } else if (error.code === 'auth/requires-recent-login') {
+            description = "Sua sessão expirou. Por favor, verifique sua senha novamente para continuar.";
+            setIsReauthenticatedForEmail(false);
         }
         
         toast({
@@ -399,6 +412,7 @@ export default function ProfilePage() {
             ) : (
               <Form {...emailForm}>
                 <form onSubmit={emailForm.handleSubmit(onEmailSubmit)} className="space-y-6">
+                   <p className="text-sm font-medium">Alterar Endereço de E-mail</p>
                   <FormField
                     control={emailForm.control}
                     name="newEmail"
@@ -521,3 +535,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
