@@ -113,6 +113,7 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
         unit: category.unit,
         recyclingDate: new Date().toISOString(),
         pointsEarned: pointsEarned,
+        type: 'log'
     };
 
     runTransaction(firestore, async (transaction) => {
@@ -134,12 +135,9 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
         if (e instanceof Error && e.name === 'FirebaseError') {
           // This is likely a permission error, let the global handler manage it.
           const permissionError = new FirestorePermissionError({
-            path: userDocRef.path,
-            operation: 'write',
-            requestResourceData: { 
-              ...newRecordData,
-              totalPointsUpdate: pointsEarned 
-            }
+            path: newRecordRef.path,
+            operation: 'create',
+            requestResourceData: newRecordData,
           });
           errorEmitter.emit('permission-error', permissionError);
         } else {
@@ -154,7 +152,7 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
   };
 
   return (
-    <Card className="transform-gpu transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-xl">
+    <Card className="transform-gpu transition-all duration-300 ease-out hover:scale-105 hover:shadow-xl">
       <CardHeader className="flex flex-row items-start gap-4 space-y-0">
         <div className="mt-1">{category.icon}</div>
         <div>
