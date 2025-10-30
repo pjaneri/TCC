@@ -11,7 +11,6 @@ import {
   AuthError,
   signInWithPopup,
   GoogleAuthProvider,
-  sendPasswordResetEmail,
 } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 
@@ -100,33 +99,6 @@ export default function LoginPage() {
     }
   };
 
-  const handlePasswordReset = async () => {
-    const email = form.getValues("email");
-    if (!email) {
-      form.setError("email", { type: "manual", message: "Por favor, insira seu e-mail para redefinir a senha." });
-      return;
-    }
-    try {
-      await sendPasswordResetEmail(auth, email);
-      toast({
-        title: "E-mail de redefinição enviado!",
-        description: "Verifique sua caixa de entrada para redefinir sua senha.",
-      });
-    } catch (error) {
-      const authError = error as AuthError;
-      let message = "Não foi possível enviar o e-mail de redefinição.";
-      if (authError.code === 'auth/user-not-found') {
-        message = "Não há conta registrada com este e-mail.";
-      }
-      toast({
-        variant: "destructive",
-        title: "Erro",
-        description: message,
-      });
-    }
-  };
-
-
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     const provider = new GoogleAuthProvider();
@@ -207,15 +179,7 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                     <div className="flex items-center justify-between">
-                      <FormLabel>Senha</FormLabel>
-                      <span
-                        onClick={handlePasswordReset}
-                        className="cursor-pointer text-xs text-primary underline-offset-4 hover:underline"
-                      >
-                        Esqueceu sua senha?
-                      </span>
-                    </div>
+                    <FormLabel>Senha</FormLabel>
                     <FormControl>
                       <PasswordInput
                         placeholder="********"
