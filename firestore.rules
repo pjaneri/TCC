@@ -1,166 +1,160 @@
 /**
  * @file Overview
- * This ruleset enforces a strict user-ownership model for personal data while allowing public read access to reward information. Administrative privileges are managed through a dedicated collection.
+ * This ruleset enforces a strict user-ownership model for most data, with a public read-only exception for the /rewards collection.
  *
  * Data Structure:
- * - /users/{userId}: Stores user profile information. Each user can only access their own profile.
- * - /users/{userId}/recycling_records/{recordId}: Stores recycling records for a specific user. Only the user can access their own records.
- * - /rewards/{rewardId}: Stores reward information. Publicly readable, but only admins can modify.
- * - /users/{userId}/redemptions/{redemptionId}: Stores redemption records for a specific user. Only the user can access their own redemptions.
- * - /roles_admin/{userId}: Indicates admin privileges. If a document exists for a user ID, that user is considered an admin.
+ * - /users/{userId}: Stores user profile information. Only the user can read/write their own profile.
+ * - /users/{userId}/recycling_records/{recordId}: Stores recycling records for each user. Only the user can read/write their own records.
+ * - /users/{userId}/redemptions/{redemptionId}: Stores redemption records for each user. Only the user can read/write their own redemptions.
+ * - /rewards/{rewardId}: Stores information about available rewards. Rewards are publicly readable, but only admins can create, update, or delete them.
+ * - /roles_admin/{userId}: Indicates admin privileges. If a document exists for a userId, that user is considered an admin.
  *
  * Key Security Decisions:
- * - Users can only read and write their own profile data and associated recycling/redemption records.
- * - Rewards are publicly readable but only modifiable by admins.
- * - Listing of user-specific data is restricted to the owning user.
- * - The 'material' field of Rewards is not validated, and all writes are allowed.
+ * - User data is strictly private; users can only access their own data.
+ * - The /rewards collection is publicly readable to allow all users to see available rewards.
+ * - Admin privileges are determined by the existence of a document in the /roles_admin/{userId} collection.
+ * - Listing all recycling records is disallowed to protect user privacy and avoid needing to filter by user ID on the client.
  *
  * Denormalization for Authorization:
- * - Admin status is determined by the existence of a document in `/roles_admin/{userId}`, avoiding the need for complex role-based lookups.
+ * - User-specific data (recycling records, redemptions) is nested under the /users/{userId} path. This allows using the `isOwner(userId)` helper function to easily enforce ownership.
  *
  * Structural Segregation:
- * - Publicly readable reward data is stored in a separate top-level collection (/rewards) to avoid mixing public and private data within the user-specific data trees (/users/{userId}/...).
+ * - Rewards are stored in a top-level collection (/rewards) to allow for public read access without exposing private user data.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Controls access to user profile documents.
+     * @description Checks if the current user is signed in.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the user ID matches the authenticated user's ID.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * @description Checks if the user is an existing owner of a document.
+     * This combines the ownership check with an existence check to prevent
+     * operations on non-existent documents.
+     */
+    function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * @description Checks if the user is an administrator.
+     * This function reads from the /roles_admin/{userId} collection to determine admin status.
+     */
+    function isAdmin() {
+      return exists(/databases/(default)/documents/roles_admin/$(request.auth.uid));
+    }
+
+
+    /**
+     * @description Enforces user-level access control for profiles.
      * @path /users/{userId}
-     * @allow (create) User with UID 'user123' can create their own profile.
-     *   Request data must include 'id': 'user123'.
-     * @allow (get, update, delete) User with UID 'user123' can read, update, and delete their own profile.
-     * @deny (create) User with UID 'user456' cannot create a profile with ID 'user123'.
-     * @deny (get, update, delete) User with UID 'user456' cannot read, update, or delete the profile of 'user123'.
-     * @principle Enforces document ownership for user profiles.
+     * @allow (create) User Vmn7HLKINqVzUwXW9XVs8kWV58I2 creates their own profile with matching userId.
+     * @allow (get, update, delete) User Vmn7HLKINqVzUwXW9XVs8kWV58I2 reads/updates/deletes their own profile.
+     * @deny (create) User Vmn7HLKINqVzUwXW9XVs8kWV58I2 attempts to create a profile for another user.
+     * @deny (get, update, delete) User anotherUser attempts to read/update/delete User Vmn7HLKINqVzUwXW9XVs8kWV58I2's profile.
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if false;
-      allow create: if isSignedIn() && isOwner(userId);// && request.resource.data.id == userId; // Relaxed data validation during prototyping
-      allow update: if isSignedIn() && isExistingOwner(userId);// && request.resource.data.id == resource.data.id; // Relaxed data validation during prototyping
-      allow delete: if isSignedIn() && isExistingOwner(userId);
+      allow get: if isOwner(userId);
+      allow list: if false; // Listing users is not permitted.
+      allow create: if isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Controls access to recycling records for a specific user.
+     * @description Enforces user-level access control for recycling records.
      * @path /users/{userId}/recycling_records/{recordId}
-     * @allow (create) User with UID 'user123' can create a recycling record under their profile.
-     *   Request data must include 'userId': 'user123'.
-     * @allow (get, update, delete) User with UID 'user123' can read, update, and delete their own recycling records.
-     * @deny (create) User with UID 'user456' cannot create a recycling record for user 'user123'.
-     * @deny (get, update, delete) User with UID 'user456' cannot read, update, or delete recycling records of user 'user123'.
-     * @principle Enforces document ownership for recycling records within user profiles.
+     * @allow (create) User Vmn7HLKINqVzUwXW9XVs8kWV58I2 creates a recycling record under their profile with matching userId.
+     * @allow (get, update, delete) User Vmn7HLKINqVzUwXW9XVs8kWV58I2 reads/updates/deletes their own recycling record.
+     * @deny (create) User Vmn7HLKINqVzUwXW9XVs8kWV58I2 attempts to create a recycling record for another user.
+     * @deny (get, update, delete) User anotherUser attempts to read/update/delete User Vmn7HLKINqVzUwXW9XVs8kWV58I2's recycling record.
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId}/recycling_records/{recordId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId);// && request.resource.data.userId == userId; // Relaxed data validation during prototyping
-      allow update: if isSignedIn() && isExistingOwner(userId);// && request.resource.data.userId == resource.data.userId; // Relaxed data validation during prototyping
-      allow delete: if isSignedIn() && isExistingOwner(userId);
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Controls access to reward documents.
+     * @description Allows public read access to rewards, but restricts creation, updates, and deletion to admins only.
      * @path /rewards/{rewardId}
-     * @allow (get, list) All users can read reward information.
-     * @allow (create) Admin user with UID 'admin123' can create rewards if they have a document at /roles_admin/admin123.
-     * @allow (update, delete) Admin user with UID 'admin123' can update and delete rewards if they have a document at /roles_admin/admin123 and if resource exists.
-     * @deny (create, update, delete) Non-admin users cannot create, update, or delete rewards.
-     * @principle Allows public read access to rewards but restricts modifications to admins.
+     * @allow (get, list) Any user can read the reward.
+     * @allow (create, update, delete) Only admins can create, update, or delete rewards.
+     * @deny (create, update, delete) Non-admins cannot create, update, or delete rewards.
+     * @principle Allows public read access while restricting write access to admins.
      */
     match /rewards/{rewardId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isAdmin() {
-        return exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
-      }
-
-      allow get: if true;
-      allow list: if true;
-      allow create: if isSignedIn() && isAdmin();
-      allow update: if isSignedIn() && isAdmin();
-      allow delete: if isSignedIn() && isAdmin();
+      allow get, list: if true;
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
     }
 
     /**
-     * @description Controls access to redemption records for a specific user.
+     * @description Enforces user-level access control for redemptions.
      * @path /users/{userId}/redemptions/{redemptionId}
-     * @allow (create) User with UID 'user123' can create a redemption record under their profile.
-     *   Request data must include 'userId': 'user123'.
-     * @allow (get, update, delete) User with UID 'user123' can read, update, and delete their own redemption records.
-     * @deny (create) User with UID 'user456' cannot create a redemption record for user 'user123'.
-     * @deny (get, update, delete) User with UID 'user456' cannot read, update, or delete redemption records of user 'user123'.
-     * @principle Enforces document ownership for redemption records within user profiles.
+     * @allow (create) User Vmn7HLKINqVzUwXW9XVs8kWV58I2 creates a redemption under their profile with matching userId.
+     * @allow (get, update, delete) User Vmn7HLKINqVzUwXW9XVs8kWV58I2 reads/updates/deletes their own redemption.
+     * @deny (create) User Vmn7HLKINqVzUwXW9XVs8kWV58I2 attempts to create a redemption for another user.
+     * @deny (get, update, delete) User anotherUser attempts to read/update/delete User Vmn7HLKINqVzUwXW9XVs8kWV58I2's redemption.
+     * @principle Enforces document ownership for writes.
      */
     match /users/{userId}/redemptions/{redemptionId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-
-      function isExistingOwner(userId) {
-        return isOwner(userId) && resource != null;
-      }
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId);// && request.resource.data.userId == userId; // Relaxed data validation during prototyping
-      allow update: if isSignedIn() && isExistingOwner(userId);// && request.resource.data.userId == resource.data.userId; // Relaxed data validation during prototyping
-      allow delete: if isSignedIn() && isExistingOwner(userId);
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
      * @description Controls access to admin role documents.
      * @path /roles_admin/{userId}
-     * @allow (get) User with UID 'user123' can check if they have admin privileges.
-     * @allow (create) User with UID 'admin123' can assign themselves admin privileges.
-     *   Request data should contain information such as user profile.
-     * @deny (create) User with UID 'user123' cannot assign admin privileges to 'admin456'.
-     * @deny (update, delete) No one can update or delete admin roles through direct requests to the role document.
-     * @principle Restricts admin role creation to self-assignment and prohibits modification.
+     * @allow create: if isAdmin();
+     * @allow get: if isAdmin() || isOwner(userId);
+     * @allow update: if false; // Updating admin roles is not allowed
+     * @allow delete: if isAdmin();
+     * @allow list: if false; // Listing admin roles is not permitted.
+     * @principle Only admins can manage admin roles.
      */
     match /roles_admin/{userId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(userId) {
-        return request.auth.uid == userId;
-      }
-
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if false;
-      allow create: if isSignedIn() && isOwner(userId);
-      allow update: if false;
-      allow delete: if false;
+        allow get: if isAdmin() || isOwner(userId);
+        allow list: if false;
+        allow create: if isAdmin();
+        allow update: if false;
+        allow delete: if isAdmin();
     }
+    
+      /**
+       * @description  Denies all access to the recycling_records_all collection.  There is no such collection in the data model.
+       * @path /recycling_records_all
+       * @allow get: if false;
+       * @allow list: if false;
+       * @allow create: if false;
+       *
+       */
+      match /recycling_records_all {
+        allow get: if false;
+        allow list: if false;
+        allow create: if false;
+        allow update: if false;
+        allow delete: if false;
+      }
   }
 }
