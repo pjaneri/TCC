@@ -133,10 +133,10 @@ export default function ProfilePage() {
     };
     
     const onPasswordSubmit = async (data: PasswordFormValues) => {
-      if (!user) return;
+      if (!user || !user.email) return;
 
       try {
-        const credential = EmailAuthProvider.credential(user.email!, data.currentPassword);
+        const credential = EmailAuthProvider.credential(user.email, data.currentPassword);
         await reauthenticateWithCredential(user, credential);
         await updatePassword(user, data.newPassword);
         
@@ -146,10 +146,12 @@ export default function ProfilePage() {
         });
         passwordForm.reset();
       } catch (error: any) {
-        console.error("Password change error:", error);
         let description = "Não foi possível alterar sua senha. Tente novamente.";
         if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
           description = "A senha atual está incorreta.";
+        } else {
+            // Log only unexpected errors
+            console.error("Password change error:", error);
         }
         toast({
           variant: "destructive",
@@ -312,4 +314,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
