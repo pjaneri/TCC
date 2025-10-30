@@ -15,8 +15,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Package, FileText, GlassWater, Wrench } from "lucide-react";
-import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
-import { collection, doc, serverTimestamp, runTransaction } from "firebase/firestore";
+import { useUser, useFirestore, errorEmitter, FirestorePermissionError, useDoc, useMemoFirebase } from "@/firebase";
+import { collection, doc, serverTimestamp, runTransaction, Timestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import {
   Form,
@@ -27,6 +27,8 @@ import {
 } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState } from "react";
+
+const COOLDOWN_MINUTES = 5;
 
 const recyclableCategories = [
   {
@@ -88,6 +90,12 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
   const firestore = useFirestore();
   const { toast } = useToast();
   const [selectedUnit, setSelectedUnit] = useState(category.defaultUnit);
+  
+  const userProfileRef = useMemoFirebase(() => {
+    if (!user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+  const { data: userProfile } = useDoc(userProfileRef);
 
   const form = useForm<LogFormValues>({
     resolver: zodResolver(logSchema),
@@ -97,7 +105,7 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
   });
 
   const onSubmit = async (data: LogFormValues) => {
-    if (!user || !firestore) {
+    if (!user || !firestore || !userProfile) {
       toast({
         variant: "destructive",
         title: "Erro",
@@ -105,13 +113,27 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
       });
       return;
     }
+    
+    if (userProfile.lastRecyclingLogDate) {
+        const lastLogTime = (userProfile.lastRecyclingLogDate as Timestamp).toDate().getTime();
+        const now = Date.now();
+        const diffInMinutes = (now - lastLogTime) / (1000 * 60);
+        if (diffInMinutes < COOLDOWN_MINUTES) {
+            toast({
+                variant: "destructive",
+                title: "Aguarde um pouco!",
+                description: `Você só pode registrar uma reciclagem a cada ${COOLDOWN_MINUTES} minutos.`,
+            });
+            return;
+        }
+    }
+
 
     const pointsCalculated = Math.round(data.quantity * (category.units as any)[selectedUnit]);
     
     const userDocRef = doc(firestore, "users", user.uid);
     const recyclingLogColRef = collection(userDocRef, "recycling_records");
     const newRecordRef = doc(recyclingLogColRef);
-
     const newRecordData = {
         id: newRecordRef.id,
         userId: user.uid,
@@ -132,7 +154,10 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
             const currentPoints = userDoc.data().totalPoints || 0;
             const newTotalPoints = currentPoints + pointsCalculated;
             
-            transaction.update(userDocRef, { totalPoints: newTotalPoints });
+            transaction.update(userDocRef, { 
+                totalPoints: newTotalPoints,
+                lastRecyclingLogDate: serverTimestamp() 
+            });
             transaction.set(newRecordRef, newRecordData);
         });
 
