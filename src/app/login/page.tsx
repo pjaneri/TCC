@@ -9,8 +9,9 @@ import {
   signInWithEmailAndPassword,
   getAuth,
   AuthError,
-  signInWithPopup,
+  signInWithRedirect,
   GoogleAuthProvider,
+  getRedirectResult,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 
@@ -35,9 +36,10 @@ import { Input, PasswordInput } from "@/components/ui/input";
 import { AuthLayout } from "@/components/auth-layout";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore } from "@/firebase";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Loader2 } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Por favor, insira um email válido." }),
@@ -55,13 +57,13 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
   const auth = getAuth();
   const firestore = useFirestore();
+  const [isCheckingRedirect, setIsCheckingRedirect] = useState(true);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -70,8 +72,47 @@ export default function LoginPage() {
       password: "",
     },
   });
+  
+  const handleGoogleSignIn = async () => {
+    const provider = new GoogleAuthProvider();
+    await signInWithRedirect(auth, provider);
+  };
 
   useEffect(() => {
+    // This effect handles the user being redirected back from Google
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (result && result.user) {
+          const user = result.user;
+          const userDocRef = doc(firestore, "users", user.uid);
+          const userDoc = await getDoc(userDocRef);
+
+          if (!userDoc.exists()) {
+            await setDoc(userDocRef, {
+              id: user.uid,
+              username: user.displayName || 'Usuário Google',
+              email: user.email,
+              registrationDate: serverTimestamp(),
+              totalPoints: 0,
+            });
+          }
+        }
+      })
+      .catch((error) => {
+        console.error("Google Sign In Redirect Error:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro de autenticação",
+          description: "Não foi possível fazer login com o Google.",
+        });
+      }).finally(() => {
+        setIsCheckingRedirect(false);
+      });
+  }, [auth, firestore, toast]);
+
+
+  useEffect(() => {
+    // This effect handles redirecting a logged-in user to the dashboard
     if (!isUserLoading && user) {
       router.replace("/dashboard");
     }
@@ -99,41 +140,13 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-
-      // Check if user exists in Firestore
-      const userDocRef = doc(firestore, "users", user.uid);
-      const userDoc = await getDoc(userDocRef);
-
-      if (!userDoc.exists()) {
-        // Create user profile if it doesn't exist
-        await setDoc(userDocRef, {
-          id: user.uid,
-          username: user.displayName || 'Usuário Google',
-          email: user.email,
-          registrationDate: serverTimestamp(),
-          totalPoints: 0,
-        });
-      }
-      // Let the onAuthStateChanged listener handle the redirect
-    } catch (error) {
-      console.error("Google Sign In Error:", error);
-      toast({
-        variant: "destructive",
-        title: "Erro de autenticação",
-        description: "Não foi possível fazer login com o Google.",
-      });
-    }
-  };
-
-  if (isUserLoading || user) {
+  if (isUserLoading || user || isCheckingRedirect) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
-        <p>Carregando...</p>
+        <div className="flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <p>Verificando autenticação...</p>
+        </div>
       </div>
     );
   }
