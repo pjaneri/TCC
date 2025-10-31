@@ -73,11 +73,6 @@
         "pointsEarned": {
           "type": "number",
           "description": "Points earned for this recycling activity."
-        },
-        "imageUrl": {
-          "type": "string",
-          "format": "uri",
-          "description": "URL of the photo taken for verification."
         }
       },
       "required": [
