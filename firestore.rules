@@ -1,18 +1,17 @@
 
 /**
  * @file Overview
- * This ruleset enforces a strict user-ownership model for most data, with public read access for rewards and leaderboard data.
+ * This ruleset enforces a strict user-ownership model for most data, with public read access for rewards.
  *
  * Data Structure:
- * - /users/{userId}: Stores user profile information. Users can read/write their own profile. Other users can read only 'username' and 'totalPoints' for leaderboards.
+ * - /users/{userId}: Stores user profile information. Users can only read/write their own profile.
  * - /users/{userId}/recycling_records/{recordId}: Stores recycling records. Only the owner can read/write.
  * - /users/{userId}/redemptions/{redemptionId}: Stores redemption records. Only the owner can read/write.
  * - /rewards/{rewardId}: Stores reward information. Publicly readable, admin-only write access.
  * - /roles_admin/{userId}: Indicates admin privileges.
  *
  * Key Security Decisions:
- * - User data is mostly private, except for fields needed for the leaderboard ('username', 'totalPoints').
- * - Listing the full /users collection is allowed for leaderboard functionality, but fields are restricted.
+ * - User data is private. Listing other users is not allowed.
  * - The /rewards collection is publicly readable.
  * - Admin privileges are managed via the /roles_admin collection.
  *
@@ -52,17 +51,16 @@ service cloud.firestore {
     }
 
     /**
-     * @description Enforces user-level access control for profiles and allows public reads for leaderboard.
+     * @description Enforces user-level access control for profiles.
      * @path /users/{userId}
-     * @allow (get) User can read their own profile. Authenticated users can read public fields for leaderboards.
-     * @allow (list) Authenticated users can list public fields for leaderboards.
+     * @allow (get) User can read their own profile.
      * @allow (create) User can create their own profile.
      * @allow (update) User can update their own profile.
-     * @deny Non-owners cannot write or read private fields of other users.
+     * @deny Reading, listing, or writing profiles of other users.
      */
     match /users/{userId} {
-      allow get: if isOwner(userId) || (isSignedIn() && (resource.data.keys().hasAll(['username', 'totalPoints']) && resource.data.keys().size() == 2));
-      allow list: if isSignedIn();
+      allow get: if isOwner(userId);
+      allow list: if false;
       allow create: if isOwner(userId) && request.resource.data.id == userId;
       allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
       allow delete: if isExistingOwner(userId);

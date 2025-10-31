@@ -96,6 +96,8 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
     },
   });
 
+  const { isSubmitting } = form.formState;
+
   const onSubmit = async (data: LogFormValues) => {
     if (!user || !firestore) {
       toast({
@@ -191,7 +193,7 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
                       />
                     </FormControl>
                     {showUnitSelector && (
-                      <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+                      <Select value={selectedUnit} onValueChange={setSelectedUnit} disabled={isSubmitting}>
                           <SelectTrigger className="w-[100px]">
                               <SelectValue placeholder="Unidade" />
                           </SelectTrigger>
@@ -212,9 +214,9 @@ function RecyclingCard({ category }: { category: typeof recyclableCategories[0] 
             <Button
               type="submit"
               className="w-full font-bold"
-              disabled={form.formState.isSubmitting}
+              disabled={isSubmitting}
             >
-              {form.formState.isSubmitting ? "Salvando..." : "Salvar Registro"}
+              {isSubmitting ? "Salvando..." : "Salvar Registro"}
             </Button>
           </form>
         </Form>
