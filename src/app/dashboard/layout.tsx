@@ -10,6 +10,7 @@ import {
   UserCircle,
   Recycle,
   BarChart,
+  Bot,
 } from "lucide-react";
 import { ReactNode, useEffect } from "react";
 import { getAuth, signOut } from "firebase/auth";
@@ -34,6 +35,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Visão Geral" },
   { href: "/dashboard/log", icon: PlusCircle, label: "Registrar Reciclagem" },
+  { href: "/dashboard/recycling-chatbot", icon: Bot, label: "Chatbot de Reciclagem" },
   { href: "/dashboard/rankings", icon: BarChart, label: "Rankings" },
   { href: "/dashboard/rewards", icon: Trophy, label: "Resgatar Prêmios" },
   { href: "/dashboard/profile", icon: UserCircle, label: "Perfil" },
