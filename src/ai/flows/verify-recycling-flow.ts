@@ -56,25 +56,30 @@ const prompt = ai.definePrompt({
   name: 'verifyRecyclingPrompt',
   input: { schema: VerifyRecyclingInputSchema },
   output: { schema: VerifyRecyclingOutputSchema },
-  prompt: `You are an AI assistant for the Recycle+ app. Your task is to verify a user's recycling submission.
+  prompt: `You are a strict AI assistant for the Recycle+ app. Your task is to verify a user's recycling submission to prevent fraud.
 
 You will be given a photo and a user's description of what they are recycling.
 
 Your task is to:
-1. Analyze the image to identify the primary material being recycled.
-2. Compare your finding with the user's description: {{{description}}}.
-3. Determine if the submission is valid. It's valid if the image clearly shows recyclable materials.
-4. The main material types are: Plástico, Papel, Vidro, Metal. If you cannot determine the type or it's something else, classify it as 'Outros'.
-5. Based on the identified material, assign points. Here is the point system:
-   - Plástico: 20 points
-   - Papel: 15 points
-   - Vidro: 10 points
-   - Metal: 75 points
-   - Outros: 5 points
-   If the submission is invalid, award 0 points.
-6. Provide a concise, friendly, one-sentence comment in Portuguese explaining your decision. For example, if it's valid, say "Ótima reciclagem! Itens de plástico verificados.". If it's invalid (e.g., a photo of a cat), say "Hmm, isso não parece ser um item reciclável.".
+1.  **Analyze the image and description with high scrutiny.** The user's description is: {{{description}}}.
+2.  **Determine if the submission is valid.** A submission is valid ONLY if the image CLEARLY shows multiple recyclable items or a clear context of recycling (e.g., a bag full of recyclables).
+    *   **INVALIDATE submissions that look like fraud.** A single item photographed perfectly might be a stock photo or a repeated submission. Be suspicious. If it's just one bottle, it is likely invalid.
+    *   **INVALIDATE non-recyclable items.** The image must contain actual recyclable materials. Photos of people, animals, landscapes, computer screens, or anything that is not a physical item for recycling are invalid.
+3.  **Identify the primary material.** The main material types are: Plástico, Papel, Vidro, Metal. If you cannot determine the type or it's something else, classify it as 'Outros'.
+4.  **Assign points based on the identified material.**
+    *   Plástico: 20 points
+    *   Papel: 15 points
+    *   Vidro: 10 points
+    *   Metal: 75 points
+    *   Outros: 5 points
+    *   **If the submission is invalid, award 0 points.**
+5.  **Provide a concise, friendly, one-sentence comment in Portuguese explaining your decision.**
+    *   For a valid submission (e.g., several plastic bottles): "Ótima reciclagem! Vários itens de plástico verificados."
+    *   For an invalid submission (e.g., a photo of a cat): "Hmm, isso não parece ser um item reciclável. Por favor, tire uma foto dos seus recicláveis."
+    *   For a suspicious submission (e.g., one single bottle): "Para evitar fraudes, por favor, mostre vários itens juntos na foto."
+    *   If paper is claimed but not clearly visible: "Não consegui identificar o papel na foto. Tente tirar uma foto mais clara dos itens."
 
-Analyze the attached photo and fulfill the request.
+Analyze the attached photo and fulfill the request with these strict rules.
 
 User's description: {{{description}}}
 Photo: {{media url=photoDataUri}}
@@ -92,5 +97,3 @@ const verifyRecyclingFlow = ai.defineFlow(
     return output!;
   }
 );
-
-    
