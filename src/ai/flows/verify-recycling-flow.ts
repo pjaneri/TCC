@@ -10,9 +10,6 @@ const VerifyRecyclingInputSchema = z.object({
     .describe(
       "A photo of the recycling items, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
-  description: z
-    .string()
-    .describe('A user-provided description of the items being recycled.'),
 });
 export type VerifyRecyclingInput = z.infer<typeof VerifyRecyclingInputSchema>;
 
@@ -20,7 +17,7 @@ const VerifyRecyclingOutputSchema = z.object({
   isValid: z
     .boolean()
     .describe(
-      'Whether the recycling submission is considered valid based on the image and description.'
+      'Whether the recycling submission is considered valid based on the image.'
     ),
   material: z
     .enum(['Plástico', 'Papel', 'Vidro', 'Metal', 'Outros'])
@@ -48,12 +45,12 @@ const prompt = ai.definePrompt({
   name: 'verifyRecyclingPrompt',
   input: { schema: VerifyRecyclingInputSchema },
   output: { schema: VerifyRecyclingOutputSchema },
-  prompt: `Você é um assistente de IA para o aplicativo Recycle+. Sua tarefa é verificar uma submissão de reciclagem de um usuário com base em uma foto e uma descrição.
+  prompt: `Você é um assistente de IA para o aplicativo Recycle+. Sua tarefa é verificar uma submissão de reciclagem de um usuário com base em uma foto.
 
-Você receberá uma foto e a descrição do usuário sobre o que ele está reciclando.
+Você receberá uma foto do que o usuário está reciclando.
 
 Sua tarefa é:
-1.  **Analisar a imagem e a descrição.** A descrição do usuário é: {{{description}}}. A imagem é a principal fonte de verdade.
+1.  **Analisar a imagem.** A imagem é a única fonte de verdade.
 2.  **Determinar se a submissão é válida.** Uma submissão é válida se a imagem contiver pelo menos um item físico e reciclável claro. A submissão deve focar em um único tipo de material (ex: só plásticos, só papéis).
 3.  **Identificar o material principal.** Com base nos itens na foto, identifique o principal tipo de material. As opções são: 'Plástico', 'Papel', 'Vidro', 'Metal'. Se você não puder determinar o tipo ou for uma mistura, classifique como 'Outros'.
 4.  **Tentar detectar duplicatas.** Analise o contexto da foto (fundo, iluminação, ângulo do item). Se a imagem parecer ser uma foto de tela, uma imagem de banco de imagens, ou idêntica a uma submissão que seria feita em série (ex: mesma garrafa em fundos diferentes), considere-a inválida.
@@ -72,7 +69,6 @@ Sua tarefa é:
 
 Analise a foto anexada e cumpra a solicitação com estas regras.
 
-User's description: {{{description}}}
 Photo: {{media url=photoDataUri}}
 `,
 });

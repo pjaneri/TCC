@@ -13,15 +13,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import {
   type VerifyRecyclingOutput,
@@ -32,11 +23,8 @@ import { collection, doc, runTransaction, serverTimestamp } from 'firebase/fires
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Image from 'next/image';
 
-const verifyRecyclingSchema = z.object({
-  description: z
-    .string()
-    .min(1, 'Please enter a description of what you are recycling.'),
-});
+// Schema is now empty as we removed the description field
+const verifyRecyclingSchema = z.object({});
 
 type VerifyRecyclingFormValues = z.infer<typeof verifyRecyclingSchema>;
 
@@ -56,9 +44,6 @@ export default function VerifyRecyclingPage() {
 
   const form = useForm<VerifyRecyclingFormValues>({
     resolver: zodResolver(verifyRecyclingSchema),
-    defaultValues: {
-      description: '',
-    },
   });
 
   const getCameraPermission = useCallback(async () => {
@@ -131,7 +116,7 @@ export default function VerifyRecyclingPage() {
     getCameraPermission(); // Re-initialize camera
   };
 
-  const onSubmit = async (data: VerifyRecyclingFormValues) => {
+  const onSubmit = async () => {
     if (!photoDataUri) {
       toast({
         variant: 'destructive',
@@ -147,7 +132,6 @@ export default function VerifyRecyclingPage() {
     try {
       const result = await verifyRecycling({
         photoDataUri: photoDataUri,
-        description: data.description,
       });
       setVerificationResult(result);
     } catch (e: any) {
@@ -300,30 +284,13 @@ export default function VerifyRecyclingPage() {
         )}
 
         {photoDataUri && !verificationResult && (
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>O que você está reciclando?</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Ex: 5 garrafas PET, 3 latas de alumínio"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <div className="flex flex-col space-y-4">
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={resetCapture} type="button">
                   <X className="mr-2" />
                   Tirar Outra
                 </Button>
-                <Button type="submit" disabled={isVerifying}>
+                <Button onClick={onSubmit} disabled={isVerifying}>
                   {isVerifying ? (
                     <Loader2 className="mr-2 animate-spin" />
                   ) : (
@@ -332,8 +299,7 @@ export default function VerifyRecyclingPage() {
                   Verificar com IA
                 </Button>
               </div>
-            </form>
-          </Form>
+          </div>
         )}
         
         {isVerifying && (
