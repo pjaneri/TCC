@@ -13,7 +13,6 @@ import {
   signInWithRedirect,
   GoogleAuthProvider,
   getRedirectResult,
-  signInWithPopup,
   User,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
@@ -66,7 +65,7 @@ export default function LoginPage() {
   const { user, isUserLoading } = useUser();
   const auth = getAuth();
   const firestore = useFirestore();
-  const [isCheckingRedirect, setIsCheckingRedirect] = useState(true);
+  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -93,41 +92,34 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider();
-    try {
-      const result = await signInWithPopup(auth, provider);
-      if (result && result.user) {
-        await checkAndCreateUserProfile(result.user);
-      }
-    } catch (error) {
-       console.error("Google Sign In Error:", error);
-        toast({
-          variant: "destructive",
-          title: "Erro de autenticação",
-          description: "Não foi possível fazer login com o Google.",
-        });
-    }
+    await signInWithRedirect(auth, provider);
   };
-
+  
   useEffect(() => {
-    // This effect handles the user being redirected back from Google in a standalone window
     getRedirectResult(auth)
       .then(async (result) => {
         if (result && result.user) {
           await checkAndCreateUserProfile(result.user);
+          // router.replace will be handled by the next useEffect
         }
       })
       .catch((error) => {
-        // This error can happen if the user closes the popup or if there's a network issue.
-        // We can often ignore it unless we need to provide specific feedback.
-        console.error("Google Sign In Redirect Error:", error);
-      }).finally(() => {
-        setIsCheckingRedirect(false);
+        // Only show a toast if it's an error other than the user closing the popup
+        if (error.code !== 'auth/popup-closed-by-user') {
+          console.error("Google Sign In Error:", error);
+          toast({
+            variant: "destructive",
+            title: "Erro de autenticação",
+            description: "Não foi possível fazer login com o Google.",
+          });
+        }
+      })
+      .finally(() => {
+        setIsProcessingRedirect(false);
       });
   }, [auth, firestore, toast]);
 
-
   useEffect(() => {
-    // This effect handles redirecting a logged-in user to the dashboard
     if (!isUserLoading && user) {
       router.replace("/dashboard");
     }
@@ -155,7 +147,7 @@ export default function LoginPage() {
     }
   };
 
-  if (isUserLoading || user) {
+  if (isUserLoading || isProcessingRedirect || user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-2">
@@ -165,7 +157,6 @@ export default function LoginPage() {
       </div>
     );
   }
-
 
   return (
     <AuthLayout>
