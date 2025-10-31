@@ -95,6 +95,7 @@ export default function LoginPage() {
       .then(async (result) => {
         if (result && result.user) {
           await checkAndCreateUserProfile(result.user);
+          // O hook `useUser` vai detectar a mudança e o useEffect abaixo cuidará do redirecionamento
         }
       })
       .catch((error) => {
@@ -142,7 +143,9 @@ export default function LoginPage() {
     }
   };
 
-  if (isUserLoading || isProcessingRedirect) {
+  const showLoader = isUserLoading || isProcessingRedirect;
+
+  if (showLoader) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-2">
@@ -153,9 +156,8 @@ export default function LoginPage() {
     );
   }
 
+  // Não renderiza o formulário se o usuário já estiver logado mas o redirect ainda não aconteceu
   if (user) {
-    // This case handles the scenario where the user is already logged in but the redirect effect hasn't fired yet.
-    // It prevents the login page from flashing.
     return (
         <div className="flex h-screen w-full items-center justify-center bg-background">
           <div className="flex flex-col items-center gap-2">
