@@ -10,9 +10,8 @@ import {
   signInWithEmailAndPassword,
   getAuth,
   AuthError,
-  signInWithRedirect,
+  signInWithPopup,
   GoogleAuthProvider,
-  getRedirectResult,
   User,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
@@ -65,7 +64,6 @@ export default function LoginPage() {
   const { user, isUserLoading } = useUser();
   const auth = getAuth();
   const firestore = useFirestore();
-  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -92,32 +90,21 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider();
-    await signInWithRedirect(auth, provider);
+    try {
+      const result = await signInWithPopup(auth, provider);
+      await checkAndCreateUserProfile(result.user);
+      // The useEffect below will handle the redirect.
+    } catch (error: any) {
+      if (error.code !== 'auth/popup-closed-by-user') {
+        console.error("Google Sign In Error:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro de autenticação",
+          description: "Não foi possível fazer login com o Google.",
+        });
+      }
+    }
   };
-  
-  useEffect(() => {
-    getRedirectResult(auth)
-      .then(async (result) => {
-        if (result && result.user) {
-          await checkAndCreateUserProfile(result.user);
-          // router.replace will be handled by the next useEffect
-        }
-      })
-      .catch((error) => {
-        // Only show a toast if it's an error other than the user closing the popup
-        if (error.code !== 'auth/popup-closed-by-user') {
-          console.error("Google Sign In Error:", error);
-          toast({
-            variant: "destructive",
-            title: "Erro de autenticação",
-            description: "Não foi possível fazer login com o Google.",
-          });
-        }
-      })
-      .finally(() => {
-        setIsProcessingRedirect(false);
-      });
-  }, [auth, firestore, toast]);
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -147,7 +134,7 @@ export default function LoginPage() {
     }
   };
 
-  if (isUserLoading || isProcessingRedirect || user) {
+  if (isUserLoading || user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-2">
