@@ -9,9 +9,8 @@ import {
   signInWithEmailAndPassword,
   getAuth,
   AuthError,
-  signInWithRedirect,
+  signInWithPopup,
   GoogleAuthProvider,
-  getRedirectResult,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 
@@ -73,45 +72,10 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-    if (isUserLoading) {
-        return; // Wait until user loading is finished
+    if (!isUserLoading && user) {
+      router.replace("/dashboard");
     }
-
-    if (user) {
-        router.replace("/dashboard");
-        return;
-    }
-    
-    // Process Google redirect result only if not loading and no user
-    getRedirectResult(auth)
-      .then(async (result) => {
-        if (result && result.user) {
-          const user = result.user;
-          const userDocRef = doc(firestore, "users", user.uid);
-          const userDoc = await getDoc(userDocRef);
-
-          if (!userDoc.exists()) {
-            await setDoc(userDocRef, {
-              id: user.uid,
-              username: user.displayName || 'Usuário Google',
-              email: user.email,
-              registrationDate: serverTimestamp(),
-              totalPoints: 0,
-            });
-          }
-          // The onAuthStateChanged listener will handle the redirect to dashboard
-          // so we don't need to do it here.
-        }
-      })
-      .catch((error) => {
-        console.error("Redirect Result Error:", error);
-        toast({
-          variant: "destructive",
-          title: "Erro de autenticação",
-          description: "Não foi possível completar o login com o Google.",
-        });
-      });
-  }, [user, isUserLoading, router, auth, firestore, toast]);
+  }, [user, isUserLoading, router]);
 
   const onSubmit = async (data: LoginFormValues) => {
     try {
@@ -137,7 +101,33 @@ export default function LoginPage() {
 
   const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider();
-    await signInWithRedirect(auth, provider);
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+
+      // Check if user exists in Firestore
+      const userDocRef = doc(firestore, "users", user.uid);
+      const userDoc = await getDoc(userDocRef);
+
+      if (!userDoc.exists()) {
+        // Create user profile if it doesn't exist
+        await setDoc(userDocRef, {
+          id: user.uid,
+          username: user.displayName || 'Usuário Google',
+          email: user.email,
+          registrationDate: serverTimestamp(),
+          totalPoints: 0,
+        });
+      }
+      // Let the onAuthStateChanged listener handle the redirect
+    } catch (error) {
+      console.error("Google Sign In Error:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro de autenticação",
+        description: "Não foi possível fazer login com o Google.",
+      });
+    }
   };
 
   if (isUserLoading || user) {
