@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -39,7 +40,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore } from "@/firebase";
 import { useEffect, useState } from "react";
 import { Separator } from "@/components/ui/separator";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Loader2 } from "lucide-react";
 
 const loginSchema = z.object({
@@ -277,3 +278,5 @@ export default function LoginPage() {
     </AuthLayout>
   );
 }
+
+    
