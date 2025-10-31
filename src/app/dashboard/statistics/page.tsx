@@ -22,7 +22,7 @@ import {
 import { Loader2, Recycle } from 'lucide-react';
 import { parseISO } from 'date-fns';
 
-const COLORS = {
+const COLORS: { [key: string]: string } = {
   "Plástico": "hsl(var(--chart-1))",
   "Papel": "hsl(var(--chart-2))",
   "Vidro": "hsl(var(--chart-3))",
@@ -113,11 +113,11 @@ export default function StatisticsPage() {
                 fill="#8884d8"
                 dataKey="value"
               >
-                {stats.materialDistribution.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[entry.name as keyof typeof COLORS]} />
+                {stats.materialDistribution.map((entry) => (
+                  <Cell key={`cell-${entry.name}`} fill={COLORS[entry.name]} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value) => `${(value as number).toLocaleString('pt-BR')}`}/>
+              <Tooltip formatter={(value, name) => [`${(value as number).toLocaleString('pt-BR')}`, name]}/>
               <Legend />
             </RechartsPieChart>
           </ResponsiveContainer>
