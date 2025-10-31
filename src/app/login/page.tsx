@@ -12,6 +12,7 @@ import {
   signInWithRedirect,
   GoogleAuthProvider,
   getRedirectResult,
+  signInWithPopup,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 
@@ -38,7 +39,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore } from "@/firebase";
 import { useEffect, useState } from "react";
 import { Separator } from "@/components/ui/separator";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Loader2 } from "lucide-react";
 
 const loginSchema = z.object({
@@ -72,14 +73,52 @@ export default function LoginPage() {
       password: "",
     },
   });
-  
+
   const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider();
-    await signInWithRedirect(auth, provider);
+    
+    // Detect if running in an iframe (like Studio) or a standalone window
+    const inIframe = window.self !== window.top;
+
+    try {
+      let result;
+      if (inIframe) {
+        // Use popup for iframe environments
+        result = await signInWithPopup(auth, provider);
+      } else {
+        // Use redirect for standalone windows/tabs
+        await signInWithRedirect(auth, provider);
+        // signInWithRedirect doesn't return a result here, it's handled by getRedirectResult
+        return;
+      }
+      
+      if (result && result.user) {
+        const user = result.user;
+        const userDocRef = doc(firestore, "users", user.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (!userDoc.exists()) {
+          await setDoc(userDocRef, {
+            id: user.uid,
+            username: user.displayName || 'Usuário Google',
+            email: user.email,
+            registrationDate: serverTimestamp(),
+            totalPoints: 0,
+          });
+        }
+      }
+    } catch (error) {
+       console.error("Google Sign In Error:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro de autenticação",
+          description: "Não foi possível fazer login com o Google.",
+        });
+    }
   };
 
   useEffect(() => {
-    // This effect handles the user being redirected back from Google
+    // This effect handles the user being redirected back from Google in a standalone window
     getRedirectResult(auth)
       .then(async (result) => {
         if (result && result.user) {
