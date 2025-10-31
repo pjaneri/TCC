@@ -19,7 +19,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { Loader2, Recycle, Package } from 'lucide-react';
+import { Loader2, Recycle } from 'lucide-react';
 import { parseISO } from 'date-fns';
 
 const COLORS = {
@@ -54,15 +54,12 @@ export default function StatisticsPage() {
     if (!records || records.length === 0) {
       return {
         materialDistribution: [],
-        totalItems: 0,
       };
     }
 
     const materialMap = new Map<string, number>();
-    let totalItems = 0;
     records.forEach((record) => {
       materialMap.set(record.materialType, (materialMap.get(record.materialType) || 0) + record.quantity);
-      totalItems += record.quantity;
     });
 
     const materialDistribution = Array.from(materialMap.entries()).map(([name, value]) => ({
@@ -70,7 +67,7 @@ export default function StatisticsPage() {
       value,
     }));
 
-    return { materialDistribution, totalItems };
+    return { materialDistribution };
   }, [records]);
 
 
@@ -96,20 +93,6 @@ export default function StatisticsPage() {
 
   return (
     <div className="grid gap-6">
-        <div className="grid gap-4 md:grid-cols-1">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Package className="h-5 w-5 text-primary" />
-                        <span>Total de Itens Reciclados</span>
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-4xl font-bold">{stats.totalItems.toLocaleString('pt-BR')}</p>
-                </CardContent>
-            </Card>
-        </div>
-
       <Card>
         <CardHeader>
           <CardTitle>Distribuição de Materiais</CardTitle>
@@ -117,7 +100,7 @@ export default function StatisticsPage() {
             A proporção de cada tipo de material que você reciclou.
           </CardDescription>
         </CardHeader>
-        <CardContent className="h-80">
+        <CardContent className="h-96">
           <ResponsiveContainer width="100%" height="100%">
             <RechartsPieChart>
               <Pie
@@ -126,7 +109,7 @@ export default function StatisticsPage() {
                 cy="50%"
                 labelLine={false}
                 label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                outerRadius={80}
+                outerRadius={120}
                 fill="#8884d8"
                 dataKey="value"
               >
@@ -140,7 +123,6 @@ export default function StatisticsPage() {
           </ResponsiveContainer>
         </CardContent>
       </Card>
-      
     </div>
   );
 }
