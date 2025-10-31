@@ -14,6 +14,7 @@ import {
   GoogleAuthProvider,
   getRedirectResult,
   signInWithPopup,
+  User,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 
@@ -75,38 +76,27 @@ export default function LoginPage() {
     },
   });
 
+  const checkAndCreateUserProfile = async (user: User) => {
+    const userDocRef = doc(firestore, "users", user.uid);
+    const userDoc = await getDoc(userDocRef);
+
+    if (!userDoc.exists()) {
+      await setDoc(userDocRef, {
+        id: user.uid,
+        username: user.displayName || 'Usuário Google',
+        email: user.email,
+        registrationDate: serverTimestamp(),
+        totalPoints: 0,
+      });
+    }
+  };
+
   const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider();
-    
-    // Detect if running in an iframe (like Studio) or a standalone window
-    const inIframe = window.self !== window.top;
-
     try {
-      let result;
-      if (inIframe) {
-        // Use popup for iframe environments
-        result = await signInWithPopup(auth, provider);
-      } else {
-        // Use redirect for standalone windows/tabs
-        await signInWithRedirect(auth, provider);
-        // signInWithRedirect doesn't return a result here, it's handled by getRedirectResult
-        return;
-      }
-      
+      const result = await signInWithPopup(auth, provider);
       if (result && result.user) {
-        const user = result.user;
-        const userDocRef = doc(firestore, "users", user.uid);
-        const userDoc = await getDoc(userDocRef);
-
-        if (!userDoc.exists()) {
-          await setDoc(userDocRef, {
-            id: user.uid,
-            username: user.displayName || 'Usuário Google',
-            email: user.email,
-            registrationDate: serverTimestamp(),
-            totalPoints: 0,
-          });
-        }
+        await checkAndCreateUserProfile(result.user);
       }
     } catch (error) {
        console.error("Google Sign In Error:", error);
@@ -123,28 +113,13 @@ export default function LoginPage() {
     getRedirectResult(auth)
       .then(async (result) => {
         if (result && result.user) {
-          const user = result.user;
-          const userDocRef = doc(firestore, "users", user.uid);
-          const userDoc = await getDoc(userDocRef);
-
-          if (!userDoc.exists()) {
-            await setDoc(userDocRef, {
-              id: user.uid,
-              username: user.displayName || 'Usuário Google',
-              email: user.email,
-              registrationDate: serverTimestamp(),
-              totalPoints: 0,
-            });
-          }
+          await checkAndCreateUserProfile(result.user);
         }
       })
       .catch((error) => {
+        // This error can happen if the user closes the popup or if there's a network issue.
+        // We can often ignore it unless we need to provide specific feedback.
         console.error("Google Sign In Redirect Error:", error);
-        toast({
-          variant: "destructive",
-          title: "Erro de autenticação",
-          description: "Não foi possível fazer login com o Google.",
-        });
       }).finally(() => {
         setIsCheckingRedirect(false);
       });
@@ -180,7 +155,7 @@ export default function LoginPage() {
     }
   };
 
-  if (isUserLoading || user || isCheckingRedirect) {
+  if (isUserLoading || user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-2">
