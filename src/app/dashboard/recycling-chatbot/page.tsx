@@ -29,7 +29,7 @@ import {
 } from '@/ai/flows/verify-recycling-flow';
 import { Loader2, Camera, Send, CheckCircle, XCircle } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { useUser, useFirestore } from '@/firebase';
+import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { collection, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 
 const formSchema = z.object({
@@ -146,7 +146,19 @@ export default function RecyclingChatbotPage() {
         const recyclingLogColRef = collection(userDocRef, "recycling_records");
         const newRecordRef = doc(recyclingLogColRef);
         
-        await runTransaction(firestore, async (transaction) => {
+        const newRecordData = {
+          id: newRecordRef.id,
+          userId: user.uid,
+          materialType: result.materialType,
+          quantity: -1, // Quantity is in the description
+          unit: 'N/A',
+          recyclingDate: serverTimestamp(),
+          pointsEarned: result.pointsAwarded,
+          imageUrl: photoDataUri, // For now, storing the data URI. In a real app, upload to storage first.
+          description: data.description,
+        };
+
+        runTransaction(firestore, async (transaction) => {
             const userDoc = await transaction.get(userDocRef);
             if (!userDoc.exists()) {
                 throw "Usuário não encontrado.";
@@ -156,17 +168,14 @@ export default function RecyclingChatbotPage() {
             const newTotalPoints = currentPoints + result.pointsAwarded;
             
             transaction.update(userDocRef, { totalPoints: newTotalPoints });
-            transaction.set(newRecordRef, {
-              id: newRecordRef.id,
-              userId: user.uid,
-              materialType: result.materialType,
-              quantity: -1, // Quantity is in the description
-              unit: 'N/A',
-              recyclingDate: serverTimestamp(),
-              pointsEarned: result.pointsAwarded,
-              imageUrl: photoDataUri, // For now, storing the data URI. In a real app, upload to storage first.
-              description: data.description,
+            transaction.set(newRecordRef, newRecordData);
+        }).catch(e => {
+            const permissionError = new FirestorePermissionError({
+                path: newRecordRef.path,
+                operation: 'create',
+                requestResourceData: newRecordData
             });
+            errorEmitter.emit('permission-error', permissionError);
         });
 
         toast({
@@ -186,7 +195,6 @@ export default function RecyclingChatbotPage() {
       setVerificationResult({
         isValid: false,
         reason: 'Ocorreu um erro no sistema. Tente novamente mais tarde.',
-        pointsAwarded: 0,
         materialType: 'Desconhecido',
       })
     } finally {

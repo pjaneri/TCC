@@ -72,7 +72,7 @@ service cloud.firestore {
      * @allow (get, list, create, update, delete) Only the owner can manage their records.
      */
     match /users/{userId}/recycling_records/{recordId} {
-      allow get, list, create, update, delete: if isOwner(userId);
+      allow read, write: if isOwner(userId);
     }
 
     /**
