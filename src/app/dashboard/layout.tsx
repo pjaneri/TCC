@@ -123,7 +123,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 <AvatarImage src={user?.photoURL || undefined} alt={user?.displayName || 'User'}/>
                 <AvatarFallback>{user?.displayName?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
               </Avatar>
-              <span className="hidden text-sm font-medium md:block">{user?.displayName}</span>
+              <span className="hidden text-sm md:block">{user?.displayName}</span>
             </div>
           </div>
         </header>
