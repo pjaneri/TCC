@@ -11,7 +11,7 @@ import {
   AuthError,
   updateProfile,
 } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -77,7 +77,7 @@ export default function SignupPage() {
         id: user.uid,
         username: data.username,
         email: data.email,
-        registrationDate: new Date().toISOString(),
+        registrationDate: serverTimestamp(),
         totalPoints: 0,
       });
 

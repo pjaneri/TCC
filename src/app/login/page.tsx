@@ -13,7 +13,7 @@ import {
   GoogleAuthProvider,
   getRedirectResult,
 } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -36,7 +36,7 @@ import { Input, PasswordInput } from "@/components/ui/input";
 import { AuthLayout } from "@/components/auth-layout";
 import { useToast } from "@/hooks/use-toast";
 import { useUser, useFirestore } from "@/firebase";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/theme-toggle";
 
@@ -63,7 +63,6 @@ export default function LoginPage() {
   const { user, isUserLoading } = useUser();
   const auth = getAuth();
   const firestore = useFirestore();
-  const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -74,40 +73,44 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-    if (!isUserLoading) {
-      if (user) {
-        router.replace("/dashboard");
-      } else {
-        // Not logged in, check for redirect result from Google
-        getRedirectResult(auth).then(async (result) => {
-            if (result && result.user) {
-                const user = result.user;
-                const userDocRef = doc(firestore, "users", user.uid);
-                const userDoc = await getDoc(userDocRef);
-
-                if (!userDoc.exists()) {
-                    await setDoc(userDocRef, {
-                        id: user.uid,
-                        username: user.displayName || 'Usuário Google',
-                        email: user.email,
-                        registrationDate: new Date().toISOString(),
-                        totalPoints: 0,
-                    });
-                }
-                // The onAuthStateChanged listener will handle the redirect to dashboard
-            }
-            setIsAuthLoading(false); // Finished checking for redirect
-        }).catch((error) => {
-            console.error("Redirect Result Error:", error);
-            setIsAuthLoading(false);
-            toast({
-                variant: "destructive",
-                title: "Erro de autenticação",
-                description: "Não foi possível completar o login com o Google.",
-            });
-        });
-      }
+    if (isUserLoading) {
+        return; // Wait until user loading is finished
     }
+
+    if (user) {
+        router.replace("/dashboard");
+        return;
+    }
+    
+    // Process Google redirect result only if not loading and no user
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (result && result.user) {
+          const user = result.user;
+          const userDocRef = doc(firestore, "users", user.uid);
+          const userDoc = await getDoc(userDocRef);
+
+          if (!userDoc.exists()) {
+            await setDoc(userDocRef, {
+              id: user.uid,
+              username: user.displayName || 'Usuário Google',
+              email: user.email,
+              registrationDate: serverTimestamp(),
+              totalPoints: 0,
+            });
+          }
+          // The onAuthStateChanged listener will handle the redirect to dashboard
+          // so we don't need to do it here.
+        }
+      })
+      .catch((error) => {
+        console.error("Redirect Result Error:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro de autenticação",
+          description: "Não foi possível completar o login com o Google.",
+        });
+      });
   }, [user, isUserLoading, router, auth, firestore, toast]);
 
   const onSubmit = async (data: LoginFormValues) => {
@@ -137,7 +140,7 @@ export default function LoginPage() {
     await signInWithRedirect(auth, provider);
   };
 
-  if (isUserLoading || user || isAuthLoading) {
+  if (isUserLoading || user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <p>Carregando...</p>
