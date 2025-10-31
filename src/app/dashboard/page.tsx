@@ -1,9 +1,8 @@
 
 "use client";
 
-import { useMemo, useState } from "react";
-import Image from "next/image";
-import { Coins, Package, FileText, GlassWater, Wrench, Gift, Image as ImageIcon } from "lucide-react";
+import { useMemo } from "react";
+import { Coins, Package, FileText, GlassWater, Wrench, Gift } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -24,13 +23,6 @@ import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from "@
 import { collection, query, orderBy, limit, doc, Timestamp } from "firebase/firestore";
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 
 const materialIcons: { [key: string]: React.ElementType } = {
   "Plástico": Package,
@@ -131,7 +123,6 @@ export default function DashboardPage() {
                 <TableHead>Item</TableHead>
                 <TableHead className="hidden sm:table-cell">Detalhes</TableHead>
                 <TableHead className="hidden md:table-cell">Data</TableHead>
-                <TableHead>Comprovante</TableHead>
                 <TableHead className="text-right">Pontos</TableHead>
               </TableRow>
             </TableHeader>
@@ -154,27 +145,6 @@ export default function DashboardPage() {
                         <TableCell className="hidden md:table-cell">
                           {formatDistanceToNow(activityDate, { addSuffix: true, locale: ptBR })}
                         </TableCell>
-                        <TableCell>
-                          {activity.photoUrl ? (
-                             <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <ImageIcon className="h-4 w-4"/>
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent className="max-w-md">
-                                  <DialogHeader>
-                                    <DialogTitle>Comprovante de Reciclagem</DialogTitle>
-                                  </DialogHeader>
-                                  <div className="mt-4">
-                                     <Image src={activity.photoUrl} alt={`Comprovante para ${activity.materialType}`} width={500} height={500} className="rounded-md object-contain"/>
-                                  </div>
-                                </DialogContent>
-                              </Dialog>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">-</span>
-                          )}
-                        </TableCell>
                         <TableCell className="text-right">
                            <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                              +{activity.pointsEarned}
@@ -196,9 +166,6 @@ export default function DashboardPage() {
                       <TableCell className="hidden md:table-cell">
                         {formatDistanceToNow(activityDate, { addSuffix: true, locale: ptBR })}
                       </TableCell>
-                      <TableCell>
-                        <span className="text-xs text-muted-foreground">-</span>
-                      </TableCell>
                       <TableCell className="text-right">
                          <Badge variant="destructive" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
                           -{activity.pointsDeducted}
@@ -211,7 +178,7 @@ export default function DashboardPage() {
               })}
               {(!isLoading && (!combinedActivities || combinedActivities.length === 0)) && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center">Nenhuma atividade recente.</TableCell>
+                  <TableCell colSpan={4} className="text-center">Nenhuma atividade recente.</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -222,6 +189,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-
-    
