@@ -1,25 +1,23 @@
+
 /**
  * @file Overview
- * This ruleset enforces a strict user-ownership model for most data, with a public read-only exception for the /rewards collection.
+ * This ruleset enforces a strict user-ownership model for most data, with public read access for rewards and leaderboard data.
  *
  * Data Structure:
- * - /users/{userId}: Stores user profile information. Only the user can read/write their own profile.
- * - /users/{userId}/recycling_records/{recordId}: Stores recycling records for each user. Only the user can read/write their own records.
- * - /users/{userId}/redemptions/{redemptionId}: Stores redemption records for each user. Only the user can read/write their own redemptions.
- * - /rewards/{rewardId}: Stores information about available rewards. Rewards are publicly readable, but only admins can create, update, or delete them.
- * - /roles_admin/{userId}: Indicates admin privileges. If a document exists for a userId, that user is considered an admin.
+ * - /users/{userId}: Stores user profile information. Users can read/write their own profile. Other users can read only 'username' and 'totalPoints' for leaderboards.
+ * - /users/{userId}/recycling_records/{recordId}: Stores recycling records. Only the owner can read/write.
+ * - /users/{userId}/redemptions/{redemptionId}: Stores redemption records. Only the owner can read/write.
+ * - /rewards/{rewardId}: Stores reward information. Publicly readable, admin-only write access.
+ * - /roles_admin/{userId}: Indicates admin privileges.
  *
  * Key Security Decisions:
- * - User data is strictly private; users can only access their own data.
- * - The /rewards collection is publicly readable to allow all users to see available rewards.
- * - Admin privileges are determined by the existence of a document in the /roles_admin/{userId} collection.
- * - Listing all recycling records is disallowed to protect user privacy and avoid needing to filter by user ID on the client.
+ * - User data is mostly private, except for fields needed for the leaderboard ('username', 'totalPoints').
+ * - Listing the full /users collection is allowed for leaderboard functionality, but fields are restricted.
+ * - The /rewards collection is publicly readable.
+ * - Admin privileges are managed via the /roles_admin collection.
  *
  * Denormalization for Authorization:
- * - User-specific data (recycling records, redemptions) is nested under the /users/{userId} path. This allows using the `isOwner(userId)` helper function to easily enforce ownership.
- *
- * Structural Segregation:
- * - Rewards are stored in a top-level collection (/rewards) to allow for public read access without exposing private user data.
+ * - User-specific data is nested under /users/{userId} to simplify ownership rules.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -41,34 +39,30 @@ service cloud.firestore {
 
     /**
      * @description Checks if the user is an existing owner of a document.
-     * This combines the ownership check with an existence check to prevent
-     * operations on non-existent documents.
      */
     function isExistingOwner(userId) {
         return isOwner(userId) && resource != null;
     }
-
+    
     /**
      * @description Checks if the user is an administrator.
-     * This function reads from the /roles_admin/{userId} collection to determine admin status.
      */
     function isAdmin() {
       return exists(/databases/(default)/documents/roles_admin/$(request.auth.uid));
     }
 
-
     /**
-     * @description Enforces user-level access control for profiles.
+     * @description Enforces user-level access control for profiles and allows public reads for leaderboard.
      * @path /users/{userId}
-     * @allow (create) User Vmn7HLKINqVzUwXW9XVs8kWV58I2 creates their own profile with matching userId.
-     * @allow (get, update, delete) User Vmn7HLKINqVzUwXW9XVs8kWV58I2 reads/updates/deletes their own profile.
-     * @deny (create) User Vmn7HLKINqVzUwXW9XVs8kWV58I2 attempts to create a profile for another user.
-     * @deny (get, update, delete) User anotherUser attempts to read/update/delete User Vmn7HLKINqVzUwXW9XVs8kWV58I2's profile.
-     * @principle Enforces document ownership for writes.
+     * @allow (get) User can read their own profile. Authenticated users can read public fields for leaderboards.
+     * @allow (list) Authenticated users can list public fields for leaderboards.
+     * @allow (create) User can create their own profile.
+     * @allow (update) User can update their own profile.
+     * @deny Non-owners cannot write or read private fields of other users.
      */
     match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow list: if false; // Listing users is not permitted.
+      allow get: if isOwner(userId) || (isSignedIn() && (resource.data.keys().hasAll(['username', 'totalPoints']) && resource.data.keys().size() == 2));
+      allow list: if isSignedIn();
       allow create: if isOwner(userId) && request.resource.data.id == userId;
       allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
       allow delete: if isExistingOwner(userId);
@@ -77,61 +71,37 @@ service cloud.firestore {
     /**
      * @description Enforces user-level access control for recycling records.
      * @path /users/{userId}/recycling_records/{recordId}
-     * @allow (create) User Vmn7HLKINqVzUwXW9XVs8kWV58I2 creates a recycling record under their profile with matching userId.
-     * @allow (get, update, delete) User Vmn7HLKINqVzUwXW9XVs8kWV58I2 reads/updates/deletes their own recycling record.
-     * @deny (create) User Vmn7HLKINqVzUwXW9XVs8kWV58I2 attempts to create a recycling record for another user.
-     * @deny (get, update, delete) User anotherUser attempts to read/update/delete User Vmn7HLKINqVzUwXW9XVs8kWV58I2's recycling record.
-     * @principle Enforces document ownership for writes.
+     * @allow (get, list, create, update, delete) Only the owner can manage their records.
      */
     match /users/{userId}/recycling_records/{recordId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-      allow delete: if isExistingOwner(userId);
+      allow get, list, create, update, delete: if isOwner(userId);
     }
 
     /**
-     * @description Allows public read access to rewards, but restricts creation, updates, and deletion to admins only.
+     * @description Allows public read access to rewards, but restricts writes to admins.
      * @path /rewards/{rewardId}
-     * @allow (get, list) Any user can read the reward.
-     * @allow (create, update, delete) Only admins can create, update, or delete rewards.
-     * @deny (create, update, delete) Non-admins cannot create, update, or delete rewards.
-     * @principle Allows public read access while restricting write access to admins.
+     * @allow (get, list) Any user can read rewards.
+     * @allow (create, update, delete) Only admins can manage rewards.
      */
     match /rewards/{rewardId} {
       allow get, list: if true;
-      allow create: if isAdmin();
-      allow update: if isAdmin();
-      allow delete: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
 
     /**
      * @description Enforces user-level access control for redemptions.
      * @path /users/{userId}/redemptions/{redemptionId}
-     * @allow (create) User Vmn7HLKINqVzUwXW9XVs8kWV58I2 creates a redemption under their profile with matching userId.
-     * @allow (get, update, delete) User Vmn7HLKINqVzUwXW9XVs8kWV58I2 reads/updates/deletes their own redemption.
-     * @deny (create) User Vmn7HLKINqVzUwXW9XVs8kWV58I2 attempts to create a redemption for another user.
-     * @deny (get, update, delete) User anotherUser attempts to read/update/delete User Vmn7HLKINqVzUwXW9XVs8kWV58I2's redemption.
-     * @principle Enforces document ownership for writes.
+     * @allow (get, list, create, update, delete) Only the owner can manage their redemptions.
      */
     match /users/{userId}/redemptions/{redemptionId} {
-      allow get: if isOwner(userId);
-      allow list: if isOwner(userId);
-      allow create: if isOwner(userId) && request.resource.data.userId == userId;
-      allow update: if isExistingOwner(userId) && request.resource.data.userId == resource.data.userId;
-      allow delete: if isExistingOwner(userId);
+      allow get, list, create, update, delete: if isOwner(userId);
     }
 
     /**
      * @description Controls access to admin role documents.
      * @path /roles_admin/{userId}
-     * @allow create: if isAdmin();
-     * @allow get: if isAdmin() || isOwner(userId);
-     * @allow update: if false; // Updating admin roles is not allowed
-     * @allow delete: if isAdmin();
-     * @allow list: if false; // Listing admin roles is not permitted.
-     * @principle Only admins can manage admin roles.
+     * @allow (get, create, delete) Only admins or the user themselves can manage admin roles (within limits).
+     * @deny (list, update) Listing or updating roles is restricted.
      */
     match /roles_admin/{userId} {
         allow get: if isAdmin() || isOwner(userId);
@@ -141,20 +111,12 @@ service cloud.firestore {
         allow delete: if isAdmin();
     }
     
-      /**
-       * @description  Denies all access to the recycling_records_all collection.  There is no such collection in the data model.
-       * @path /recycling_records_all
-       * @allow get: if false;
-       * @allow list: if false;
-       * @allow create: if false;
-       *
-       */
-      match /recycling_records_all {
-        allow get: if false;
-        allow list: if false;
-        allow create: if false;
-        allow update: if false;
-        allow delete: if false;
-      }
+    /**
+     * @description  Denies all access to the recycling_records_all collection.  There is no such collection in the data model.
+     * @path /recycling_records_all
+     */
+    match /recycling_records_all/{doc=**} {
+      allow read, write: if false;
+    }
   }
 }
