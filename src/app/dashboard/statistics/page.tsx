@@ -114,7 +114,7 @@ export default function StatisticsPage() {
                 dataKey="value"
               >
                 {stats.materialDistribution.map((entry) => (
-                  <Cell key={`cell-${entry.name}`} fill={COLORS[entry.name]} />
+                  <Cell key={`cell-${entry.name}`} fill={COLORS[entry.name]} stroke={COLORS[entry.name]} />
                 ))}
               </Pie>
               <Tooltip formatter={(value, name) => [`${(value as number).toLocaleString('pt-BR')}`, name]}/>
