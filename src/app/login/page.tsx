@@ -9,8 +9,9 @@ import {
   signInWithEmailAndPassword,
   getAuth,
   AuthError,
-  signInWithPopup,
+  signInWithRedirect,
   GoogleAuthProvider,
+  getRedirectResult,
 } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 
@@ -62,7 +63,7 @@ export default function LoginPage() {
   const { user, isUserLoading } = useUser();
   const auth = getAuth();
   const firestore = useFirestore();
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -73,15 +74,46 @@ export default function LoginPage() {
   });
 
   useEffect(() => {
-    if (user && !isUserLoading) {
-      router.replace("/dashboard");
+    if (!isUserLoading) {
+      if (user) {
+        router.replace("/dashboard");
+      } else {
+        // Not logged in, check for redirect result from Google
+        getRedirectResult(auth).then(async (result) => {
+            if (result && result.user) {
+                const user = result.user;
+                const userDocRef = doc(firestore, "users", user.uid);
+                const userDoc = await getDoc(userDocRef);
+
+                if (!userDoc.exists()) {
+                    await setDoc(userDocRef, {
+                        id: user.uid,
+                        username: user.displayName || 'Usuário Google',
+                        email: user.email,
+                        registrationDate: new Date().toISOString(),
+                        totalPoints: 0,
+                    });
+                }
+                // The onAuthStateChanged listener will handle the redirect to dashboard
+            }
+            setIsAuthLoading(false); // Finished checking for redirect
+        }).catch((error) => {
+            console.error("Redirect Result Error:", error);
+            setIsAuthLoading(false);
+            toast({
+                variant: "destructive",
+                title: "Erro de autenticação",
+                description: "Não foi possível completar o login com o Google.",
+            });
+        });
+      }
     }
-  }, [user, isUserLoading, router]);
+  }, [user, isUserLoading, router, auth, firestore, toast]);
 
   const onSubmit = async (data: LoginFormValues) => {
     try {
       await signInWithEmailAndPassword(auth, data.email, data.password);
-      router.push("/dashboard");
+      // onAuthStateChanged will handle the redirect
     } catch (error) {
       const authError = error as AuthError;
       let message = "Ocorreu um erro ao fazer login. Tente novamente.";
@@ -101,43 +133,11 @@ export default function LoginPage() {
   };
 
   const handleGoogleSignIn = async () => {
-    setIsGoogleLoading(true);
     const provider = new GoogleAuthProvider();
-    try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
-
-      const userDocRef = doc(firestore, "users", user.uid);
-      const userDoc = await getDoc(userDocRef);
-
-      if (!userDoc.exists()) {
-        await setDoc(userDocRef, {
-          id: user.uid,
-          username: user.displayName || 'Usuário Google',
-          email: user.email,
-          registrationDate: new Date().toISOString(),
-          totalPoints: 0,
-        });
-      }
-
-      router.push("/dashboard");
-    } catch (error) {
-      const authError = error as AuthError;
-      let message = "Não foi possível fazer login com o Google.";
-      if (authError.code !== 'auth/popup-closed-by-user') {
-        console.error("Google Sign-In Error: ", authError);
-         toast({
-            variant: "destructive",
-            title: "Erro de autenticação",
-            description: message,
-        });
-      }
-    } finally {
-        setIsGoogleLoading(false);
-    }
+    await signInWithRedirect(auth, provider);
   };
 
-  if (isUserLoading || user) {
+  if (isUserLoading || user || isAuthLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <p>Carregando...</p>
@@ -194,7 +194,7 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
-               <Button type="submit" className="w-full font-bold" disabled={form.formState.isSubmitting || isGoogleLoading} style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }}>
+               <Button type="submit" className="w-full font-bold" disabled={form.formState.isSubmitting} style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }}>
                 {form.formState.isSubmitting ? "Entrando..." : "Entrar"}
               </Button>
             </CardContent>
@@ -213,8 +213,8 @@ export default function LoginPage() {
         </div>
         
         <CardContent>
-             <Button variant="outline" className="w-full font-bold" onClick={handleGoogleSignIn} disabled={form.formState.isSubmitting || isGoogleLoading}>
-                {isGoogleLoading ? "Carregando..." : <><GoogleIcon className="mr-2 h-4 w-4" /> Google</>}
+             <Button variant="outline" className="w-full font-bold" onClick={handleGoogleSignIn} disabled={form.formState.isSubmitting}>
+                <GoogleIcon className="mr-2 h-4 w-4" /> Google
               </Button>
         </CardContent>
 
