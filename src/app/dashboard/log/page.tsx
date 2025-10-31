@@ -1,24 +1,19 @@
-"use client";
 
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+'use client';
+
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Camera, Loader2, Send, Sparkles, X, Check, FileImage } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+} from '@/components/ui/card';
 import {
   Form,
   FormControl,
@@ -26,56 +21,169 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/components/ui/form";
-import { useToast } from "@/hooks/use-toast";
-import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from "@/firebase";
-import { collection, doc, runTransaction, serverTimestamp } from "firebase/firestore";
-import { Loader2 } from "lucide-react";
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/hooks/use-toast';
+import {
+  type VerifyRecyclingOutput,
+  verifyRecycling,
+} from '@/ai/flows/verify-recycling-flow';
+import { errorEmitter, FirestorePermissionError, useFirestore, useUser } from '@/firebase';
+import { collection, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import Image from 'next/image';
 
-const materialPoints: Record<string, number> = {
-  Plástico: 20,
-  Papel: 15,
-  Vidro: 10,
-  Metal: 75,
-  Outros: 5,
-};
-
-const materials = Object.keys(materialPoints);
-
-const logSchema = z.object({
-  materialType: z.string().min(1, { message: "Selecione o tipo de material." }),
-  quantity: z.coerce.number().min(0.1, { message: "A quantidade deve ser maior que zero." }),
-  unit: z.string().optional().default("un"),
+const verifyRecyclingSchema = z.object({
+  description: z
+    .string()
+    .min(1, 'Please enter a description of what you are recycling.'),
 });
 
-type LogFormValues = z.infer<typeof logSchema>;
+type VerifyRecyclingFormValues = z.infer<typeof verifyRecyclingSchema>;
 
-export default function LogRecyclingPage() {
+export default function VerifyRecyclingPage() {
   const { toast } = useToast();
+  const [photoDataUri, setPhotoDataUri] = useState<string | null>(null);
+  const [isCameraInitializing, setIsCameraInitializing] = useState<boolean>(true);
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const [verificationResult, setVerificationResult] =
+    useState<VerifyRecyclingOutput | null>(null);
+  const [isVerifying, setIsVerifying] = useState<boolean>(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const photoCanvasRef = useRef<HTMLCanvasElement>(null);
+
   const { user } = useUser();
   const firestore = useFirestore();
 
-  const form = useForm<LogFormValues>({
-    resolver: zodResolver(logSchema),
+  const form = useForm<VerifyRecyclingFormValues>({
+    resolver: zodResolver(verifyRecyclingSchema),
     defaultValues: {
-      materialType: "",
-      quantity: 1,
-      unit: "un",
+      description: '',
     },
   });
 
-  const onSubmit = async (data: LogFormValues) => {
-    if (!user || !firestore) {
+  const getCameraPermission = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      setHasCameraPermission(true);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (error) {
+      console.error('Error accessing camera:', error);
+      setHasCameraPermission(false);
+      toast({
+        variant: 'destructive',
+        title: 'Camera Access Denied',
+        description:
+          'Please enable camera permissions in your browser settings to use this feature.',
+      });
+    } finally {
+      setIsCameraInitializing(false);
+    }
+  }, [toast]);
+
+  useEffect(() => {
+    if (!photoDataUri) {
+      getCameraPermission();
+    }
+
+    return () => {
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, [photoDataUri, getCameraPermission]);
+
+  const handleTakePhoto = () => {
+    if (videoRef.current && photoCanvasRef.current) {
+      const video = videoRef.current;
+      const canvas = photoCanvasRef.current;
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const context = canvas.getContext('2d');
+      context?.drawImage(video, 0, 0, video.videoWidth, video.videoHeight);
+      setPhotoDataUri(canvas.toDataURL('image/jpeg'));
+
+      // Stop camera stream after taking photo
+      if (video.srcObject) {
+        const stream = video.srcObject as MediaStream;
+        stream.getTracks().forEach((track) => track.stop());
+      }
+    }
+  };
+  
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPhotoDataUri(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const resetCapture = () => {
+    setPhotoDataUri(null);
+    setVerificationResult(null);
+    form.reset();
+    getCameraPermission(); // Re-initialize camera
+  };
+
+  const onSubmit = async (data: VerifyRecyclingFormValues) => {
+    if (!photoDataUri) {
+      toast({
+        variant: 'destructive',
+        title: 'No photo taken',
+        description: 'Please take a photo of your recycling items.',
+      });
+      return;
+    }
+
+    setIsVerifying(true);
+    setVerificationResult(null);
+
+    try {
+      const result = await verifyRecycling({
+        photoDataUri: photoDataUri,
+        description: data.description,
+      });
+      setVerificationResult(result);
+    } catch (e: any) {
+      console.error(e);
+      toast({
+        variant: 'destructive',
+        title: 'AI Verification Failed',
+        description:
+          e.message || 'The AI could not verify your recycling submission.',
+      });
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleConfirmRecycling = async () => {
+    if (!user || !firestore || !verificationResult || !photoDataUri) {
       toast({
         variant: "destructive",
         title: "Erro",
-        description: "Você precisa estar logado para registrar.",
+        description: "Não foi possível salvar. Verifique se está logado e se a verificação foi concluída.",
       });
       return;
     }
     
-    const pointsEarned = (materialPoints[data.materialType] || 0);
+    if (!verificationResult.isValid) {
+        toast({
+            variant: "destructive",
+            title: "Registro Inválido",
+            description: "Este registro de reciclagem não foi aprovado pela IA.",
+        });
+        return;
+    }
 
+    const { material, points } = verificationResult;
     const userDocRef = doc(firestore, "users", user.uid);
     const recyclingLogColRef = collection(userDocRef, "recycling_records");
     const newRecordRef = doc(recyclingLogColRef);
@@ -83,11 +191,12 @@ export default function LogRecyclingPage() {
     const newRecordData = {
         id: newRecordRef.id,
         userId: user.uid,
-        materialType: data.materialType,
-        quantity: data.quantity,
-        unit: data.unit,
+        materialType: material,
+        quantity: 1, // Assuming 1 batch from photo
         recyclingDate: serverTimestamp(),
-        pointsEarned: pointsEarned,
+        pointsEarned: points,
+        imageUrl: photoDataUri,
+        aiComment: verificationResult.comment,
     };
 
     try {
@@ -98,7 +207,7 @@ export default function LogRecyclingPage() {
             }
 
             const currentPoints = userDoc.data().totalPoints || 0;
-            const newTotalPoints = currentPoints + pointsEarned;
+            const newTotalPoints = currentPoints + points;
             
             transaction.update(userDocRef, { totalPoints: newTotalPoints });
             transaction.set(newRecordRef, newRecordData);
@@ -106,9 +215,9 @@ export default function LogRecyclingPage() {
 
         toast({
             title: "Reciclagem registrada!",
-            description: `Você ganhou ${pointsEarned} pontos.`,
+            description: `Você ganhou ${points} pontos.`,
         });
-        form.reset();
+        resetCapture();
 
     } catch (e) {
          const permissionError = new FirestorePermissionError({
@@ -126,97 +235,149 @@ export default function LogRecyclingPage() {
   };
 
   return (
-    <Card className="w-full max-w-lg mx-auto">
+    <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
-        <CardTitle>Registrar Reciclagem</CardTitle>
+        <CardTitle>Registrar com IA</CardTitle>
         <CardDescription>
-          Selecione o material, a quantidade e salve para ganhar pontos.
+          Tire uma foto dos seus itens recicláveis para que a nossa IA possa
+          verificar e recompensá-lo.
         </CardDescription>
       </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="materialType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo de Material</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um material" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {materials.map((material) => (
-                        <SelectItem key={material} value={material}>
-                          {material}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
+      <CardContent className="space-y-6">
+        <div className="relative aspect-video w-full overflow-hidden rounded-md border bg-muted">
+          {photoDataUri ? (
+            <Image
+              src={photoDataUri}
+              alt="Recycling photo"
+              layout="fill"
+              objectFit="contain"
             />
-            <div className="flex gap-4">
+          ) : (
+            <video
+              ref={videoRef}
+              className="h-full w-full object-cover"
+              autoPlay
+              playsInline
+              muted
+            />
+          )}
+           {isCameraInitializing && !photoDataUri && (
+             <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+               <Loader2 className="h-8 w-8 animate-spin text-white" />
+             </div>
+           )}
+        </div>
+        <canvas ref={photoCanvasRef} className="hidden" />
+        
+        {hasCameraPermission === false && !photoDataUri && (
+          <div className="flex flex-col items-center gap-4 text-center">
+            <Alert variant="destructive">
+              <Camera className="h-4 w-4" />
+              <AlertTitle>Câmera não disponível</AlertTitle>
+              <AlertDescription>
+                Não foi possível acessar sua câmera. Por favor, habilite a permissão no seu navegador ou envie uma foto.
+              </AlertDescription>
+            </Alert>
+            <div className="relative">
+              <Button asChild>
+                <label htmlFor="file-upload">
+                  <FileImage className="mr-2 h-4 w-4" /> Enviar Foto
+                </label>
+              </Button>
+              <input id="file-upload" type="file" accept="image/*" className="sr-only" onChange={handleFileChange} />
+            </div>
+          </div>
+        )}
+        
+        {hasCameraPermission && !photoDataUri && (
+          <Button onClick={handleTakePhoto} className="w-full">
+            <Camera className="mr-2" />
+            Tirar Foto
+          </Button>
+        )}
+
+        {photoDataUri && !verificationResult && (
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
                 control={form.control}
-                name="quantity"
+                name="description"
                 render={({ field }) => (
-                  <FormItem className="flex-1">
-                    <FormLabel>Quantidade</FormLabel>
+                  <FormItem>
+                    <FormLabel>O que você está reciclando?</FormLabel>
                     <FormControl>
-                      <Input type="number" placeholder="Ex: 5" {...field} />
+                      <Input
+                        placeholder="Ex: 5 garrafas PET, 3 latas de alumínio"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-               <FormField
-                control={form.control}
-                name="unit"
-                render={({ field }) => (
-                  <FormItem className="w-24">
-                    <FormLabel>Unidade</FormLabel>
-                     <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                        <SelectTrigger>
-                            <SelectValue />
-                        </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                            <SelectItem value="un">un</SelectItem>
-                            <SelectItem value="kg">kg</SelectItem>
-                            <SelectItem value="g">g</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={resetCapture} type="button">
+                  <X className="mr-2" />
+                  Tirar Outra
+                </Button>
+                <Button type="submit" disabled={isVerifying}>
+                  {isVerifying ? (
+                    <Loader2 className="mr-2 animate-spin" />
+                  ) : (
+                    <Sparkles className="mr-2" />
+                  )}
+                  Verificar com IA
+                </Button>
+              </div>
+            </form>
+          </Form>
+        )}
+        
+        {isVerifying && (
+            <div className="flex flex-col items-center justify-center gap-4 rounded-lg border border-dashed p-8">
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                <p className="font-medium">Nossa IA está analisando sua foto...</p>
+                <p className="text-sm text-muted-foreground">Isso pode levar alguns segundos.</p>
             </div>
-            <Button
-              type="submit"
-              className="w-full font-bold"
-              disabled={form.formState.isSubmitting}
-            >
-              {form.formState.isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Salvando...
-                </>
-              ) : (
-                "Salvar Registro"
+        )}
+
+        {verificationResult && (
+          <div className="space-y-4 rounded-lg border bg-card p-4 shadow-sm">
+            <h3 className="font-semibold text-lg">Resultado da Verificação</h3>
+            {verificationResult.isValid ? (
+              <Alert variant="default" className="border-green-500 bg-green-50 text-green-900 dark:bg-green-950 dark:text-green-200 dark:border-green-700">
+                <Check className="h-4 w-4 !text-green-500" />
+                <AlertTitle>Reciclagem Aprovada!</AlertTitle>
+                <AlertDescription>
+                  Material: <strong>{verificationResult.material}</strong> | Pontos a serem ganhos: <strong>{verificationResult.points}</strong>
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <Alert variant="destructive">
+                <X className="h-4 w-4" />
+                <AlertTitle>Reciclagem Recusada</AlertTitle>
+              </Alert>
+            )}
+            <p className="text-sm text-muted-foreground italic">
+              "{verificationResult.comment}"
+            </p>
+            <div className="flex justify-end gap-2">
+               <Button variant="outline" onClick={resetCapture}>
+                <X className="mr-2" />
+                Cancelar
+              </Button>
+              {verificationResult.isValid && (
+                  <Button onClick={handleConfirmRecycling}>
+                      <Send className="mr-2" />
+                      Confirmar e Salvar
+                  </Button>
               )}
-            </Button>
-          </form>
-        </Form>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
 }
+
+    
