@@ -9,8 +9,6 @@ import {
   Recycle,
   Trophy,
   UserCircle,
-  Shield,
-  BarChart,
 } from "lucide-react";
 import { ReactNode, useEffect } from "react";
 import { getAuth, signOut } from "firebase/auth";
@@ -36,7 +34,6 @@ const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Visão Geral" },
   { href: "/dashboard/log", icon: PlusCircle, label: "Registrar Reciclagem" },
   { href: "/dashboard/rewards", icon: Trophy, label: "Resgatar Prêmios" },
-  { href: "/dashboard/rankings", icon: Shield, label: "Rankings" },
   { href: "/dashboard/profile", icon: UserCircle, label: "Perfil" },
 ];
 
