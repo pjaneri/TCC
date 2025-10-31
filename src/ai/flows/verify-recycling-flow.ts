@@ -33,7 +33,7 @@ const VerifyRecyclingOutputSchema = z.object({
   comment: z
     .string()
     .describe(
-      'A brief comment explaining the decision, especially if the submission is invalid.'
+      'A brief, friendly, one-sentence comment in Portuguese explaining the decision, especially if the submission is invalid.'
     ),
 });
 export type VerifyRecyclingOutput = z.infer<typeof VerifyRecyclingOutputSchema>;
@@ -48,27 +48,29 @@ const prompt = ai.definePrompt({
   name: 'verifyRecyclingPrompt',
   input: { schema: VerifyRecyclingInputSchema },
   output: { schema: VerifyRecyclingOutputSchema },
-  prompt: `You are an AI assistant for the Recycle+ app. Your task is to verify a user's recycling submission based on a photo and a description.
+  prompt: `Você é um assistente de IA para o aplicativo Recycle+. Sua tarefa é verificar uma submissão de reciclagem de um usuário com base em uma foto e uma descrição.
 
-You will be given a photo and a user's description of what they are recycling.
+Você receberá uma foto e a descrição do usuário sobre o que ele está reciclando.
 
-Your task is to:
-1.  **Analyze the image and description.** The user's description is: {{{description}}}. The image is the primary source of truth.
-2.  **Determine if the submission is valid.** A submission is valid if the image contains at least one clear, physical recyclable item. Submissions with non-recyclable items (like animals, people, screenshots) are invalid.
-3.  **Identify the primary material.** Based on the items in the photo, identify the main material type. The options are: 'Plástico', 'Papel', 'Vidro', 'Metal'. If you cannot determine the type or it's a mix without a clear primary one, classify it as 'Outros'.
-4.  **Assign points based on the identified material.**
-    *   Plástico: 20 points
-    *   Papel: 15 points
-    *   Vidro: 10 points
-    *   Metal: 75 points
-    *   Outros: 5 points
-    *   **If the submission is invalid, award 0 points.**
-5.  **Provide a concise, friendly, one-sentence comment in Portuguese explaining your decision.**
-    *   For a valid submission (e.g., plastic bottle and paper): "Ótima reciclagem! Itens de plástico e papel verificados."
-    *   For an invalid submission (e.g., a photo of a cat): "Hmm, isso não parece ser um item reciclável. Por favor, envie uma foto dos seus recicláveis."
-    *   If you identify paper: "Reciclagem de papel verificada. Bom trabalho!"
+Sua tarefa é:
+1.  **Analisar a imagem e a descrição.** A descrição do usuário é: {{{description}}}. A imagem é a principal fonte de verdade.
+2.  **Determinar se a submissão é válida.** Uma submissão é válida se a imagem contiver pelo menos um item físico e reciclável claro. A submissão deve focar em um único tipo de material (ex: só plásticos, só papéis).
+3.  **Identificar o material principal.** Com base nos itens na foto, identifique o principal tipo de material. As opções são: 'Plástico', 'Papel', 'Vidro', 'Metal'. Se você não puder determinar o tipo ou for uma mistura, classifique como 'Outros'.
+4.  **Tentar detectar duplicatas.** Analise o contexto da foto (fundo, iluminação, ângulo do item). Se a imagem parecer ser uma foto de tela, uma imagem de banco de imagens, ou idêntica a uma submissão que seria feita em série (ex: mesma garrafa em fundos diferentes), considere-a inválida.
+5.  **Atribuir pontos com base no material identificado.**
+    *   Plástico: 20 pontos
+    *   Papel: 15 pontos
+    *   Vidro: 10 pontos
+    *   Metal: 75 pontos
+    *   Outros: 5 pontos
+    *   **Se a submissão for inválida (item não reciclável, duplicata suspeita, etc.), atribua 0 pontos.**
+6.  **Fornecer um comentário conciso, amigável e em UMA frase EM PORTUGUÊS explicando sua decisão.**
+    *   Exemplo Válido (garrafas de plástico): "Ótima reciclagem! Itens de plástico verificados com sucesso."
+    *   Exemplo Inválido (foto de um gato): "Hmm, isso não parece ser um item reciclável. Por favor, envie uma foto dos seus recicláveis."
+    *   Exemplo Inválido (suspeita de duplicata): "Esta imagem parece ser muito semelhante a uma submissão anterior. Por favor, envie uma nova foto com itens diferentes."
+    *   Exemplo Inválido (múltiplos materiais): "Detectei múltiplos tipos de materiais. Por favor, envie apenas um tipo de material por vez."
 
-Analyze the attached photo and fulfill the request with these rules.
+Analise a foto anexada e cumpra a solicitação com estas regras.
 
 User's description: {{{description}}}
 Photo: {{media url=photoDataUri}}
@@ -104,3 +106,5 @@ const verifyRecyclingFlow = ai.defineFlow(
     return output!;
   }
 );
+
+    

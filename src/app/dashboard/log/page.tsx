@@ -1,8 +1,7 @@
-
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Camera, Loader2, Send, Sparkles, X, Check, FileImage } from 'lucide-react';
+import { Camera, Loader2, Send, Sparkles, X, Check, FileImage, AlertTriangle } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -136,8 +135,8 @@ export default function VerifyRecyclingPage() {
     if (!photoDataUri) {
       toast({
         variant: 'destructive',
-        title: 'No photo taken',
-        description: 'Please take a photo of your recycling items.',
+        title: 'Nenhuma foto tirada',
+        description: 'Por favor, tire uma foto dos seus itens recicláveis.',
       });
       return;
     }
@@ -155,9 +154,9 @@ export default function VerifyRecyclingPage() {
       console.error(e);
       toast({
         variant: 'destructive',
-        title: 'AI Verification Failed',
+        title: 'Falha na Verificação por IA',
         description:
-          e.message || 'The AI could not verify your recycling submission.',
+          e.message || 'A IA não pôde verificar sua submissão de reciclagem.',
       });
     } finally {
       setIsVerifying(false);
@@ -235,11 +234,19 @@ export default function VerifyRecyclingPage() {
       <CardHeader>
         <CardTitle>Registrar com IA</CardTitle>
         <CardDescription>
-          Tire uma foto dos seus itens recicláveis para que a nossa IA possa
+          Tire uma foto dos seus itens recicláveís para que a nossa IA possa
           verificar e recompensá-lo.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        <Alert variant="default" className="border-amber-500/50 bg-amber-50 text-amber-900 dark:bg-amber-950/30 dark:text-amber-300">
+          <AlertTriangle className="h-4 w-4 !text-amber-500" />
+          <AlertTitle>Atenção</AlertTitle>
+          <AlertDescription>
+            Para uma verificação precisa, envie apenas <strong>um tipo de material</strong> por foto (Ex: apenas plásticos, apenas papéis).
+          </AlertDescription>
+        </Alert>
+
         <div className="relative aspect-video w-full overflow-hidden rounded-md border bg-muted">
           {photoDataUri ? (
             <Image
