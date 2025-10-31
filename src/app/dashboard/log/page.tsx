@@ -195,7 +195,7 @@ export default function VerifyRecyclingPage() {
         quantity: 1, // Assuming 1 batch from photo
         recyclingDate: serverTimestamp(),
         pointsEarned: points,
-        imageUrl: photoDataUri,
+        imageUrl: photoDataUri, // Storing data URI for simplicity
         aiComment: verificationResult.comment,
     };
 
@@ -226,11 +226,7 @@ export default function VerifyRecyclingPage() {
             requestResourceData: newRecordData
         });
         errorEmitter.emit('permission-error', permissionError);
-        toast({
-            variant: "destructive",
-            title: "Erro ao registrar",
-            description: "Não foi possível salvar seu registro. Verifique suas permissões."
-        })
+        // We no longer show a toast here because the error listener will throw it globally.
     }
   };
 
