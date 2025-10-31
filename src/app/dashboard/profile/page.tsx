@@ -210,14 +210,14 @@ export default function ProfilePage() {
 
   return (
     <div className="flex w-full flex-col gap-8">
-        <div className="flex flex-col items-center gap-4 rounded-xl bg-gradient-to-r from-primary to-green-400 p-8 text-primary-foreground md:flex-row">
+        <div className="flex flex-col items-center gap-4 rounded-xl bg-gradient-to-r from-primary to-green-400 p-8 text-primary-foreground text-center md:flex-row md:text-left">
             <Avatar className="h-24 w-24 border-4 border-background/50">
                 <AvatarImage src={user?.photoURL || undefined} />
                 <AvatarFallback className="text-4xl font-bold text-primary">
                 {user?.displayName?.charAt(0).toUpperCase() || 'U'}
                 </AvatarFallback>
             </Avatar>
-            <div className="text-center md:text-left">
+            <div>
                 <h2 className="text-3xl font-bold">{profileForm.watch('username')}</h2>
                 <p className="text-lg opacity-90">{user?.email}</p>
             </div>
@@ -390,5 +390,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    

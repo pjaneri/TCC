@@ -127,7 +127,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
         </header>
-        <main className="flex flex-1 justify-center p-4 md:p-6">
+        <main className="flex flex-1 justify-center p-4 sm:p-6">
           <div className="w-full max-w-4xl animate-fade-in-up" style={{ animationDuration: '0.8s' }}>
             {children}
           </div>
