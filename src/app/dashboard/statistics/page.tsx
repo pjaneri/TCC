@@ -18,15 +18,9 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
 } from 'recharts';
-import { Loader2, Recycle, Sigma, Package } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
+import { Loader2, Recycle, Package } from 'lucide-react';
+import { parseISO } from 'date-fns';
 
 const COLORS = {
   "Plástico": "hsl(var(--chart-1))",
@@ -60,8 +54,6 @@ export default function StatisticsPage() {
     if (!records || records.length === 0) {
       return {
         materialDistribution: [],
-        pointsOverTime: [],
-        totalPoints: 0,
         totalItems: 0,
       };
     }
@@ -78,25 +70,7 @@ export default function StatisticsPage() {
       value,
     }));
 
-    const pointsMap = new Map<string, number>();
-    let accumulatedPoints = 0;
-    records.forEach((record) => {
-        const date = toDate(record.recyclingDate);
-        if(date) {
-            const month = format(date, 'MMM/yy', { locale: ptBR });
-            accumulatedPoints += record.pointsEarned;
-            pointsMap.set(month, accumulatedPoints);
-        }
-    });
-
-    const pointsOverTime = Array.from(pointsMap.entries()).map(([name, points]) => ({
-        name,
-        pontos: points,
-    }));
-    
-    const totalPoints = records.reduce((acc, r) => acc + r.pointsEarned, 0);
-
-    return { materialDistribution, pointsOverTime, totalPoints, totalItems };
+    return { materialDistribution, totalItems };
   }, [records]);
 
 
@@ -122,18 +96,7 @@ export default function StatisticsPage() {
 
   return (
     <div className="grid gap-6">
-        <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Sigma className="h-5 w-5 text-primary" />
-                        <span>Total de Pontos Acumulados</span>
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-4xl font-bold">{stats.totalPoints.toLocaleString('pt-BR')}</p>
-                </CardContent>
-            </Card>
+        <div className="grid gap-4 md:grid-cols-1">
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -178,26 +141,6 @@ export default function StatisticsPage() {
         </CardContent>
       </Card>
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Evolução dos Pontos</CardTitle>
-          <CardDescription>
-            Seu acúmulo de pontos de reciclagem ao longo do tempo.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={stats.pointsOverTime} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Line type="monotone" dataKey="pontos" stroke="hsl(var(--primary))" strokeWidth={2} activeDot={{ r: 8 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
     </div>
   );
 }
