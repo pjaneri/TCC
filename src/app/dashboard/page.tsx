@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   Coins,
   Package,
@@ -8,6 +8,8 @@ import {
   GlassWater,
   Wrench,
   Gift,
+  Trash2,
+  Loader2
 } from 'lucide-react';
 import {
   Card,
@@ -31,6 +33,8 @@ import {
   useCollection,
   useDoc,
   useMemoFirebase,
+  FirestorePermissionError,
+  errorEmitter
 } from '@/firebase';
 import {
   collection,
@@ -39,9 +43,24 @@ import {
   limit,
   doc,
   Timestamp,
+  runTransaction,
 } from 'firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 const materialIcons: { [key: string]: React.ElementType } = {
   Plástico: Package,
@@ -72,6 +91,9 @@ const snapshotOptions = { includeMetadataChanges: true };
 export default function DashboardPage() {
   const { user } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+
 
   const userProfileRef = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -119,25 +141,73 @@ export default function DashboardPage() {
     }));
 
     return [...records, ...redemptions]
-      .filter(
-        (activity) =>
-          activity.date !== null ||
-          (activity.type === 'log' && (activity as any).metadata?.hasPendingWrites)
-      )
+       .filter(activity => activity.date !== null || (activity as any).metadata?.hasPendingWrites)
       .sort((a, b) => {
-        // Treat pending writes as the most recent
-        const aIsPending = a.type === 'log' && (a as any).metadata?.hasPendingWrites;
-        const bIsPending = b.type === 'log' && (b as any).metadata?.hasPendingWrites;
+        const aIsPending = (a as any).metadata?.hasPendingWrites;
+        const bIsPending = (b as any).metadata?.hasPendingWrites;
 
         if (aIsPending && !bIsPending) return -1;
         if (!aIsPending && bIsPending) return 1;
 
         const dateA = a.date ? a.date.getTime() : Date.now();
         const dateB = b.date ? b.date.getTime() : Date.now();
+        
         return dateB - dateA;
       })
       .slice(0, 5);
   }, [recentRecords, recentRedemptions]);
+  
+  const handleDeleteActivity = async (activity: any) => {
+    if (!user || !firestore) return;
+
+    setIsDeleting(activity.id);
+
+    const userDocRef = doc(firestore, 'users', user.uid);
+    let activityDocRef;
+    let pointsToRestore = 0;
+
+    if (activity.type === 'log') {
+      activityDocRef = doc(firestore, 'users', user.uid, 'recycling_records', activity.id);
+      pointsToRestore = activity.pointsEarned;
+    } else { // redemption
+      activityDocRef = doc(firestore, 'users', user.uid, 'redemptions', activity.id);
+      pointsToRestore = -activity.pointsDeducted;
+    }
+
+    try {
+      await runTransaction(firestore, async (transaction) => {
+        const userDoc = await transaction.get(userDocRef);
+        if (!userDoc.exists()) {
+          throw 'Usuário não encontrado.';
+        }
+        const currentPoints = userDoc.data().totalPoints || 0;
+        const newTotalPoints = currentPoints - pointsToRestore;
+
+        transaction.update(userDocRef, { totalPoints: newTotalPoints });
+        transaction.delete(activityDocRef);
+      });
+
+      toast({
+        title: "Atividade excluída!",
+        description: "A atividade foi removida e sua pontuação foi ajustada.",
+      });
+
+    } catch (error) {
+        const permissionError = new FirestorePermissionError({
+            path: activityDocRef.path,
+            operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        toast({
+          variant: "destructive",
+          title: "Erro ao excluir",
+          description: "Não foi possível excluir a atividade.",
+        });
+    } finally {
+        setIsDeleting(null);
+    }
+  };
+
 
   const userPoints = userProfile?.totalPoints || 0;
   const isLoading = profileLoading || recordsLoading || redemptionsLoading;
@@ -183,6 +253,7 @@ export default function DashboardPage() {
                   </TableHead>
                   <TableHead className="hidden md:table-cell">Data</TableHead>
                   <TableHead className="text-right">Pontos</TableHead>
+                  <TableHead className="w-[50px] text-right">Ação</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -208,7 +279,7 @@ export default function DashboardPage() {
                             </div>
                           </TableCell>
                           <TableCell className="hidden sm:table-cell">
-                            {activity.quantity} un
+                            {activity.quantity} {activity.unit || 'un'}
                           </TableCell>
                           <TableCell className="hidden md:table-cell">
                             {isPending
@@ -227,6 +298,27 @@ export default function DashboardPage() {
                             >
                               +{activity.pointsEarned}
                             </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
+                           <AlertDialog>
+                             <AlertDialogTrigger asChild>
+                               <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isDeleting === activity.id}>
+                                 {isDeleting === activity.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />}
+                               </Button>
+                             </AlertDialogTrigger>
+                             <AlertDialogContent>
+                               <AlertDialogHeader>
+                                 <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+                                 <AlertDialogDescription>
+                                   Esta ação não pode ser desfeita. A atividade será excluída e os pontos serão ajustados.
+                                 </AlertDialogDescription>
+                               </AlertDialogHeader>
+                               <AlertDialogFooter>
+                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                 <AlertDialogAction onClick={() => handleDeleteActivity(activity)} className={cn(buttonVariants({variant: "destructive"}))}>Excluir</AlertDialogAction>
+                               </AlertDialogFooter>
+                             </AlertDialogContent>
+                           </AlertDialog>
                           </TableCell>
                         </TableRow>
                       );
@@ -264,6 +356,27 @@ export default function DashboardPage() {
                               -{activity.pointsDeducted}
                             </Badge>
                           </TableCell>
+                          <TableCell className="text-right">
+                           <AlertDialog>
+                             <AlertDialogTrigger asChild>
+                               <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isDeleting === activity.id}>
+                                 {isDeleting === activity.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />}
+                               </Button>
+                             </AlertDialogTrigger>
+                             <AlertDialogContent>
+                               <AlertDialogHeader>
+                                 <AlertDialogTitle>Tem certeza?</AlertDialogTitle>
+                                 <AlertDialogDescription>
+                                  Esta ação não pode ser desfeita. A atividade será excluída e os pontos serão ajustados.
+                                 </AlertDialogDescription>
+                               </AlertDialogHeader>
+                               <AlertDialogFooter>
+                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                 <AlertDialogAction onClick={() => handleDeleteActivity(activity)} className={cn(buttonVariants({variant: "destructive"}))}>Excluir</AlertDialogAction>
+                               </AlertDialogFooter>
+                             </AlertDialogContent>
+                           </AlertDialog>
+                          </TableCell>
                         </TableRow>
                       );
                     }
@@ -272,7 +385,7 @@ export default function DashboardPage() {
                 {!isLoading &&
                   (!combinedActivities || combinedActivities.length === 0) && (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center">
+                      <TableCell colSpan={5} className="text-center">
                         Nenhuma atividade recente.
                       </TableCell>
                     </TableRow>
