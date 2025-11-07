@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useMemo } from "react";
@@ -66,7 +65,7 @@ export default function DashboardPage() {
     );
   }, [firestore, user]);
   
-  const { data: recentRecords, isLoading: recordsLoading } = useCollection(recentActivitiesQuery);
+  const { data: recentRecords, isLoading: recordsLoading } = useCollection(recentActivitiesQuery, { includeMetadataChanges: true });
 
   const redemptionsQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
@@ -75,7 +74,7 @@ export default function DashboardPage() {
         orderBy('redemptionDate', 'desc'),
         limit(5)
     );
-}, [firestore, user]);
+  }, [firestore, user]);
 
   const { data: recentRedemptions, isLoading: redemptionsLoading } = useCollection(redemptionsQuery);
 
@@ -84,8 +83,12 @@ export default function DashboardPage() {
     const redemptions = (recentRedemptions || []).map(r => ({ ...r, date: toDate(r.redemptionDate), type: 'redemption' as const }));
     
     return [...records, ...redemptions]
-      .filter(activity => activity.date !== null)
-      .sort((a, b) => b.date!.getTime() - a.date!.getTime())
+      .filter(activity => activity.date !== null || (activity.type === 'log' && (activity as any).metadata?.hasPendingWrites))
+      .sort((a, b) => {
+        const dateA = a.date ? a.date.getTime() : Date.now();
+        const dateB = b.date ? b.date.getTime() : Date.now();
+        return dateB - dateA;
+      })
       .slice(0, 5);
   }, [recentRecords, recentRedemptions]);
 
@@ -194,5 +197,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

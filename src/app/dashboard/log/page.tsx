@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter, FirestorePermissionError, useFirestore, useUser } from '@/firebase';
-import { collection, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, addDoc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -65,6 +65,8 @@ export default function LogRecyclingPage() {
     const points = materialPoints[data.materialType] * data.quantity;
     const userDocRef = doc(firestore, "users", user.uid);
     const recyclingLogColRef = collection(userDocRef, "recycling_records");
+    
+    // A new ref for the new record
     const newRecordRef = doc(recyclingLogColRef);
     
     const newRecordData = {
@@ -87,6 +89,7 @@ export default function LogRecyclingPage() {
         const newTotalPoints = (userDoc.data().totalPoints || 0) + points;
         
         transaction.update(userDocRef, { totalPoints: newTotalPoints });
+        // Use the new reference with the ID already included in the data
         transaction.set(newRecordRef, newRecordData);
       });
 
