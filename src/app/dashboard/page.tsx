@@ -164,14 +164,14 @@ export default function DashboardPage() {
 
     const userDocRef = doc(firestore, 'users', user.uid);
     let activityDocRef;
-    let pointsToRestore = 0;
+    let pointsToAdjust = 0;
 
     if (activity.type === 'log') {
       activityDocRef = doc(firestore, 'users', user.uid, 'recycling_records', activity.id);
-      pointsToRestore = activity.pointsEarned;
+      pointsToAdjust = -activity.pointsEarned; // Subtract points earned
     } else { // redemption
       activityDocRef = doc(firestore, 'users', user.uid, 'redemptions', activity.id);
-      pointsToRestore = -activity.pointsDeducted;
+      pointsToAdjust = activity.pointsDeducted; // Add back points deducted
     }
 
     try {
@@ -181,7 +181,7 @@ export default function DashboardPage() {
           throw 'Usuário não encontrado.';
         }
         const currentPoints = userDoc.data().totalPoints || 0;
-        const newTotalPoints = currentPoints - pointsToRestore;
+        const newTotalPoints = currentPoints + pointsToAdjust;
 
         transaction.update(userDocRef, { totalPoints: newTotalPoints });
         transaction.delete(activityDocRef);
@@ -400,5 +400,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
