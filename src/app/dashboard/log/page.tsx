@@ -22,9 +22,12 @@ import { errorEmitter, FirestorePermissionError, useFirestore, useUser } from '@
 import { collection, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import Image from 'next/image';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Textarea } from '@/components/ui/textarea';
 
-// Schema is now empty as we removed the description field
-const verifyRecyclingSchema = z.object({});
+const verifyRecyclingSchema = z.object({
+  description: z.string().min(10, { message: 'Por favor, descreva os itens com pelo menos 10 caracteres.' }),
+});
 
 type VerifyRecyclingFormValues = z.infer<typeof verifyRecyclingSchema>;
 
@@ -116,7 +119,7 @@ export default function VerifyRecyclingPage() {
     getCameraPermission(); // Re-initialize camera
   };
 
-  const onSubmit = async () => {
+  const onSubmit = async (data: VerifyRecyclingFormValues) => {
     if (!photoDataUri) {
       toast({
         variant: 'destructive',
@@ -132,6 +135,7 @@ export default function VerifyRecyclingPage() {
     try {
       const result = await verifyRecycling({
         photoDataUri: photoDataUri,
+        description: data.description,
       });
       setVerificationResult(result);
     } catch (e: any) {
@@ -218,7 +222,7 @@ export default function VerifyRecyclingPage() {
       <CardHeader>
         <CardTitle>Registrar com IA</CardTitle>
         <CardDescription>
-          Tire uma foto dos seus itens recicláveís para que a nossa IA possa
+          Tire uma foto e descreva seus itens recicláveís para que a nossa IA possa
           verificar e recompensá-lo.
         </CardDescription>
       </CardHeader>
@@ -284,13 +288,30 @@ export default function VerifyRecyclingPage() {
         )}
 
         {photoDataUri && !verificationResult && (
-          <div className="flex flex-col space-y-4">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>O que você está reciclando?</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Ex: 5 garrafas PET transparentes, 3 caixas de papelão, etc."
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={resetCapture} type="button">
                   <X className="mr-2" />
                   Tirar Outra
                 </Button>
-                <Button onClick={onSubmit} disabled={isVerifying}>
+                <Button type="submit" disabled={isVerifying}>
                   {isVerifying ? (
                     <Loader2 className="mr-2 animate-spin" />
                   ) : (
@@ -299,7 +320,8 @@ export default function VerifyRecyclingPage() {
                   Verificar com IA
                 </Button>
               </div>
-          </div>
+            </form>
+          </Form>
         )}
         
         {isVerifying && (
@@ -348,5 +370,3 @@ export default function VerifyRecyclingPage() {
     </Card>
   );
 }
-
-    

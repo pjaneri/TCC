@@ -1,4 +1,3 @@
-
 'use server';
 
 import { ai } from '@/ai/genkit';
@@ -10,6 +9,7 @@ const VerifyRecyclingInputSchema = z.object({
     .describe(
       "A photo of the recycling items, as a data URI that must include a MIME type and use Base64 encoding. Expected format: 'data:<mimetype>;base64,<encoded_data>'."
     ),
+  description: z.string().describe("User's description of the recycled items."),
 });
 export type VerifyRecyclingInput = z.infer<typeof VerifyRecyclingInputSchema>;
 
@@ -45,14 +45,14 @@ const prompt = ai.definePrompt({
   name: 'verifyRecyclingPrompt',
   input: { schema: VerifyRecyclingInputSchema },
   output: { schema: VerifyRecyclingOutputSchema },
-  prompt: `Você é um assistente de IA para o aplicativo Recycle+. Sua tarefa é verificar uma submissão de reciclagem de um usuário com base em uma foto.
+  prompt: `Você é um assistente de IA para o aplicativo Recycle+. Sua tarefa é verificar uma submissão de reciclagem de um usuário com base em uma foto e uma descrição.
 
-Você receberá uma foto do que o usuário está reciclando.
+Você receberá uma foto e uma descrição do que o usuário está reciclando.
 
 Sua tarefa é:
-1.  **Analisar a imagem.** A imagem é a única fonte de verdade.
+1.  **Analisar a imagem e a descrição.** Ambas são as fontes de verdade.
 2.  **Determinar se a submissão é válida.** Uma submissão é válida se a imagem contiver pelo menos um item físico e reciclável claro. A submissão deve focar em um único tipo de material (ex: só plásticos, só papéis).
-3.  **Identificar o material principal.** Com base nos itens na foto, identifique o principal tipo de material. As opções são: 'Plástico', 'Papel', 'Vidro', 'Metal'. Se você não puder determinar o tipo ou for uma mistura, classifique como 'Outros'.
+3.  **Identificar o material principal.** Com base nos itens na foto e na descrição, identifique o principal tipo de material. As opções são: 'Plástico', 'Papel', 'Vidro', 'Metal'. Se você não puder determinar o tipo ou for uma mistura, classifique como 'Outros'.
 4.  **Tentar detectar duplicatas.** Analise o contexto da foto (fundo, iluminação, ângulo do item). Se a imagem parecer ser uma foto de tela, uma imagem de banco de imagens, ou idêntica a uma submissão que seria feita em série (ex: mesma garrafa em fundos diferentes), considere-a inválida.
 5.  **Atribuir pontos com base no material identificado.**
     *   Plástico: 20 pontos
@@ -67,8 +67,9 @@ Sua tarefa é:
     *   Exemplo Inválido (suspeita de duplicata): "Esta imagem parece ser muito semelhante a uma submissão anterior. Por favor, envie uma nova foto com itens diferentes."
     *   Exemplo Inválido (múltiplos materiais): "Detectei múltiplos tipos de materiais. Por favor, envie apenas um tipo de material por vez."
 
-Analise a foto anexada e cumpra a solicitação com estas regras.
+Analise a foto e a descrição anexadas e cumpra a solicitação com estas regras.
 
+Descrição: {{{description}}}
 Photo: {{media url=photoDataUri}}
 `,
 });
@@ -102,5 +103,3 @@ const verifyRecyclingFlow = ai.defineFlow(
     return output!;
   }
 );
-
-    
