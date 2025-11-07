@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
-import { collection, query, orderBy, limit, doc, Timestamp, runTransaction, writeBatch } from "firebase/firestore";
+import { collection, query, orderBy, limit, doc, Timestamp, runTransaction } from "firebase/firestore";
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -33,7 +33,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -83,7 +82,7 @@ export default function DashboardPage() {
     );
   }, [firestore, user]);
   
-  const { data: recentRecords, isLoading: recordsLoading } = useCollection(recentActivitiesQuery);
+  const { data: recentRecords, isLoading: recordsLoading } = useCollection(recentActivitiesQuery, { includeMetadataChanges: true });
 
   const redemptionsQuery = useMemoFirebase(() => {
     if (!user) return null;
@@ -97,12 +96,16 @@ export default function DashboardPage() {
   const { data: recentRedemptions, isLoading: redemptionsLoading } = useCollection(redemptionsQuery);
 
   const combinedActivities = useMemo(() => {
-    const records = (recentRecords || []).map(r => ({ ...r, date: toDate(r.recyclingDate), type: 'log' as const }));
-    const redemptions = (recentRedemptions || []).map(r => ({ ...r, date: toDate(r.redemptionDate), type: 'redemption' as const }));
+    const records = (recentRecords || []).map(r => ({ ...r, date: toDate(r.recyclingDate), type: 'log' as const, hasPendingWrites: (r as any).metadata?.hasPendingWrites }));
+    const redemptions = (recentRedemptions || []).map(r => ({ ...r, date: toDate(r.redemptionDate), type: 'redemption' as const, hasPendingWrites: (r as any).metadata?.hasPendingWrites }));
     
     return [...records, ...redemptions]
-      .filter(activity => activity.date !== null)
-      .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0))
+      .filter(activity => activity.date !== null || activity.hasPendingWrites)
+      .sort((a, b) => {
+        const timeA = a.date?.getTime() ?? Date.now();
+        const timeB = b.date?.getTime() ?? Date.now();
+        return timeB - timeA;
+      })
       .slice(0, 5);
   }, [recentRecords, recentRedemptions]);
 
@@ -125,18 +128,18 @@ export default function DashboardPage() {
         }
         
         const currentPoints = userDoc.data().totalPoints || 0;
-        let pointsToRestore = 0;
+        let pointsToAdjust = 0;
         let activityRef;
 
         if (activity.type === 'log') {
           activityRef = doc(firestore, 'users', user.uid, 'recycling_records', activity.id);
-          pointsToRestore = -activity.pointsEarned; // Subtract points earned
+          pointsToAdjust = -activity.pointsEarned; // Subtract points earned
         } else { // redemption
           activityRef = doc(firestore, 'users', user.uid, 'redemptions', activity.id);
-          pointsToRestore = activity.pointsDeducted; // Add back points deducted
+          pointsToAdjust = activity.pointsDeducted; // Add back points deducted
         }
 
-        const newTotalPoints = currentPoints - pointsToRestore;
+        const newTotalPoints = currentPoints + pointsToAdjust;
 
         transaction.update(userDocRef, { totalPoints: newTotalPoints });
         transaction.delete(activityRef);
@@ -205,7 +208,6 @@ export default function DashboardPage() {
             <TableBody>
               {combinedActivities && combinedActivities.map((activity) => {
                  const activityDate = activity.date;
-                 if (!activityDate) return null;
 
                  if (activity.type === 'log') {
                     const Icon = materialIcons[activity.materialType] || Package;
@@ -219,7 +221,7 @@ export default function DashboardPage() {
                         </TableCell>
                         <TableCell className="hidden sm:table-cell">{activity.quantity} un</TableCell>
                         <TableCell className="hidden md:table-cell">
-                          {formatDistanceToNow(activityDate, { addSuffix: true, locale: ptBR })}
+                          {activity.hasPendingWrites ? 'Salvando...' : activityDate ? formatDistanceToNow(activityDate, { addSuffix: true, locale: ptBR }) : 'Agora mesmo'}
                         </TableCell>
                         <TableCell className="text-right">
                            <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
@@ -229,7 +231,7 @@ export default function DashboardPage() {
                          <TableCell className="text-right">
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isDeleting === activity.id}>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isDeleting === activity.id || activity.hasPendingWrites}>
                                 {isDeleting === activity.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />}
                               </Button>
                             </AlertDialogTrigger>
@@ -261,7 +263,7 @@ export default function DashboardPage() {
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">Prêmio Resgatado</TableCell>
                       <TableCell className="hidden md:table-cell">
-                        {formatDistanceToNow(activityDate, { addSuffix: true, locale: ptBR })}
+                        {activityDate ? formatDistanceToNow(activityDate, { addSuffix: true, locale: ptBR }) : 'Agora mesmo'}
                       </TableCell>
                       <TableCell className="text-right">
                          <Badge variant="destructive" className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">

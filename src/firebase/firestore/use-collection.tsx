@@ -8,6 +8,7 @@ import {
   FirestoreError,
   QuerySnapshot,
   CollectionReference,
+  SnapshotListenOptions,
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -53,6 +54,7 @@ export interface InternalQuery extends Query<DocumentData> {
  */
 export function useCollection<T = any>(
     memoizedTargetRefOrQuery: ((CollectionReference<DocumentData> | Query<DocumentData>) & {__memo?: boolean})  | null | undefined,
+    options?: SnapshotListenOptions
 ): UseCollectionResult<T> {
   type ResultItemType = WithId<T>;
   type StateDataType = ResultItemType[] | null;
@@ -75,11 +77,16 @@ export function useCollection<T = any>(
     // Directly use memoizedTargetRefOrQuery as it's assumed to be the final query
     const unsubscribe = onSnapshot(
       memoizedTargetRefOrQuery,
+      options || {},
       (snapshot: QuerySnapshot<DocumentData>) => {
         const results: ResultItemType[] = [];
-        for (const doc of snapshot.docs) {
-          results.push({ ...(doc.data() as T), id: doc.id });
-        }
+        snapshot.docs.forEach((doc) => {
+          results.push({
+            ...(doc.data({ serverTimestamps: 'estimate' }) as T),
+            id: doc.id,
+            metadata: doc.metadata
+          });
+        });
         setData(results);
         setError(null);
         setIsLoading(false);
@@ -106,7 +113,7 @@ export function useCollection<T = any>(
     );
 
     return () => unsubscribe();
-  }, [memoizedTargetRefOrQuery]); // Re-run if the target query/reference changes.
+  }, [memoizedTargetRefOrQuery, options]); // Re-run if the target query/reference changes.
   if(memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo) {
     throw new Error(memoizedTargetRefOrQuery + ' was not properly memoized using useMemoFirebase');
   }
