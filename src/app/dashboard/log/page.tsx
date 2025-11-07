@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter, FirestorePermissionError, useFirestore, useUser } from '@/firebase';
-import { collection, doc, runTransaction, serverTimestamp, writeBatch, increment } from 'firebase/firestore';
+import { collection, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -77,10 +77,18 @@ export default function LogRecyclingPage() {
     };
 
     try {
-      const batch = writeBatch(firestore);
-      batch.set(newRecordRef, newRecordData);
-      batch.update(userDocRef, { totalPoints: increment(points) });
-      await batch.commit();
+      await runTransaction(firestore, async (transaction) => {
+        const userDoc = await transaction.get(userDocRef);
+
+        if (!userDoc.exists()) {
+          throw "Usuário não encontrado.";
+        }
+
+        const newTotalPoints = (userDoc.data().totalPoints || 0) + points;
+        
+        transaction.update(userDocRef, { totalPoints: newTotalPoints });
+        transaction.set(newRecordRef, newRecordData);
+      });
 
       toast({
         title: "Reciclagem registrada!",
