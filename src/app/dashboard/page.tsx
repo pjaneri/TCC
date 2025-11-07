@@ -29,15 +29,28 @@ const materialIcons: { [key: string]: React.ElementType } = {
   "Papel": FileText,
   "Vidro": GlassWater,
   "Metal": Wrench,
+  "Outros": Package,
 };
 
 // Helper function to convert Firestore Timestamp or ISO String to Date
-const toDate = (date: Timestamp | string | Date | undefined): Date | null => {
+const toDate = (date: any): Date | null => {
   if (!date) return null;
   if (date instanceof Timestamp) {
     return date.toDate();
   }
-  return new Date(date);
+  if (typeof date === 'string') {
+    return new Date(date);
+  }
+  // If it's a plain object from a pending serverTimestamp, it won't have toDate,
+  // we can return null or a temporary value. Returning null is safer.
+  if (typeof date === 'object' && date.seconds === undefined) {
+    return null;
+  }
+  // This case should be rare but handles objects with seconds/nanoseconds
+  if(typeof date === 'object' && date.seconds) {
+    return new Timestamp(date.seconds, date.nanoseconds).toDate();
+  }
+  return null;
 };
 
 export default function DashboardPage() {
