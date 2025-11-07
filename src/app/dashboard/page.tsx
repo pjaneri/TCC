@@ -85,7 +85,7 @@ const toDate = (date: any): Date | null => {
   return null;
 };
 
-// Stable options object for useCollection
+// Stable options object for useCollection to prevent re-renders
 const snapshotOptions = { includeMetadataChanges: true };
 
 export default function DashboardPage() {
@@ -126,25 +126,25 @@ export default function DashboardPage() {
   }, [firestore, user]);
 
   const { data: recentRedemptions, isLoading: redemptionsLoading } =
-    useCollection(redemptionsQuery);
+    useCollection(redemptionsQuery, snapshotOptions);
 
   const combinedActivities = useMemo(() => {
-    const records = (recentRecords || []).map((r) => ({
-      ...(r as any),
+    const records = (recentRecords || []).map((r: any) => ({
+      ...r,
       date: toDate(r.recyclingDate),
       type: 'log' as const,
     }));
-    const redemptions = (recentRedemptions || []).map((r) => ({
-      ...(r as any),
+    const redemptions = (recentRedemptions || []).map((r: any) => ({
+      ...r,
       date: toDate(r.redemptionDate),
       type: 'redemption' as const,
     }));
 
     return [...records, ...redemptions]
-       .filter(activity => activity.date !== null || (activity as any).metadata?.hasPendingWrites)
+       .filter(activity => activity.date !== null || activity.metadata?.hasPendingWrites)
       .sort((a, b) => {
-        const aIsPending = (a as any).metadata?.hasPendingWrites;
-        const bIsPending = (b as any).metadata?.hasPendingWrites;
+        const aIsPending = a.metadata?.hasPendingWrites;
+        const bIsPending = b.metadata?.hasPendingWrites;
 
         if (aIsPending && !bIsPending) return -1;
         if (!aIsPending && bIsPending) return 1;
@@ -260,7 +260,7 @@ export default function DashboardPage() {
                 {combinedActivities &&
                   combinedActivities.map((activity) => {
                     const activityDate = activity.date;
-                    const isPending = (activity as any).metadata?.hasPendingWrites;
+                    const isPending = activity.metadata?.hasPendingWrites;
 
                     if (activity.type === 'log') {
                       const Icon =
@@ -341,12 +341,14 @@ export default function DashboardPage() {
                             Prêmio Resgatado
                           </TableCell>
                           <TableCell className="hidden md:table-cell">
-                            {activityDate
+                             {isPending
+                              ? 'Agora mesmo'
+                              : activityDate
                               ? formatDistanceToNow(activityDate, {
                                   addSuffix: true,
                                   locale: ptBR,
                                 })
-                              : 'Agora mesmo'}
+                              : 'Resgatando...'}
                           </TableCell>
                           <TableCell className="text-right">
                             <Badge
@@ -398,3 +400,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
