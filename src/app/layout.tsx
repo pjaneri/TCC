@@ -8,6 +8,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 export const metadata: Metadata = {
   title: "Recycle+ (Recicla Mais)",
   description: "Registre sua reciclagem, ganhe pontos e resgate prêmios.",
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({
