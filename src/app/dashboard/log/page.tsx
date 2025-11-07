@@ -1,9 +1,9 @@
 'use client';
 
+import { useState } from 'react';
+import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
 import { z } from 'zod';
-import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
@@ -11,67 +11,100 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import { errorEmitter, FirestorePermissionError, useFirestore, useUser } from '@/firebase';
-import { collection, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { useToast } from '@/hooks/use-toast';
+import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
+import { collection, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { Loader2, Package, FileText, GlassWater, Wrench } from 'lucide-react';
 
-const materialPoints: Record<string, number> = {
-  'Plástico': 20,
-  'Papel': 15,
-  'Vidro': 10,
-  'Metal': 75,
-  'Outros': 5,
-};
+const materialData = [
+  {
+    name: 'Plástico',
+    description: 'Garrafas PET, embalagens, etc.',
+    icon: Package,
+    unit: 'un',
+    points: 20,
+  },
+  {
+    name: 'Papel',
+    description: 'Jornais, revistas, caixas de papelão.',
+    icon: FileText,
+    unit: 'kg',
+    points: 15,
+  },
+  {
+    name: 'Vidro',
+    description: 'Garrafas, potes, frascos.',
+    icon: GlassWater,
+    unit: 'un',
+    points: 10,
+  },
+  {
+    name: 'Metal',
+    description: 'Latinhas de alumínio, aço.',
+    icon: Wrench,
+    unit: 'un',
+    points: 75,
+  },
+];
 
-const logRecyclingSchema = z.object({
-  materialType: z.enum(['Plástico', 'Papel', 'Vidro', 'Metal', 'Outros'], {
-    required_error: "Você precisa selecionar um tipo de material.",
-  }),
+const logSchema = z.object({
   quantity: z.coerce.number().min(1, { message: 'A quantidade deve ser pelo menos 1.' }),
 });
 
-type LogRecyclingFormValues = z.infer<typeof logRecyclingSchema>;
+type LogFormValues = z.infer<typeof logSchema>;
 
-export default function LogRecyclingPage() {
+interface MaterialLogCardProps {
+  material: typeof materialData[0];
+}
+
+function MaterialLogCard({ material }: MaterialLogCardProps) {
   const { toast } = useToast();
   const { user } = useUser();
   const firestore = useFirestore();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const form = useForm<LogRecyclingFormValues>({
-    resolver: zodResolver(logRecyclingSchema),
+  const form = useForm<LogFormValues>({
+    resolver: zodResolver(logSchema),
     defaultValues: {
-      quantity: 1,
-    }
+      quantity: 0,
+    },
   });
 
-  const onSubmit = async (data: LogRecyclingFormValues) => {
+  const onSubmit: SubmitHandler<LogFormValues> = async (data) => {
     if (!user || !firestore) {
       toast({
-        variant: "destructive",
-        title: "Erro",
-        description: "Você precisa estar logado para registrar.",
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Você precisa estar logado para registrar.',
       });
+      return;
+    }
+     if (data.quantity <= 0) {
+      form.setError("quantity", { type: "manual", message: "A quantidade deve ser maior que zero." });
       return;
     }
 
     setIsSubmitting(true);
 
-    const points = materialPoints[data.materialType] * data.quantity;
-    const userDocRef = doc(firestore, "users", user.uid);
-    const recyclingLogColRef = collection(userDocRef, "recycling_records");
-    
+    const points = material.points * data.quantity;
+    const userDocRef = doc(firestore, 'users', user.uid);
+    const recyclingLogColRef = collection(userDocRef, 'recycling_records');
     const newRecordRef = doc(recyclingLogColRef);
-    
+
     const newRecordData = {
       id: newRecordRef.id,
       userId: user.uid,
-      materialType: data.materialType,
+      materialType: material.name,
       quantity: data.quantity,
       recyclingDate: serverTimestamp(),
       pointsEarned: points,
@@ -80,99 +113,97 @@ export default function LogRecyclingPage() {
     try {
       await runTransaction(firestore, async (transaction) => {
         const userDoc = await transaction.get(userDocRef);
-
         if (!userDoc.exists()) {
-          throw "Usuário não encontrado.";
+          throw 'Usuário não encontrado.';
         }
-
         const newTotalPoints = (userDoc.data().totalPoints || 0) + points;
-        
         transaction.update(userDocRef, { totalPoints: newTotalPoints });
         transaction.set(newRecordRef, newRecordData);
       });
 
       toast({
-        title: "Reciclagem registrada!",
-        description: `Você ganhou ${points} pontos.`,
+        title: 'Reciclagem registrada!',
+        description: `Você ganhou ${points} pontos reciclando ${material.name}.`,
       });
-      form.reset();
-
+      form.reset({ quantity: 0 });
     } catch (e) {
-        console.error("Transaction failed: ", e);
-        // Let's assume any error here could be a permission error.
-        const permissionError = new FirestorePermissionError({
-            path: newRecordRef.path,
-            operation: 'create',
-            requestResourceData: newRecordData
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        toast({
-            variant: "destructive",
-            title: "Uh oh! Algo deu errado.",
-            description: "Não foi possível registrar a reciclagem. Verifique suas permissões ou tente novamente.",
-        });
+      console.error('Transaction failed: ', e);
+      const permissionError = new FirestorePermissionError({
+        path: newRecordRef.path,
+        operation: 'create',
+        requestResourceData: newRecordData,
+      });
+      errorEmitter.emit('permission-error', permissionError);
+      toast({
+        variant: 'destructive',
+        title: 'Uh oh! Algo deu errado.',
+        description:
+          'Não foi possível registrar a reciclagem. Verifique suas permissões ou tente novamente.',
+      });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>Registrar Reciclagem</CardTitle>
-        <CardDescription>
-          Adicione manualmente seus itens reciclados para ganhar pontos.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="materialType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo de Material</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um material" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {Object.keys(materialPoints).map((material) => (
-                        <SelectItem key={material} value={material}>
-                          {material}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+  const Icon = material.icon;
 
+  return (
+    <Card className="flex h-full flex-col">
+      <CardHeader>
+        <div className="flex items-center gap-4">
+          <Icon className="h-8 w-8 text-primary" />
+          <div>
+            <CardTitle>{material.name}</CardTitle>
+            <CardDescription>{material.description}</CardDescription>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="flex-1">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
               name="quantity"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Quantidade</FormLabel>
-                  <FormControl>
-                    <Input type="number" min="1" {...field} />
-                  </FormControl>
+                    <div className="flex items-center gap-2">
+                        <FormControl>
+                            <Input type="number" min="0" {...field} />
+                        </FormControl>
+                        <span className="text-sm text-muted-foreground">{material.unit}</span>
+                    </div>
                   <FormMessage />
                 </FormItem>
               )}
             />
-            
-            <Button type="submit" disabled={isSubmitting} className="w-full">
-              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isSubmitting ? "Registrando..." : "Registrar e Ganhar Pontos"}
+            <Button type="submit" disabled={isSubmitting} className="w-full font-bold" style={{ backgroundColor: 'hsl(var(--primary))', color: 'hsl(var(--primary-foreground))' }}>
+              {isSubmitting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : null}
+              {isSubmitting ? 'Salvando...' : 'Salvar Registro'}
             </Button>
           </form>
         </Form>
       </CardContent>
     </Card>
   );
+}
+
+export default function LogRecyclingPage() {
+    return (
+        <div className="w-full">
+            <div className="mb-6">
+                <h1 className="text-2xl font-bold tracking-tight">Registrar Reciclagem</h1>
+                <p className="text-muted-foreground">
+                    Adicione os itens que você reciclou para ganhar pontos.
+                </p>
+            </div>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                {materialData.map((material) => (
+                    <MaterialLogCard key={material.name} material={material} />
+                ))}
+            </div>
+        </div>
+    );
 }
