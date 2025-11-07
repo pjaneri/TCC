@@ -15,7 +15,6 @@ import { useToast } from '@/hooks/use-toast';
 import { errorEmitter, FirestorePermissionError, useFirestore, useUser } from '@/firebase';
 import { collection, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Loader2 } from 'lucide-react';
@@ -34,7 +33,6 @@ const logRecyclingSchema = z.object({
     required_error: "Você precisa selecionar um tipo de material.",
   }),
   quantity: z.coerce.number().min(1, { message: 'A quantidade deve ser pelo menos 1.' }),
-  description: z.string().optional(),
 });
 
 type LogRecyclingFormValues = z.infer<typeof logRecyclingSchema>;
@@ -76,7 +74,6 @@ export default function LogRecyclingPage() {
       quantity: data.quantity,
       recyclingDate: serverTimestamp(),
       pointsEarned: points,
-      description: data.description || "",
     };
 
     try {
@@ -155,23 +152,6 @@ export default function LogRecyclingPage() {
                   <FormLabel>Quantidade</FormLabel>
                   <FormControl>
                     <Input type="number" min="1" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descrição (Opcional)</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Ex: 5 garrafas PET, 3 caixas de papelão..."
-                      {...field}
-                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
