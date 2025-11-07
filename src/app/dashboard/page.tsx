@@ -61,6 +61,9 @@ const toDate = (date: any): Date | null => {
   return null;
 };
 
+// Stable options object for useCollection
+const collectionOptions = { includeMetadataChanges: true };
+
 export default function DashboardPage() {
   const { user } = useUser();
   const firestore = useFirestore();
@@ -69,7 +72,7 @@ export default function DashboardPage() {
 
 
   const userProfileRef = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || !firestore) return null;
     return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
   const { data: userProfile, isLoading: profileLoading } = useDoc(userProfileRef);
@@ -83,10 +86,10 @@ export default function DashboardPage() {
     );
   }, [firestore, user]);
   
-  const { data: recentRecords, isLoading: recordsLoading } = useCollection(recentActivitiesQuery, { includeMetadataChanges: true });
+  const { data: recentRecords, isLoading: recordsLoading } = useCollection(recentActivitiesQuery, collectionOptions);
 
   const redemptionsQuery = useMemoFirebase(() => {
-    if (!user) return null;
+    if (!user || !firestore) return null;
     return query(
         collection(firestore, 'users', user.uid, 'redemptions'),
         orderBy('redemptionDate', 'desc'),
@@ -310,3 +313,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
