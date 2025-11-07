@@ -68,7 +68,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   if (isUserLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
-        <p>Carregando...</p>
+        <div className="flex flex-col items-center gap-2">
+            <Recycle className="h-12 w-12 animate-spin text-primary" />
+            <p className="text-muted-foreground">Carregando...</p>
+        </div>
       </div>
     );
   }
