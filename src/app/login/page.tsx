@@ -110,6 +110,7 @@ export default function LoginPage() {
       .finally(() => {
         setIsProcessingRedirect(false);
       });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [auth]);
 
   const handleGoogleSignIn = async () => {
