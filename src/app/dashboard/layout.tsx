@@ -10,8 +10,9 @@ import {
   UserCircle,
   Recycle,
   BarChart,
+  MessageCircle,
 } from "lucide-react";
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { getAuth, signOut } from "firebase/auth";
 
 import {
@@ -30,6 +31,9 @@ import { useUser } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { ChatWidget } from "@/components/chat-widget";
 
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Visão Geral" },
@@ -45,6 +49,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   const auth = getAuth();
+  const [isChatOpen, setChatOpen] = useState(false);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -110,7 +115,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </SidebarMenuButton>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset>
+      <SidebarInset className="md:rounded-none">
         <header className="flex h-14 items-center justify-between gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6">
           <SidebarTrigger className="md:hidden" />
           <div className="flex w-full flex-1 items-center justify-end gap-4">
@@ -132,6 +137,24 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             {children}
           </div>
         </main>
+        
+        <div className="fixed bottom-6 right-6 z-50">
+            <Button size="icon" className="rounded-full h-14 w-14 shadow-lg" onClick={() => setChatOpen(true)}>
+                <MessageCircle className="h-6 w-6" />
+                <span className="sr-only">Abrir Chat</span>
+            </Button>
+        </div>
+
+        <Sheet open={isChatOpen} onOpenChange={setChatOpen}>
+            <SheetContent className="flex flex-col p-0">
+                <SheetHeader className="p-4 border-b">
+                    <SheetTitle>Converse com o Recy</SheetTitle>
+                </SheetHeader>
+                <div className="flex-1 overflow-y-auto">
+                   <ChatWidget />
+                </div>
+            </SheetContent>
+        </Sheet>
       </SidebarInset>
     </SidebarProvider>
   );
