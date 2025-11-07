@@ -1,8 +1,8 @@
 
 "use client";
 
-import { useMemo } from "react";
-import { Coins, Package, FileText, GlassWater, Wrench, Gift } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Coins, Package, FileText, GlassWater, Wrench, Gift, Trash2, Loader2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -19,10 +19,24 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase } from "@/firebase";
-import { collection, query, orderBy, limit, doc, Timestamp } from "firebase/firestore";
+import { useUser, useFirestore, useCollection, useDoc, useMemoFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
+import { collection, query, orderBy, limit, doc, Timestamp, runTransaction, writeBatch } from "firebase/firestore";
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Button } from "@/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 const materialIcons: { [key: string]: React.ElementType } = {
   "Plástico": Package,
@@ -41,13 +55,7 @@ const toDate = (date: any): Date | null => {
   if (typeof date === 'string') {
     return new Date(date);
   }
-  // If it's a plain object from a pending serverTimestamp, it won't have toDate,
-  // we can return null or a temporary value. Returning null is safer.
-  if (typeof date === 'object' && date.seconds === undefined) {
-    return null;
-  }
-  // This case should be rare but handles objects with seconds/nanoseconds
-  if(typeof date === 'object' && date.seconds) {
+  if (typeof date === 'object' && date.seconds) {
     return new Timestamp(date.seconds, date.nanoseconds).toDate();
   }
   return null;
@@ -56,6 +64,9 @@ const toDate = (date: any): Date | null => {
 export default function DashboardPage() {
   const { user } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+
 
   const userProfileRef = useMemoFirebase(() => {
     if (!user) return null;
@@ -99,6 +110,57 @@ export default function DashboardPage() {
   const userPoints = userProfile?.totalPoints || 0;
   const isLoading = profileLoading || recordsLoading || redemptionsLoading;
 
+  const handleDeleteActivity = async (activity: any) => {
+    if (!user || !firestore) return;
+
+    setIsDeleting(activity.id);
+
+    const userDocRef = doc(firestore, "users", user.uid);
+
+    try {
+      await runTransaction(firestore, async (transaction) => {
+        const userDoc = await transaction.get(userDocRef);
+        if (!userDoc.exists()) {
+          throw "Usuário não encontrado.";
+        }
+        
+        const currentPoints = userDoc.data().totalPoints || 0;
+        let pointsToRestore = 0;
+        let activityRef;
+
+        if (activity.type === 'log') {
+          activityRef = doc(firestore, 'users', user.uid, 'recycling_records', activity.id);
+          pointsToRestore = -activity.pointsEarned; // Subtract points earned
+        } else { // redemption
+          activityRef = doc(firestore, 'users', user.uid, 'redemptions', activity.id);
+          pointsToRestore = activity.pointsDeducted; // Add back points deducted
+        }
+
+        const newTotalPoints = currentPoints - pointsToRestore;
+
+        transaction.update(userDocRef, { totalPoints: newTotalPoints });
+        transaction.delete(activityRef);
+      });
+
+      toast({
+        title: "Atividade excluída!",
+        description: "Sua pontuação foi atualizada.",
+      });
+
+    } catch (e: any) {
+        let activityRef;
+        let operation: 'delete' = 'delete';
+        if (activity.type === 'log') {
+            activityRef = doc(firestore, 'users', user.uid, 'recycling_records', activity.id);
+        } else {
+            activityRef = doc(firestore, 'users', user.uid, 'redemptions', activity.id);
+        }
+        const permissionError = new FirestorePermissionError({ path: activityRef.path, operation });
+        errorEmitter.emit('permission-error', permissionError);
+    } finally {
+      setIsDeleting(null);
+    }
+  };
 
   return (
     <div className="grid gap-6">
@@ -137,6 +199,7 @@ export default function DashboardPage() {
                 <TableHead className="hidden sm:table-cell">Detalhes</TableHead>
                 <TableHead className="hidden md:table-cell">Data</TableHead>
                 <TableHead className="text-right">Pontos</TableHead>
+                <TableHead className="w-[50px]"><span className="sr-only">Ações</span></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -154,7 +217,7 @@ export default function DashboardPage() {
                             <span className="font-medium">{activity.materialType}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="hidden sm:table-cell">{activity.quantity} {activity.unit || 'un'}</TableCell>
+                        <TableCell className="hidden sm:table-cell">{activity.quantity} un</TableCell>
                         <TableCell className="hidden md:table-cell">
                           {formatDistanceToNow(activityDate, { addSuffix: true, locale: ptBR })}
                         </TableCell>
@@ -162,6 +225,27 @@ export default function DashboardPage() {
                            <Badge variant="secondary" className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
                              +{activity.pointsEarned}
                            </Badge>
+                        </TableCell>
+                         <TableCell className="text-right">
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isDeleting === activity.id}>
+                                {isDeleting === activity.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Tem certeza que deseja excluir esta atividade? Esta ação não pode ser desfeita e seus pontos serão ajustados.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteActivity(activity)} className={cn(buttonVariants({variant: "destructive"}))}>Excluir</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </TableCell>
                       </TableRow>
                     )
@@ -172,7 +256,7 @@ export default function DashboardPage() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Gift className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{activity.rewardName}</span>
+                          <span className="font-medium">{activity.rewardName || 'Prêmio Resgatado'}</span>
                         </div>
                       </TableCell>
                       <TableCell className="hidden sm:table-cell">Prêmio Resgatado</TableCell>
@@ -184,6 +268,27 @@ export default function DashboardPage() {
                           -{activity.pointsDeducted}
                         </Badge>
                       </TableCell>
+                       <TableCell className="text-right">
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isDeleting === activity.id}>
+                                {isDeleting === activity.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Tem certeza que deseja excluir este resgate? Os pontos serão devolvidos à sua conta.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDeleteActivity(activity)} className={cn(buttonVariants({variant: "destructive"}))}>Excluir</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </TableCell>
                     </TableRow>
                   )
                 }
@@ -191,7 +296,7 @@ export default function DashboardPage() {
               })}
               {(!isLoading && (!combinedActivities || combinedActivities.length === 0)) && (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center">Nenhuma atividade recente.</TableCell>
+                  <TableCell colSpan={5} className="text-center">Nenhuma atividade recente.</TableCell>
                 </TableRow>
               )}
             </TableBody>
