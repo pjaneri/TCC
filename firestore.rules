@@ -79,9 +79,7 @@ service cloud.firestore {
                     && request.resource.data.materialType is string
                     && request.resource.data.quantity is number
                     && request.resource.data.pointsEarned is number
-                    && request.resource.data.recyclingDate == request.time
-                    && request.resource.data.imageUrl is string
-                    && request.resource.data.aiComment is string;
+                    && request.resource.data.recyclingDate == request.time;
     }
 
     /**
@@ -127,5 +125,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
