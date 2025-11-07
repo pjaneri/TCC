@@ -79,6 +79,7 @@ export default function SignupPage() {
         email: data.email,
         registrationDate: serverTimestamp(),
         totalPoints: 0,
+        lifetimePoints: 0,
       });
 
       toast({

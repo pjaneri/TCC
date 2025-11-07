@@ -31,7 +31,7 @@ export default function RankingsPage() {
         return <div className="flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
 
-    const userPoints = userProfile.totalPoints || 0;
+    const userPoints = userProfile.lifetimePoints || 0;
     
     const currentRankIndex = ranks.slice().reverse().findIndex(rank => userPoints >= rank.points);
     const currentRank = ranks[ranks.length - 1 - currentRankIndex];
@@ -56,7 +56,7 @@ export default function RankingsPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="text-center mb-6">
-                        <p className="text-2xl font-semibold">{userPoints.toLocaleString('pt-BR')} Pontos</p>
+                        <p className="text-2xl font-semibold">{userPoints.toLocaleString('pt-BR')} Pontos Ganhos</p>
                     </div>
 
                     {nextRank && (

@@ -179,8 +179,9 @@ export default function ProfilePage() {
       if (!user || !firestore) return;
 
       const userDocRef = doc(firestore, "users", user.uid);
+      const resetData = { totalPoints: 0, lifetimePoints: 0 };
       try {
-        await updateDoc(userDocRef, { totalPoints: 0 });
+        await updateDoc(userDocRef, resetData);
         toast({
           title: "Pontos resetados!",
           description: "Sua pontuação foi zerada com sucesso.",
@@ -189,7 +190,7 @@ export default function ProfilePage() {
         const permissionError = new FirestorePermissionError({
           path: userDocRef.path,
           operation: 'update',
-          requestResourceData: { totalPoints: 0 }
+          requestResourceData: resetData
         });
         errorEmitter.emit('permission-error', permissionError);
       }

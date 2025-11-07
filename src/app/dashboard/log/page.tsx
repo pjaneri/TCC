@@ -116,8 +116,16 @@ function MaterialLogCard({ material }: MaterialLogCardProps) {
         if (!userDoc.exists()) {
           throw 'Usuário não encontrado.';
         }
-        const newTotalPoints = (userDoc.data().totalPoints || 0) + points;
-        transaction.update(userDocRef, { totalPoints: newTotalPoints });
+        const currentTotalPoints = userDoc.data().totalPoints || 0;
+        const currentLifetimePoints = userDoc.data().lifetimePoints || 0;
+        
+        const newTotalPoints = currentTotalPoints + points;
+        const newLifetimePoints = currentLifetimePoints + points;
+
+        transaction.update(userDocRef, { 
+            totalPoints: newTotalPoints,
+            lifetimePoints: newLifetimePoints 
+        });
         transaction.set(newRecordRef, newRecordData);
       });
 

@@ -86,6 +86,7 @@ export default function LoginPage() {
         email: user.email,
         registrationDate: serverTimestamp(),
         totalPoints: 0,
+        lifetimePoints: 0,
       });
     }
   };

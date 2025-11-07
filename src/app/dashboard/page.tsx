@@ -169,13 +169,16 @@ export default function DashboardPage() {
     const userDocRef = doc(firestore, 'users', user.uid);
     let activityDocRef;
     let pointsToAdjust = 0;
+    let lifetimePointsToAdjust = 0;
 
     if (activity.type === 'log') {
       activityDocRef = doc(firestore, 'users', user.uid, 'recycling_records', activity.id);
       pointsToAdjust = -activity.pointsEarned; // Subtract points earned
+      lifetimePointsToAdjust = -activity.pointsEarned;
     } else { // redemption
       activityDocRef = doc(firestore, 'users', user.uid, 'redemptions', activity.id);
       pointsToAdjust = activity.pointsDeducted; // Add back points deducted
+      // No change to lifetime points for redemption
     }
 
     try {
@@ -185,9 +188,12 @@ export default function DashboardPage() {
           throw 'Usuário não encontrado.';
         }
         const currentPoints = userDoc.data().totalPoints || 0;
-        const newTotalPoints = currentPoints + pointsToAdjust;
+        const currentLifetimePoints = userDoc.data().lifetimePoints || 0;
 
-        transaction.update(userDocRef, { totalPoints: newTotalPoints });
+        const newTotalPoints = currentPoints + pointsToAdjust;
+        const newLifetimePoints = currentLifetimePoints + lifetimePointsToAdjust;
+
+        transaction.update(userDocRef, { totalPoints: newTotalPoints, lifetimePoints: newLifetimePoints });
         transaction.delete(activityDocRef);
       });
 
@@ -231,7 +237,7 @@ export default function DashboardPage() {
         
         // Reset user points
         const userDocRef = doc(firestore, 'users', user.uid);
-        batch.update(userDocRef, { totalPoints: 0 });
+        batch.update(userDocRef, { totalPoints: 0, lifetimePoints: 0 });
 
         await batch.commit();
 
@@ -262,7 +268,7 @@ export default function DashboardPage() {
         <Card className="transform-gpu bg-primary text-primary-foreground transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Total de Pontos
+              Pontos para Resgate
             </CardTitle>
             <Coins className="h-5 w-5 text-primary-foreground/80" />
           </CardHeader>
@@ -272,6 +278,22 @@ export default function DashboardPage() {
             </div>
             <p className="text-xs text-primary-foreground/80">
               Continue reciclando para ganhar mais!
+            </p>
+          </CardContent>
+        </Card>
+         <Card className="transform-gpu transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Pontos para Ranking
+            </CardTitle>
+            <Coins className="h-5 w-5 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-4xl font-bold">
+              {(userProfile?.lifetimePoints || 0).toLocaleString('pt-BR')}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Seu progresso total no ranking.
             </p>
           </CardContent>
         </Card>

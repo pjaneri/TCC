@@ -27,7 +27,11 @@
         },
         "totalPoints": {
           "type": "number",
-          "description": "Total points accumulated by the user through recycling."
+          "description": "Current points balance available for redeeming rewards."
+        },
+        "lifetimePoints": {
+          "type": "number",
+          "description": "Total points ever earned by the user, used for ranking."
         },
         "birthday": {
           "type": "string",
@@ -40,7 +44,8 @@
         "username",
         "email",
         "registrationDate",
-        "totalPoints"
+        "totalPoints",
+        "lifetimePoints"
       ]
     },
     "RecyclingRecord": {
