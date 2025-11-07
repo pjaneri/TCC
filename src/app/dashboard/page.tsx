@@ -9,7 +9,8 @@ import {
   Wrench,
   Gift,
   Trash2,
-  Loader2
+  Loader2,
+  AlertTriangle
 } from 'lucide-react';
 import {
   Card,
@@ -44,6 +45,8 @@ import {
   doc,
   Timestamp,
   runTransaction,
+  writeBatch,
+  getDocs,
 } from 'firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -93,6 +96,7 @@ export default function DashboardPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
 
 
   const userProfileRef = useMemoFirebase(() => {
@@ -141,7 +145,7 @@ export default function DashboardPage() {
     }));
 
     return [...records, ...redemptions]
-       .filter(activity => activity.date !== null || activity.metadata?.hasPendingWrites)
+      .filter(activity => activity.date !== null || activity.metadata?.hasPendingWrites)
       .sort((a, b) => {
         const aIsPending = a.metadata?.hasPendingWrites;
         const bIsPending = b.metadata?.hasPendingWrites;
@@ -208,9 +212,49 @@ export default function DashboardPage() {
     }
   };
 
+  const handleDeleteAllActivities = async () => {
+    if (!user || !firestore) return;
+
+    setIsDeletingAll(true);
+    try {
+        const batch = writeBatch(firestore);
+
+        // Delete recycling records
+        const recordsCollectionRef = collection(firestore, 'users', user.uid, 'recycling_records');
+        const recordsSnapshot = await getDocs(recordsCollectionRef);
+        recordsSnapshot.forEach(doc => batch.delete(doc.ref));
+
+        // Delete redemptions
+        const redemptionsCollectionRef = collection(firestore, 'users', user.uid, 'redemptions');
+        const redemptionsSnapshot = await getDocs(redemptionsCollectionRef);
+        redemptionsSnapshot.forEach(doc => batch.delete(doc.ref));
+        
+        // Reset user points
+        const userDocRef = doc(firestore, 'users', user.uid);
+        batch.update(userDocRef, { totalPoints: 0 });
+
+        await batch.commit();
+
+        toast({
+            title: "Tudo limpo!",
+            description: "Seu histórico de atividades e seus pontos foram zerados.",
+        });
+
+    } catch (error) {
+        console.error("Error deleting all activities: ", error);
+        toast({
+            variant: "destructive",
+            title: "Erro ao limpar atividades",
+            description: "Não foi possível excluir todo o seu histórico. Tente novamente.",
+        });
+    } finally {
+        setIsDeletingAll(false);
+    }
+  };
 
   const userPoints = userProfile?.totalPoints || 0;
   const isLoading = profileLoading || recordsLoading || redemptionsLoading;
+  const hasActivities = combinedActivities && combinedActivities.length > 0;
 
   return (
     <div className="grid gap-6">
@@ -234,14 +278,40 @@ export default function DashboardPage() {
       </div>
 
       <Card className="transform-gpu transition-all duration-300 ease-out hover:shadow-xl">
-        <CardHeader>
-          <CardTitle className="font-headline">Atividade Recente</CardTitle>
-          <CardDescription>
-            Seus registros de reciclagem e resgates mais recentes.
-          </CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle className="font-headline">Atividade Recente</CardTitle>
+            <CardDescription>
+              Seus registros de reciclagem e resgates mais recentes.
+            </CardDescription>
+          </div>
+          {hasActivities && (
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm" disabled={isDeletingAll}>
+                  {isDeletingAll ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Trash2 className="mr-2 h-4 w-4" />}
+                  Excluir Tudo
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle className="text-destructive"/>Tem certeza absoluta?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta ação não pode ser desfeita. Isso excluirá permanentemente <strong>todas</strong> as suas atividades (reciclagens e resgates) e irá zerar sua pontuação.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDeleteAllActivities} className={cn(buttonVariants({variant: "destructive"}))}>
+                    Sim, excluir tudo
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
         </CardHeader>
         <CardContent>
-          {isLoading && (!combinedActivities || combinedActivities.length === 0) ? (
+          {isLoading && !hasActivities ? (
             <p>Carregando atividades...</p>
           ) : (
             <Table>
