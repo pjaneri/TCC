@@ -80,14 +80,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     <SidebarProvider>
       <Sidebar>
         <SidebarHeader>
-          <div className="flex items-center gap-2">
+          <Link href="/dashboard" className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <Recycle className="h-5 w-5" />
             </div>
             <span className="font-headline text-lg font-semibold text-primary">
               Recycle+
             </span>
-          </div>
+          </Link>
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
