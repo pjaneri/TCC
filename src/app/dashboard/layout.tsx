@@ -55,7 +55,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const handleSignOut = async () => {
     try {
       await signOut(auth);
-      router.push("/login");
+      router.push("/");
     } catch (error) {
       toast({
         variant: "destructive",
