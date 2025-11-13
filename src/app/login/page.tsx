@@ -56,6 +56,9 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
+// Create the provider instance once.
+const provider = new GoogleAuthProvider();
+
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -63,14 +66,6 @@ export default function LoginPage() {
   const auth = useAuth();
   const firestore = useFirestore();
   const [isProcessingGoogle, setIsProcessingGoogle] = useState(false);
-  const [isAuthReady, setIsAuthReady] = useState(false);
-
-  useEffect(() => {
-    // This effect ensures that we don't try to use `auth` before it's initialized.
-    if (auth) {
-      setIsAuthReady(true);
-    }
-  }, [auth]);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -98,18 +93,26 @@ export default function LoginPage() {
   };
 
   const handleGoogleSignIn = async () => {
-    if (!auth) return;
-    const provider = new GoogleAuthProvider();
+    if (!auth) {
+        toast({
+            variant: "destructive",
+            title: "Erro de autenticação",
+            description: "O serviço de autenticação não está pronto. Tente novamente em alguns segundos.",
+        });
+        return;
+    }
+
     setIsProcessingGoogle(true);
     try {
       const result = await signInWithPopup(auth, provider);
       await checkAndCreateUserProfile(result.user);
-    } catch (error) {
+      // Successful login is handled by the useEffect below
+    } catch (error: any) {
       console.error("Popup Sign-In Error:", error);
       toast({
         variant: "destructive",
         title: "Erro de autenticação",
-        description: "Não foi possível completar o login com o Google. Verifique a configuração do seu projeto.",
+        description: "Não foi possível completar o login com o Google. Verifique a configuração do seu projeto ou a janela pop-up.",
       });
     } finally {
       setIsProcessingGoogle(false);
@@ -155,7 +158,7 @@ export default function LoginPage() {
     );
   }
 
-  const isLoading = form.formState.isSubmitting || isProcessingGoogle || !isAuthReady;
+  const isLoading = form.formState.isSubmitting || isProcessingGoogle;
 
   return (
     <AuthLayout>
@@ -208,8 +211,8 @@ export default function LoginPage() {
                 )}
               />
                <Button type="submit" className="w-full font-bold" disabled={isLoading} style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }}>
-                {form.formState.isSubmitting && !isProcessingGoogle ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                {isLoading ? "Aguarde..." : "Entrar"}
+                {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {isLoading && !isProcessingGoogle ? "Aguarde..." : "Entrar"}
               </Button>
             </CardContent>
           </form>
@@ -229,7 +232,7 @@ export default function LoginPage() {
         <CardContent>
              <Button variant="outline" className="w-full font-bold" onClick={handleGoogleSignIn} disabled={isLoading}>
                 {isProcessingGoogle ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
-                 {isLoading ? "Aguarde..." : "Google"}
+                 {isLoading && isProcessingGoogle ? "Aguarde..." : "Google"}
               </Button>
         </CardContent>
 
@@ -247,3 +250,5 @@ export default function LoginPage() {
     </AuthLayout>
   );
 }
+
+    
