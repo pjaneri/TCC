@@ -66,6 +66,7 @@ export default function LoginPage() {
   const [isAuthReady, setIsAuthReady] = useState(false);
 
   useEffect(() => {
+    // This effect ensures that we don't try to use `auth` before it's initialized.
     if (auth) {
       setIsAuthReady(true);
     }
@@ -108,7 +109,7 @@ export default function LoginPage() {
       toast({
         variant: "destructive",
         title: "Erro de autenticação",
-        description: "Não foi possível completar o login com o Google.",
+        description: "Não foi possível completar o login com o Google. Verifique a configuração do seu projeto.",
       });
     } finally {
       setIsProcessingGoogle(false);
@@ -207,7 +208,7 @@ export default function LoginPage() {
                 )}
               />
                <Button type="submit" className="w-full font-bold" disabled={isLoading} style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }}>
-                {isLoading && !isProcessingGoogle ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {form.formState.isSubmitting && !isProcessingGoogle ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 {isLoading ? "Aguarde..." : "Entrar"}
               </Button>
             </CardContent>
@@ -227,7 +228,7 @@ export default function LoginPage() {
         
         <CardContent>
              <Button variant="outline" className="w-full font-bold" onClick={handleGoogleSignIn} disabled={isLoading}>
-                {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
+                {isProcessingGoogle ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
                  {isLoading ? "Aguarde..." : "Google"}
               </Button>
         </CardContent>
