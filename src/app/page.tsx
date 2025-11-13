@@ -10,6 +10,7 @@ import {
   PlusCircle,
   Trophy,
   ArrowRight,
+  Loader2,
 } from 'lucide-react';
 import {
   Card,
@@ -24,6 +25,7 @@ import { cn } from '@/lib/utils';
 import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 const featuredRewards = rewardsData.placeholderImages.slice(0, 3);
 
@@ -76,7 +78,8 @@ export default function LandingPage() {
             <Recycle className="mr-2 h-6 w-6 text-primary" />
             <span className="font-bold">Recycle+</span>
           </div>
-          <div className="flex flex-1 items-center justify-end space-x-2">
+          <div className="flex flex-1 items-center justify-end space-x-4">
+             <ThemeToggle />
             <nav className="flex items-center space-x-2">
               <Link
                 href="/login"
