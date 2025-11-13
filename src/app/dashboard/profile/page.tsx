@@ -13,17 +13,18 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Input, PasswordInput } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useUser, useFirestore, useDoc, useMemoFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
+import { useUser, useFirestore, useDoc, useMemoFirebase, errorEmitter, FirestorePermissionError, useAuth } from "@/firebase";
 import { doc, updateDoc } from "firebase/firestore";
-import { updateProfile } from "firebase/auth";
+import { updateProfile, updatePassword, EmailAuthProvider, reauthenticateWithCredential } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
+  FormLabel,
   FormMessage,
 } from "@/components/ui/form";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -43,17 +44,23 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-
 const profileSchema = z.object({
     username: z.string().min(3, { message: "O nome de usuário deve ter pelo menos 3 caracteres." }),
     birthday: z.string().optional(),
 });
 
+const passwordSchema = z.object({
+    currentPassword: z.string().min(1, { message: "A senha atual é obrigatória." }),
+    newPassword: z.string().min(6, { message: "A nova senha deve ter pelo menos 6 caracteres." }),
+});
+
 type ProfileFormValues = z.infer<typeof profileSchema>;
+type PasswordFormValues = z.infer<typeof passwordSchema>;
 
 export default function ProfilePage() {
     const { user, isUserLoading } = useUser();
     const firestore = useFirestore();
+    const auth = useAuth();
     const { toast } = useToast();
 
     const userProfileRef = useMemoFirebase(() => {
@@ -67,6 +74,14 @@ export default function ProfilePage() {
         defaultValues: {
             username: "",
             birthday: "",
+        },
+    });
+    
+    const passwordForm = useForm<PasswordFormValues>({
+        resolver: zodResolver(passwordSchema),
+        defaultValues: {
+            currentPassword: "",
+            newPassword: "",
         },
     });
 
@@ -123,6 +138,39 @@ export default function ProfilePage() {
             });
         }
     };
+    
+    const onPasswordSubmit = async (data: PasswordFormValues) => {
+        if (!user || !user.email) return;
+
+        const credential = EmailAuthProvider.credential(user.email, data.currentPassword);
+
+        passwordForm.formState.isSubmitting = true;
+        try {
+            await reauthenticateWithCredential(user, credential);
+            await updatePassword(user, data.newPassword);
+            toast({
+                title: "Senha alterada!",
+                description: "Sua senha foi atualizada com sucesso.",
+            });
+            passwordForm.reset();
+        } catch (error: any) {
+             let description = "Não foi possível alterar sua senha. Tente novamente.";
+             if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+                description = "A senha atual está incorreta.";
+                passwordForm.setError("currentPassword", {
+                    type: "manual",
+                    message: "Senha incorreta."
+                });
+            }
+            toast({
+                variant: "destructive",
+                title: "Erro ao alterar senha",
+                description: description,
+            });
+        } finally {
+            passwordForm.formState.isSubmitting = false;
+        }
+    };
 
     const handleResetPoints = async () => {
       if (!user || !firestore) return;
@@ -158,6 +206,10 @@ export default function ProfilePage() {
         return <div className="flex justify-center items-center"><Loader2 className="h-8 w-8 animate-spin" /></div>
     }
 
+    const isGoogleProvider = user?.providerData.some(
+        (provider) => provider.providerId === "google.com"
+    );
+
   return (
     <div className="flex w-full flex-col gap-8">
         <div className="flex flex-col items-center gap-4 rounded-xl bg-gradient-to-r from-primary to-green-400 p-8 text-primary-foreground text-center md:flex-row md:text-left">
@@ -174,8 +226,9 @@ export default function ProfilePage() {
         </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="profile">Perfil</TabsTrigger>
+          <TabsTrigger value="security">Segurança</TabsTrigger>
           <TabsTrigger value="danger">Zona de Perigo</TabsTrigger>
         </TabsList>
         
@@ -235,6 +288,56 @@ export default function ProfilePage() {
           </Card>
         </TabsContent>
         
+        <TabsContent value="security" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Alterar Senha</CardTitle>
+              <CardDescription>
+                {isGoogleProvider
+                  ? "Você está logado com o Google. Para alterar sua senha, acesse as configurações da sua conta Google."
+                  : "Defina uma nova senha para sua conta."}
+              </CardDescription>
+            </CardHeader>
+            {!isGoogleProvider && (
+            <CardContent>
+              <Form {...passwordForm}>
+                <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-6">
+                  <FormField
+                    control={passwordForm.control}
+                    name="currentPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <Label>Senha Atual</Label>
+                        <FormControl>
+                            <PasswordInput placeholder="********" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={passwordForm.control}
+                    name="newPassword"
+                    render={({ field }) => (
+                      <FormItem>
+                        <Label>Nova Senha</Label>
+                        <FormControl>
+                            <PasswordInput placeholder="********" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                   <Button type="submit" className="font-bold" disabled={passwordForm.formState.isSubmitting}>
+                    {passwordForm.formState.isSubmitting ? "Alterando..." : "Alterar Senha"}
+                  </Button>
+                </form>
+              </Form>
+            </CardContent>
+            )}
+          </Card>
+        </TabsContent>
+
         <TabsContent value="danger" className="mt-6">
             <Card className="border-destructive">
             <CardHeader>
