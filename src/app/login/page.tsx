@@ -10,10 +10,9 @@ import {
   signInWithEmailAndPassword,
   getAuth,
   AuthError,
-  signInWithRedirect,
+  signInWithPopup,
   GoogleAuthProvider,
   User,
-  getRedirectResult,
 } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 
@@ -65,7 +64,7 @@ export default function LoginPage() {
   const { user, isUserLoading } = useUser();
   const auth = getAuth();
   const firestore = useFirestore();
-  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
+  const [isProcessingGoogle, setIsProcessingGoogle] = useState(false);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -92,31 +91,23 @@ export default function LoginPage() {
     }
   };
 
-  useEffect(() => {
-    getRedirectResult(auth)
-      .then(async (result) => {
-        if (result && result.user) {
-          await checkAndCreateUserProfile(result.user);
-          // O hook `useUser` vai detectar a mudança e o useEffect abaixo cuidará do redirecionamento
-        }
-      })
-      .catch((error) => {
-        console.error("Redirect Result Error:", error);
-        toast({
-          variant: "destructive",
-          title: "Erro de autenticação",
-          description: "Não foi possível completar o login com o Google.",
-        });
-      })
-      .finally(() => {
-        setIsProcessingRedirect(false);
-      });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [auth]);
-
   const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider();
-    await signInWithRedirect(auth, provider);
+    setIsProcessingGoogle(true);
+    try {
+      const result = await signInWithPopup(auth, provider);
+      await checkAndCreateUserProfile(result.user);
+      // O hook `useUser` detectará a mudança e o `useEffect` abaixo cuidará do redirecionamento.
+    } catch (error) {
+      console.error("Popup Sign-In Error:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro de autenticação",
+        description: "Não foi possível completar o login com o Google.",
+      });
+    } finally {
+      setIsProcessingGoogle(false);
+    }
   };
 
   useEffect(() => {
@@ -146,7 +137,7 @@ export default function LoginPage() {
     }
   };
 
-  const showLoader = isUserLoading || isProcessingRedirect;
+  const showLoader = isUserLoading;
 
   if (showLoader) {
     return (
@@ -219,7 +210,7 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
-               <Button type="submit" className="w-full font-bold" disabled={form.formState.isSubmitting} style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }}>
+               <Button type="submit" className="w-full font-bold" disabled={form.formState.isSubmitting || isProcessingGoogle} style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }}>
                 {form.formState.isSubmitting ? "Entrando..." : "Entrar"}
               </Button>
             </CardContent>
@@ -238,8 +229,9 @@ export default function LoginPage() {
         </div>
         
         <CardContent>
-             <Button variant="outline" className="w-full font-bold" onClick={handleGoogleSignIn} disabled={form.formState.isSubmitting}>
-                <GoogleIcon className="mr-2 h-4 w-4" /> Google
+             <Button variant="outline" className="w-full font-bold" onClick={handleGoogleSignIn} disabled={form.formState.isSubmitting || isProcessingGoogle}>
+                {isProcessingGoogle ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
+                 {isProcessingGoogle ? "Aguarde..." : "Google"}
               </Button>
         </CardContent>
 
