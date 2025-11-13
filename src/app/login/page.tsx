@@ -90,38 +90,39 @@ export default function LoginPage() {
       });
     }
   };
+  
+  useEffect(() => {
+    if (!isProcessingGoogle || !auth) return;
 
-  const handleGoogleSignIn = async () => {
-    if (!auth) {
+    const doGoogleSignIn = async () => {
+      try {
+        const result = await signInWithPopup(auth, provider);
+        await checkAndCreateUserProfile(result.user);
+      } catch (error: any) {
+        console.error("Popup Sign-In Error:", error);
+        let description = "Não foi possível completar o login com o Google.";
+        if (error.code === 'auth/popup-closed-by-user') {
+          description = "A janela de login foi fechada antes da conclusão.";
+        } else if (error.code === 'auth/network-request-failed') {
+            description = "Falha na rede. Verifique sua conexão e tente novamente."
+        }
         toast({
-            variant: "destructive",
-            title: "Erro de autenticação",
-            description: "O serviço de autenticação não está pronto. Tente novamente em alguns segundos.",
+          variant: "destructive",
+          title: "Erro de autenticação com Google",
+          description: description,
         });
-        return;
-    }
-
-    setIsProcessingGoogle(true);
-    try {
-      const result = await signInWithPopup(auth, provider);
-      await checkAndCreateUserProfile(result.user);
-    } catch (error: any) {
-      console.error("Popup Sign-In Error:", error);
-      let description = "Não foi possível completar o login com o Google.";
-      if (error.code === 'auth/popup-closed-by-user') {
-        description = "A janela de login foi fechada antes da conclusão.";
-      } else if (error.code === 'auth/network-request-failed') {
-          description = "Falha na rede. Verifique sua conexão e tente novamente."
+      } finally {
+        setIsProcessingGoogle(false);
       }
-      toast({
-        variant: "destructive",
-        title: "Erro de autenticação com Google",
-        description: description,
-      });
-    } finally {
-      setIsProcessingGoogle(false);
-    }
+    };
+
+    doGoogleSignIn();
+  }, [isProcessingGoogle, auth, firestore]);
+
+  const handleGoogleSignIn = () => {
+      setIsProcessingGoogle(true);
   };
+
 
   useEffect(() => {
     if (!isUserLoading && user) {
