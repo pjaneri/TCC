@@ -186,11 +186,6 @@ export default function LoginPage() {
                   <FormItem>
                     <div className="flex items-center justify-between">
                         <FormLabel>Senha</FormLabel>
-                        <Link href="/forgot-password" passHref>
-                          <span className="text-xs text-primary underline-offset-4 hover:underline">
-                            Esqueceu sua senha?
-                          </span>
-                        </Link>
                     </div>
                     <FormControl>
                       <PasswordInput

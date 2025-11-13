@@ -8,10 +8,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
   createUserWithEmailAndPassword,
-  getAuth,
   AuthError,
   updateProfile,
-  sendEmailVerification,
 } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 
@@ -61,6 +59,8 @@ export default function SignupPage() {
   });
 
   const onSubmit = async (data: SignupFormValues) => {
+    if (!auth || !firestore) return;
+
     try {
       const userCredential = await createUserWithEmailAndPassword(
         auth,
@@ -83,12 +83,10 @@ export default function SignupPage() {
         totalPoints: 0,
         lifetimePoints: 0,
       });
-      
-      await sendEmailVerification(user);
 
       toast({
         title: "Conta criada com sucesso!",
-        description: "Um email de verificação foi enviado. Por favor, cheque sua caixa de entrada.",
+        description: "Você já pode começar a reciclar e ganhar pontos.",
       });
 
       router.push("/dashboard");

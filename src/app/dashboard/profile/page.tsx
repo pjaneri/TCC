@@ -13,11 +13,11 @@ import {
   CardFooter,
 } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
-import { Input, PasswordInput } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useUser, useFirestore, useDoc, useMemoFirebase, errorEmitter, FirestorePermissionError } from "@/firebase";
 import { doc, updateDoc } from "firebase/firestore";
-import { updateProfile, EmailAuthProvider, reauthenticateWithCredential, updatePassword } from "firebase/auth";
+import { updateProfile } from "firebase/auth";
 import { useToast } from "@/hooks/use-toast";
 import {
   Form,
@@ -29,7 +29,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useEffect, useState, ChangeEvent } from "react";
+import { useEffect, ChangeEvent } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,18 +49,7 @@ const profileSchema = z.object({
     birthday: z.string().optional(),
 });
 
-const passwordSchema = z.object({
-  currentPassword: z.string().min(1, { message: "A senha atual é obrigatória." }),
-  newPassword: z.string().min(6, { message: "A nova senha deve ter pelo menos 6 caracteres." }),
-  confirmPassword: z.string()
-}).refine(data => data.newPassword === data.confirmPassword, {
-  message: "As novas senhas não correspondem.",
-  path: ["confirmPassword"],
-});
-
-
 type ProfileFormValues = z.infer<typeof profileSchema>;
-type PasswordFormValues = z.infer<typeof passwordSchema>;
 
 export default function ProfilePage() {
     const { user, isUserLoading } = useUser();
@@ -79,15 +68,6 @@ export default function ProfilePage() {
             username: "",
             birthday: "",
         },
-    });
-    
-    const passwordForm = useForm<PasswordFormValues>({
-      resolver: zodResolver(passwordSchema),
-      defaultValues: {
-        currentPassword: "",
-        newPassword: "",
-        confirmPassword: ""
-      }
     });
 
     useEffect(() => {
@@ -143,37 +123,6 @@ export default function ProfilePage() {
             });
         }
     };
-    
-    const onPasswordSubmit = async (data: PasswordFormValues) => {
-      if (!user || !user.email) return;
-
-      passwordForm.clearErrors();
-      try {
-        const credential = EmailAuthProvider.credential(user.email, data.currentPassword);
-        await reauthenticateWithCredential(user, credential);
-        await updatePassword(user, data.newPassword);
-        
-        toast({
-          title: "Senha alterada!",
-          description: "Sua senha foi atualizada com sucesso.",
-        });
-        passwordForm.reset();
-      } catch (error: any) {
-        let description = "Não foi possível alterar sua senha. Tente novamente.";
-        if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-          description = "A senha atual está incorreta.";
-          passwordForm.setError("currentPassword", { type: "manual", message: description });
-        } else {
-             console.error("Password change error:", error);
-        }
-        
-        toast({
-          variant: "destructive",
-          title: "Erro ao alterar senha",
-          description,
-        });
-      }
-    };
 
     const handleResetPoints = async () => {
       if (!user || !firestore) return;
@@ -225,9 +174,8 @@ export default function ProfilePage() {
         </div>
 
       <Tabs defaultValue="profile" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="profile">Perfil</TabsTrigger>
-          <TabsTrigger value="security">Segurança</TabsTrigger>
           <TabsTrigger value="danger">Zona de Perigo</TabsTrigger>
         </TabsList>
         
@@ -287,68 +235,6 @@ export default function ProfilePage() {
           </Card>
         </TabsContent>
         
-        <TabsContent value="security" className="mt-6">
-            <Card>
-            <CardHeader>
-                <CardTitle>Segurança da Conta</CardTitle>
-                <CardDescription>Altere sua senha de acesso.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Form {...passwordForm}>
-                <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-6 max-w-md">
-                    <p className="text-sm font-medium">Alterar Senha</p>
-                    <FormField
-                    control={passwordForm.control}
-                    name="currentPassword"
-                    render={({ field }) => (
-                        <FormItem>
-                        <Label>Senha Atual</Label>
-                        <FormControl>
-                            <PasswordInput {...field} placeholder="Sua senha atual"/>
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <FormField
-                    control={passwordForm.control}
-                    name="newPassword"
-                    render={({ field }) => (
-                        <FormItem>
-                        <Label>Nova Senha</Label>
-                        <FormControl>
-                            <PasswordInput {...field} placeholder="Pelo menos 6 caracteres"/>
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <FormField
-                    control={passwordForm.control}
-                    name="confirmPassword"
-                    render={({ field }) => (
-                        <FormItem>
-                        <Label>Confirmar Nova Senha</Label>
-                        <FormControl>
-                            <PasswordInput {...field} placeholder="Repita a nova senha"/>
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                    />
-                    <Button
-                    type="submit"
-                    className="font-bold"
-                    disabled={passwordForm.formState.isSubmitting}
-                    >
-                    {passwordForm.formState.isSubmitting ? "Alterando..." : "Alterar Senha"}
-                    </Button>
-                </form>
-                </Form>
-            </CardContent>
-            </Card>
-        </TabsContent>
-        
         <TabsContent value="danger" className="mt-6">
             <Card className="border-destructive">
             <CardHeader>
@@ -391,5 +277,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
