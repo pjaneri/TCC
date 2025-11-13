@@ -56,7 +56,6 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-// Create the provider instance once.
 const provider = new GoogleAuthProvider();
 
 export default function LoginPage() {
@@ -106,13 +105,18 @@ export default function LoginPage() {
     try {
       const result = await signInWithPopup(auth, provider);
       await checkAndCreateUserProfile(result.user);
-      // Successful login is handled by the useEffect below
     } catch (error: any) {
       console.error("Popup Sign-In Error:", error);
+      let description = "Não foi possível completar o login com o Google.";
+      if (error.code === 'auth/popup-closed-by-user') {
+        description = "A janela de login foi fechada antes da conclusão.";
+      } else if (error.code === 'auth/network-request-failed') {
+          description = "Falha na rede. Verifique sua conexão e tente novamente."
+      }
       toast({
         variant: "destructive",
-        title: "Erro de autenticação",
-        description: "Não foi possível completar o login com o Google. Verifique a configuração do seu projeto ou a janela pop-up.",
+        title: "Erro de autenticação com Google",
+        description: description,
       });
     } finally {
       setIsProcessingGoogle(false);
@@ -210,7 +214,7 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
-               <Button type="submit" className="w-full font-bold" disabled={isLoading} style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }}>
+               <Button type="submit" className="w-full font-bold" disabled={isLoading || !auth} style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }}>
                 {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 {isLoading && !isProcessingGoogle ? "Aguarde..." : "Entrar"}
               </Button>
@@ -230,7 +234,7 @@ export default function LoginPage() {
         </div>
         
         <CardContent>
-             <Button variant="outline" className="w-full font-bold" onClick={handleGoogleSignIn} disabled={isLoading}>
+             <Button variant="outline" className="w-full font-bold" onClick={handleGoogleSignIn} disabled={isLoading || !auth}>
                 {isProcessingGoogle ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
                  {isLoading && isProcessingGoogle ? "Aguarde..." : "Google"}
               </Button>
@@ -250,5 +254,3 @@ export default function LoginPage() {
     </AuthLayout>
   );
 }
-
-    
