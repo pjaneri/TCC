@@ -239,7 +239,7 @@ export default function LandingPage() {
       </main>
 
       <footer className="border-t">
-        <div className="container flex flex-col items-center justify-between gap-4 py-8 md:flex-row">
+        <div className="container flex flex-col items-center justify-center gap-4 py-8 md:flex-row">
           <div className="flex items-center gap-2">
             <Recycle className="h-5 w-5 text-primary" />
             <p className="text-sm text-muted-foreground">
@@ -247,9 +247,6 @@ export default function LandingPage() {
               reservados.
             </p>
           </div>
-          <p className="text-center text-sm text-muted-foreground md:text-left">
-            Feito com ❤️ para um planeta mais verde.
-          </p>
         </div>
       </footer>
     </div>
