@@ -13,14 +13,8 @@ export function initializeFirebase() {
     return getSdks(getApp());
   }
 
-  let firebaseApp;
-  try {
-    // This will succeed on App Hosting.
-    firebaseApp = initializeApp();
-  } catch (e) {
-    // This will fail on local development, so we fall back to the config object.
-    firebaseApp = initializeApp(firebaseConfig);
-  }
+  // Always initialize with the config on the client
+  const firebaseApp = initializeApp(firebaseConfig);
 
   return getSdks(firebaseApp);
 }
