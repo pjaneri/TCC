@@ -144,7 +144,6 @@ export default function ProfilePage() {
 
         const credential = EmailAuthProvider.credential(user.email, data.currentPassword);
 
-        passwordForm.formState.isSubmitting = true;
         try {
             await reauthenticateWithCredential(user, credential);
             await updatePassword(user, data.newPassword);
@@ -167,8 +166,6 @@ export default function ProfilePage() {
                 title: "Erro ao alterar senha",
                 description: description,
             });
-        } finally {
-            passwordForm.formState.isSubmitting = false;
         }
     };
 
