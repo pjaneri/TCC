@@ -8,7 +8,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
   signInWithEmailAndPassword,
-  getAuth,
   AuthError,
   signInWithPopup,
   GoogleAuthProvider,
@@ -36,9 +35,8 @@ import {
 import { Input, PasswordInput } from "@/components/ui/input";
 import { AuthLayout } from "@/components/auth-layout";
 import { useToast } from "@/hooks/use-toast";
-import { useUser, useFirestore } from "@/firebase";
+import { useUser, useFirestore, useAuth } from "@/firebase";
 import { useEffect, useState } from "react";
-import { Separator } from "@/components/ui/separator";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Loader2 } from "lucide-react";
 
@@ -62,7 +60,7 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
-  const auth = getAuth();
+  const auth = useAuth();
   const firestore = useFirestore();
   const [isProcessingGoogle, setIsProcessingGoogle] = useState(false);
 
@@ -92,12 +90,12 @@ export default function LoginPage() {
   };
 
   const handleGoogleSignIn = async () => {
+    if (!auth) return;
     const provider = new GoogleAuthProvider();
     setIsProcessingGoogle(true);
     try {
       const result = await signInWithPopup(auth, provider);
       await checkAndCreateUserProfile(result.user);
-      // O hook `useUser` detectará a mudança e o `useEffect` abaixo cuidará do redirecionamento.
     } catch (error) {
       console.error("Popup Sign-In Error:", error);
       toast({
@@ -117,6 +115,7 @@ export default function LoginPage() {
   }, [user, isUserLoading, router]);
 
   const onSubmit = async (data: LoginFormValues) => {
+    if (!auth) return;
     try {
       await signInWithEmailAndPassword(auth, data.email, data.password);
     } catch (error) {
@@ -136,30 +135,16 @@ export default function LoginPage() {
       });
     }
   };
-
-  const showLoader = isUserLoading;
-
-  if (showLoader) {
+  
+  if (isUserLoading || user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-2">
             <Loader2 className="h-8 w-8 animate-spin" />
-            <p>Verificando autenticação...</p>
+            <p>Carregando...</p>
         </div>
       </div>
     );
-  }
-
-  // Não renderiza o formulário se o usuário já estiver logado mas o redirect ainda não aconteceu
-  if (user) {
-    return (
-        <div className="flex h-screen w-full items-center justify-center bg-background">
-          <div className="flex flex-col items-center gap-2">
-              <Loader2 className="h-8 w-8 animate-spin" />
-              <p>Redirecionando...</p>
-          </div>
-        </div>
-      );
   }
 
   return (
@@ -199,7 +184,14 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Senha</FormLabel>
+                    <div className="flex items-center justify-between">
+                        <FormLabel>Senha</FormLabel>
+                        <Link href="/forgot-password" passHref>
+                          <span className="text-xs text-primary underline-offset-4 hover:underline">
+                            Esqueceu sua senha?
+                          </span>
+                        </Link>
+                    </div>
                     <FormControl>
                       <PasswordInput
                         placeholder="********"

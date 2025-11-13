@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -10,6 +11,7 @@ import {
   getAuth,
   AuthError,
   updateProfile,
+  sendEmailVerification,
 } from "firebase/auth";
 import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 
@@ -33,7 +35,7 @@ import {
 import { Input, PasswordInput } from "@/components/ui/input";
 import { AuthLayout } from "@/components/auth-layout";
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore } from "@/firebase";
+import { useFirestore, useAuth } from "@/firebase";
 
 const signupSchema = z.object({
   email: z.string().email({ message: "Por favor, insira um email válido." }),
@@ -46,7 +48,7 @@ type SignupFormValues = z.infer<typeof signupSchema>;
 export default function SignupPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const auth = getAuth();
+  const auth = useAuth();
   const firestore = useFirestore();
 
   const form = useForm<SignupFormValues>({
@@ -81,10 +83,12 @@ export default function SignupPage() {
         totalPoints: 0,
         lifetimePoints: 0,
       });
+      
+      await sendEmailVerification(user);
 
       toast({
         title: "Conta criada com sucesso!",
-        description: "Você será redirecionado para o painel.",
+        description: "Um email de verificação foi enviado. Por favor, cheque sua caixa de entrada.",
       });
 
       router.push("/dashboard");
