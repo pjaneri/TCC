@@ -117,6 +117,12 @@ const nextConfig: NextConfig = {
         hostname: 'lojaplasticossantana.com.br',
         port: '',
         pathname: '/**',
+      },
+       {
+        protocol: 'https',
+        hostname: 'cdn.n49.com.br',
+        port: '',
+        pathname: '/**',
       }
     ],
   },
