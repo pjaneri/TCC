@@ -123,6 +123,12 @@ const nextConfig: NextConfig = {
         hostname: 'cdn.n49.com.br',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.contabilista.com.br',
+        port: '',
+        pathname: '/**',
       }
     ],
   },
