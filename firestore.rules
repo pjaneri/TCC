@@ -1,11 +1,12 @@
 
 /**
  * @file Overview
- * This ruleset enforces a strict user-ownership model for most data, with public read access for rewards.
+ * This ruleset enforces a strict user-ownership model for most data, with public read access for rewards
+ * and admin-only access for validation.
  *
  * Data Structure:
  * - /users/{userId}: Stores user profile information. Users can only read/write their own profile.
- * - /users/{userId}/recycling_records/{recordId}: Stores recycling records. Only the owner can read/write.
+ * - /users/{userId}/recycling_records/{recordId}: Stores recycling records. Owner can create, admins can update for validation.
  * - /users/{userId}/redemptions/{redemptionId}: Stores redemption records. Only the owner can read/write.
  * - /rewards/{rewardId}: Stores reward information. Publicly readable, admin-only write access.
  * - /roles_admin/{userId}: Indicates admin privileges.
@@ -14,9 +15,7 @@
  * - User data is private. Listing other users is not allowed.
  * - The /rewards collection is publicly readable.
  * - Admin privileges are managed via the /roles_admin collection.
- *
- * Denormalization for Authorization:
- * - User-specific data is nested under /users/{userId} to simplify ownership rules.
+ * - Admins can update recycling records to approve/reject them.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -55,33 +54,38 @@ service cloud.firestore {
      * @path /users/{userId}
      * @allow (get) User can read their own profile.
      * @allow (create) User can create their own profile.
-     * @allow (update) User can update their own profile.
+     * @allow (update) User can update their own profile. Admins can update points.
      * @deny Reading, listing, or writing profiles of other users.
      */
     match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow list: if false; // Disallow listing for leaderboard
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
       allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId);
+      allow update: if isExistingOwner(userId) || isAdmin();
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Enforces user-level access control for recycling records.
+     * @description Enforces access control for recycling records.
      * @path /users/{userId}/recycling_records/{recordId}
-     * @allow (get, list, create, update, delete) Only the owner can manage their records.
+     * @allow (read) Owner and admins can read records.
+     * @allow (create) Owner can create a new record with 'pending' status.
+     * @allow (update) Admin can update the status to 'approved' or 'rejected'.
+     * @allow (delete) Owner can delete their own records.
      */
     match /users/{userId}/recycling_records/{recordId} {
-      allow read: if isOwner(userId);
+      allow read: if isOwner(userId) || isAdmin();
+      allow list: if isOwner(userId) || isAdmin();
       allow create: if isOwner(userId) 
                     && request.resource.data.userId == userId
                     && request.resource.data.id == recordId
-                    && request.resource.data.materialType is string
-                    && request.resource.data.quantity is number
-                    && request.resource.data.pointsEarned is number
+                    && request.resource.data.status == 'pending'
                     && request.resource.data.recyclingDate == request.time;
+      allow update: if isAdmin()
+                    && request.resource.data.status != resource.data.status
+                    && (request.resource.data.status == 'approved' || request.resource.data.status == 'rejected')
+                    && request.resource.data.validatedAt == request.time;
       allow delete: if isOwner(userId);
-      allow update: if false;
     }
 
     /**
@@ -115,7 +119,7 @@ service cloud.firestore {
      */
     match /roles_admin/{userId} {
         allow get: if isAdmin() || isOwner(userId);
-        allow list: if false;
+        allow list: if isAdmin();
         allow create: if isAdmin();
         allow update: if false;
         allow delete: if isAdmin();

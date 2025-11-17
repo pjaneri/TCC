@@ -62,6 +62,10 @@
           "type": "string",
           "description": "Reference to UserProfile. (Relationship: UserProfile 1:N RecyclingRecord)"
         },
+        "userName": {
+          "type": "string",
+          "description": "The display name of the user who submitted the record."
+        },
         "materialType": {
           "type": "string",
           "description": "Type of material recycled (e.g., plastic, paper, glass)."
@@ -77,16 +81,28 @@
         },
         "pointsEarned": {
           "type": "number",
-          "description": "Points earned for this recycling activity."
+          "description": "Points to be earned for this recycling activity upon approval."
+        },
+        "status": {
+          "type": "string",
+          "description": "The validation status of the record.",
+          "enum": ["pending", "approved", "rejected"]
+        },
+        "validatedAt": {
+          "type": "string",
+          "description": "Date and time when the record was validated by an admin.",
+          "format": "date-time"
         }
       },
       "required": [
         "id",
         "userId",
+        "userName",
         "materialType",
         "quantity",
         "recyclingDate",
-        "pointsEarned"
+        "pointsEarned",
+        "status"
       ]
     },
     "Reward": {

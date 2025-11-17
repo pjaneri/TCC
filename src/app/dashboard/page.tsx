@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo, useState } from 'react';
@@ -10,7 +11,10 @@ import {
   Gift,
   Trash2,
   Loader2,
-  AlertTriangle
+  AlertTriangle,
+  Clock,
+  CheckCircle2,
+  XCircle
 } from 'lucide-react';
 import {
   Card,
@@ -71,6 +75,12 @@ const materialIcons: { [key: string]: React.ElementType } = {
   Vidro: GlassWater,
   Metal: Wrench,
   Outros: Package,
+};
+
+const statusConfig: { [key: string]: { icon: React.ElementType, label: string, color: string } } = {
+    pending: { icon: Clock, label: 'Pendente', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300' },
+    approved: { icon: CheckCircle2, label: 'Aprovado', color: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' },
+    rejected: { icon: XCircle, label: 'Recusado', color: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300' },
 };
 
 // Helper function to convert Firestore Timestamp or ISO String to Date
@@ -163,48 +173,70 @@ export default function DashboardPage() {
   
   const handleDeleteActivity = async (activity: any) => {
     if (!user || !firestore) return;
-
+  
     setIsDeleting(activity.id);
-
+  
     const userDocRef = doc(firestore, 'users', user.uid);
     let activityDocRef;
-    let pointsToAdjust = 0;
-    let lifetimePointsToAdjust = 0;
-
-    if (activity.type === 'log') {
-      activityDocRef = doc(firestore, 'users', user.uid, 'recycling_records', activity.id);
-      pointsToAdjust = -activity.pointsEarned; // Subtract points earned
-      lifetimePointsToAdjust = -activity.pointsEarned;
-    } else { // redemption
-      activityDocRef = doc(firestore, 'users', user.uid, 'redemptions', activity.id);
-      pointsToAdjust = activity.pointsDeducted; // Add back points deducted
-      // No change to lifetime points for redemption
-    }
-
+  
     try {
-      await runTransaction(firestore, async (transaction) => {
-        const userDoc = await transaction.get(userDocRef);
-        if (!userDoc.exists()) {
-          throw 'Usuário não encontrado.';
+      if (activity.type === 'log') {
+        activityDocRef = doc(firestore, 'users', user.uid, 'recycling_records', activity.id);
+        
+        // Only adjust points if the record was already approved
+        if (activity.status === 'approved') {
+          await runTransaction(firestore, async (transaction) => {
+            const userDoc = await transaction.get(userDocRef);
+            if (!userDoc.exists()) throw 'Usuário não encontrado.';
+            
+            const currentPoints = userDoc.data().totalPoints || 0;
+            const currentLifetimePoints = userDoc.data().lifetimePoints || 0;
+            const newTotalPoints = currentPoints - activity.pointsEarned;
+            const newLifetimePoints = currentLifetimePoints - activity.pointsEarned;
+            
+            transaction.update(userDocRef, { 
+              totalPoints: newTotalPoints < 0 ? 0 : newTotalPoints, 
+              lifetimePoints: newLifetimePoints < 0 ? 0 : newLifetimePoints 
+            });
+            transaction.delete(activityDocRef);
+          });
+        } else {
+          // If not approved, just delete the record without changing points
+          await runTransaction(firestore, async (transaction) => {
+            transaction.delete(activityDocRef);
+          });
         }
-        const currentPoints = userDoc.data().totalPoints || 0;
-        const currentLifetimePoints = userDoc.data().lifetimePoints || 0;
-
-        const newTotalPoints = currentPoints + pointsToAdjust;
-        const newLifetimePoints = currentLifetimePoints + lifetimePointsToAdjust;
-
-        transaction.update(userDocRef, { totalPoints: newTotalPoints, lifetimePoints: newLifetimePoints });
-        transaction.delete(activityDocRef);
-      });
-
+  
+      } else { // redemption
+        activityDocRef = doc(firestore, 'users', user.uid, 'redemptions', activity.id);
+        const pointsToAdjust = activity.pointsDeducted; // Add back points
+  
+        await runTransaction(firestore, async (transaction) => {
+          const userDoc = await transaction.get(userDocRef);
+          if (!userDoc.exists()) throw 'Usuário não encontrado.';
+          
+          const currentPoints = userDoc.data().totalPoints || 0;
+          const newTotalPoints = currentPoints + pointsToAdjust;
+          
+          // Lifetime points are not affected by redemptions
+          transaction.update(userDocRef, { totalPoints: newTotalPoints });
+          transaction.delete(activityDocRef);
+        });
+      }
+  
       toast({
         title: "Atividade excluída!",
-        description: "A atividade foi removida e sua pontuação foi ajustada.",
+        description: "A atividade foi removida com sucesso.",
       });
-
+  
     } catch (error) {
+        // Fallback for activityDocRef if it was not set in the try block
+        const path = activity.type === 'log'
+            ? `users/${user.uid}/recycling_records/${activity.id}`
+            : `users/${user.uid}/redemptions/${activity.id}`;
+
         const permissionError = new FirestorePermissionError({
-            path: activityDocRef.path,
+            path: activityDocRef ? activityDocRef.path : path,
             operation: 'delete',
         });
         errorEmitter.emit('permission-error', permissionError);
@@ -341,7 +373,7 @@ export default function DashboardPage() {
                 <TableRow>
                   <TableHead>Item</TableHead>
                   <TableHead className="hidden sm:table-cell">
-                    Detalhes
+                    Status
                   </TableHead>
                   <TableHead className="hidden md:table-cell">Data</TableHead>
                   <TableHead className="text-right">Pontos</TableHead>
@@ -357,6 +389,7 @@ export default function DashboardPage() {
                     if (activity.type === 'log') {
                       const Icon =
                         materialIcons[activity.materialType] || Package;
+                      const currentStatus = statusConfig[activity.status] || statusConfig.pending;
                       return (
                         <TableRow
                           key={`log-${activity.id}`}
@@ -365,13 +398,21 @@ export default function DashboardPage() {
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <Icon className="h-4 w-4 text-muted-foreground" />
-                              <span className="font-medium">
-                                {activity.materialType}
-                              </span>
+                              <div className='flex flex-col'>
+                                <span className="font-medium">
+                                    {activity.materialType}
+                                </span>
+                                <span className="text-xs text-muted-foreground sm:hidden">
+                                     {activity.quantity} {activity.unit || 'un'}
+                                </span>
+                              </div>
                             </div>
                           </TableCell>
                           <TableCell className="hidden sm:table-cell">
-                            {activity.quantity} {activity.unit || 'un'}
+                            <Badge variant="outline" className={cn("gap-1", currentStatus.color)}>
+                                <currentStatus.icon className="h-3 w-3" />
+                                {currentStatus.label}
+                            </Badge>
                           </TableCell>
                           <TableCell className="hidden md:table-cell">
                             {isPending
@@ -430,7 +471,10 @@ export default function DashboardPage() {
                             </div>
                           </TableCell>
                           <TableCell className="hidden sm:table-cell">
-                            Prêmio Resgatado
+                             <Badge variant="outline" className={cn("gap-1", statusConfig.approved.color)}>
+                                <statusConfig.approved.icon className="h-3 w-3" />
+                                Concluído
+                            </Badge>
                           </TableCell>
                           <TableCell className="hidden md:table-cell">
                              {isPending

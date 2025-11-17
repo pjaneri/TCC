@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/form';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
-import { collection, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { Loader2, Package, Bot, Popcorn } from 'lucide-react';
 
 const materialData = [
@@ -91,38 +91,27 @@ function MaterialLogCard({ material }: MaterialLogCardProps) {
     const newRecordData = {
       id: newRecordRef.id,
       userId: user.uid,
+      userName: user.displayName || 'Usuário Anônimo',
       materialType: material.name,
       quantity: data.quantity,
       recyclingDate: serverTimestamp(),
       pointsEarned: points,
+      status: 'pending', // 'pending', 'approved', 'rejected'
+      validatedAt: null,
     };
 
     try {
-      await runTransaction(firestore, async (transaction) => {
-        const userDoc = await transaction.get(userDocRef);
-        if (!userDoc.exists()) {
-          throw 'Usuário não encontrado.';
-        }
-        const currentTotalPoints = userDoc.data().totalPoints || 0;
-        const currentLifetimePoints = userDoc.data().lifetimePoints || 0;
-        
-        const newTotalPoints = currentTotalPoints + points;
-        const newLifetimePoints = currentLifetimePoints + points;
-
-        transaction.update(userDocRef, { 
-            totalPoints: newTotalPoints,
-            lifetimePoints: newLifetimePoints 
-        });
-        transaction.set(newRecordRef, newRecordData);
-      });
+      // Points are no longer added in this transaction.
+      // They are added when an admin approves the record.
+      await setDoc(newRecordRef, newRecordData);
 
       toast({
-        title: 'Reciclagem registrada!',
-        description: `Você ganhou ${points} pontos reciclando ${material.name}.`,
+        title: 'Registro enviado para validação!',
+        description: `Seu registro de ${material.name} foi enviado. Você receberá os pontos após a aprovação.`,
       });
       form.reset({ quantity: 0 });
     } catch (e) {
-      console.error('Transaction failed: ', e);
+      console.error('Submission failed: ', e);
       const permissionError = new FirestorePermissionError({
         path: newRecordRef.path,
         operation: 'create',
@@ -176,7 +165,7 @@ function MaterialLogCard({ material }: MaterialLogCardProps) {
               {isSubmitting ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
-              {isSubmitting ? 'Salvando...' : 'Salvar Registro'}
+              {isSubmitting ? 'Enviando...' : 'Enviar para Validação'}
             </Button>
           </form>
         </Form>
@@ -191,7 +180,7 @@ export default function LogRecyclingPage() {
             <div className="mb-6">
                 <h1 className="text-2xl font-bold tracking-tight">Registrar Reciclagem</h1>
                 <p className="text-muted-foreground">
-                    Adicione os itens que você reciclou para ganhar pontos.
+                    Adicione os itens que você reciclou para ganhar pontos após a validação.
                 </p>
             </div>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
