@@ -26,7 +26,7 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'picsum.photos',
         port: '',
-pathname: '/**',
+        pathname: '/**',
       },
       {
         protocol: 'https',
@@ -107,7 +107,7 @@ pathname: '/**',
         pathname: '/**',
       },
       {
-        protocol: 'https://',
+        protocol: 'https',
         hostname: 'livrariascuritiba.vteximg.com.br',
         port: '',
         pathname: '/**',
