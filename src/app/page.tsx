@@ -214,7 +214,7 @@ export default function LandingPage() {
                   />
                   <CardContent className="flex flex-1 flex-col p-4">
                     <CardTitle className="font-headline text-lg">
-                      {reward.id === "reward-1" ? "Garrafa de Água" : reward.id === "reward-3" ? "Vaso de Planta" : "Lancheira Ecológica"}
+                      {reward.name}
                     </CardTitle>
                     <CardDescription className="mt-1 flex-1">
                       {reward.description}
