@@ -135,6 +135,12 @@ pathname: '/**',
         hostname: 'cdn.shoppub.io',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.sistemawbuy.com.br',
+        port: '',
+        pathname: '/**',
       }
     ],
   },
