@@ -87,6 +87,18 @@ const nextConfig: NextConfig = {
         hostname: 'minipreco.vteximg.com.br',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.freepik.com',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ercaplast.com.br',
+        port: '',
+        pathname: '/**',
       }
     ],
   },
