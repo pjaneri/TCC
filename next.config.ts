@@ -77,7 +77,7 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
       {
-        protocol: 'httpsas',
+        protocol: 'https',
         hostname: 'www.arqplast.com.br',
         port: '',
         pathname: '/**',
