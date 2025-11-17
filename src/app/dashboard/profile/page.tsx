@@ -220,7 +220,7 @@ export default function ProfilePage() {
             <div>
                 <h2 className="text-3xl font-bold">{profileForm.watch('username')}</h2>
                 <p className="text-lg opacity-90">{user?.email}</p>
-                 <p className="text-xs opacity-70 mt-2">UID: {user?.uid}</p>
+                 <p className="text-xs opacity-70 mt-2 font-mono bg-black/20 rounded px-2 py-1 inline-block">UID: {user?.uid}</p>
             </div>
         </div>
 
