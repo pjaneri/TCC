@@ -95,7 +95,7 @@ pathname: '/**',
         pathname: '/**',
       },
       {
-        protocol: 'httpslers',
+        protocol: 'https',
         hostname: 'ercaplast.com.br',
         port: '',
         pathname: '/**',
