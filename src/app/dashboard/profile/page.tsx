@@ -43,6 +43,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Link from "next/link";
 
 const profileSchema = z.object({
     username: z.string().min(3, { message: "O nome de usuário deve ter pelo menos 3 caracteres." }),
@@ -219,6 +220,7 @@ export default function ProfilePage() {
             <div>
                 <h2 className="text-3xl font-bold">{profileForm.watch('username')}</h2>
                 <p className="text-lg opacity-90">{user?.email}</p>
+                 <p className="text-xs opacity-70 mt-2">UID: {user?.uid}</p>
             </div>
         </div>
 
@@ -343,37 +345,49 @@ export default function ProfilePage() {
                 Ações permanentes que não podem ser desfeitas.
                 </CardDescription>
             </CardHeader>
-            <CardContent>
-                <p className="mb-2 text-sm font-medium">Resetar Pontuação</p>
-                <p className="text-sm text-muted-foreground mb-4">
-                Isso irá zerar todos os seus pontos de reciclagem acumulados. Seus registros de atividades permanecerão.
-                </p>
+            <CardContent className="space-y-6">
+                <div>
+                    <p className="mb-2 text-sm font-medium">Resetar Pontuação</p>
+                    <p className="text-sm text-muted-foreground mb-4">
+                    Isso irá zerar todos os seus pontos de reciclagem acumulados. Seus registros de atividades permanecerão.
+                    </p>
+                     <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="destructive">Resetar Meus Pontos</Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                            <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Esta ação não pode ser desfeita. Isso irá resetar permanentemente
+                                sua pontuação para <strong>0</strong>.
+                            </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleResetPoints} className={cn(buttonVariants({variant: "destructive"}))}>
+                                Sim, resetar meus pontos
+                            </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </div>
+
+                <div>
+                    <p className="mb-2 text-sm font-medium">Acesso de Administrador</p>
+                    <p className="text-sm text-muted-foreground mb-4">
+                        Clique no link abaixo para acessar a página de configuração de administrador.
+                    </p>
+                    <Link href="/make-admin" className={cn(buttonVariants({ variant: 'outline' }))}>
+                        Tornar-se Administrador (uso único)
+                    </Link>
+                </div>
             </CardContent>
-            <CardFooter className="bg-destructive/10">
-                <AlertDialog>
-                <AlertDialogTrigger asChild>
-                    <Button variant="destructive">Resetar Meus Pontos</Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                    <AlertDialogTitle>Você tem certeza absoluta?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        Esta ação não pode ser desfeita. Isso irá resetar permanentemente
-                        sua pontuação para <strong>0</strong>.
-                    </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleResetPoints} className={cn(buttonVariants({variant: "destructive"}))}>
-                        Sim, resetar meus pontos
-                    </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-                </AlertDialog>
-            </CardFooter>
             </Card>
         </TabsContent>
       </Tabs>
     </div>
   );
 }
+
+    
