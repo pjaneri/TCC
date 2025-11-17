@@ -77,7 +77,7 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
       {
-        protocol: 'https',
+        protocol: 'httpsas',
         hostname: 'www.arqplast.com.br',
         port: '',
         pathname: '/**',
@@ -97,6 +97,12 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'ercaplast.com.br',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'dfxe7ekqtze9q.cloudfront.net',
         port: '',
         pathname: '/**',
       }
