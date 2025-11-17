@@ -81,6 +81,12 @@ const nextConfig: NextConfig = {
         hostname: 'www.arqplast.com.br',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'minipreco.vteximg.com.br',
+        port: '',
+        pathname: '/**',
       }
     ],
   },
