@@ -36,7 +36,7 @@ const allRewards = rewardsData.placeholderImages.map(reward => ({
     reward.id.includes("kit-cracha-chaveiros") ? 40000 :
     reward.id.includes("kit-saboneteira-cumbuca-tupperware") ? 35000 :
     reward.id.includes("kit-espatula-caneca-garrafa") ? 30000 :
-    reward.id.includes("espremedor") || reward.id.includes("chaveiro-pers") || reward.id.includes("cumbuca-hashi") ? 20000 :
+    reward.id.includes("espremedor") || reward.id.includes("cumbuca-hashi") ? 20000 :
     reward.id.includes("chaveiro-id") || reward.id.includes("tupperware") || reward.id.includes("garrafa") ? 15000 :
     reward.id.includes("saboneteira") || reward.id.includes("porta-cracha") || reward.id.includes("espatula") || reward.id.includes("caneca") ? 10000 :
     5000

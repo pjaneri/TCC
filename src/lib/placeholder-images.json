@@ -4,91 +4,84 @@
       "id": "reward-prato",
       "name": "Prato",
       "description": "Prato de plástico reciclado, durável e ecológico.",
-      "imageUrl": "https://images.unsplash.com/photo-1618453444382-67a42b9fb419?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "imageUrl": "https://static.casaebar.com.br/public/casaebar/imagens/produtos/prato-plastico-24cm-azul-63d17ce58a0f0.jpg",
       "imageHint": "plastic plate"
     },
     {
       "id": "reward-vaso",
       "name": "Vaso de Planta",
       "description": "Vaso de planta de plástico reciclado para suas plantas.",
-      "imageUrl": "https://images.unsplash.com/photo-1592296429945-93008c7e5a83?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "imageUrl": "https://images.tcdn.com.br/img/img_prod/1048182/vaso_planta_grande_redondo_preto_plastico_jardim_flores_arqplast_395_1_8585a2e6581575b2c896f57ce923f3fb.jpg",
       "imageHint": "plastic flowerpot"
     },
     {
       "id": "reward-quebra-cabeca",
       "name": "Quebra-cabeça Carrinho",
       "description": "Divertido quebra-cabeça 3D de um carrinho, feito de plástico reciclado.",
-      "imageUrl": "https://images.unsplash.com/photo-1598507971853-356157833594?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "imageUrl": "https://m.media-amazon.com/images/I/61hPMrQZxUL._AC_UF894,1000_QL80_.jpg",
       "imageHint": "plastic toycar"
     },
     {
       "id": "reward-saboneteira",
       "name": "Saboneteira",
       "description": "Saboneteira elegante feita de plástico reciclado para o seu banheiro.",
-      "imageUrl": "https://images.unsplash.com/photo-1629276535941-8a68a5f118c7?q=80&w=1962&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "imageUrl": "https://www.arqplast.com.br/wp-content/uploads/2023/09/25687.jpg",
       "imageHint": "plastic soapdish"
     },
     {
       "id": "reward-porta-cracha",
       "name": "Porta Crachá",
       "description": "Porta crachá de plástico reciclado, ideal para o trabalho ou eventos.",
-      "imageUrl": "https://images.unsplash.com/photo-1589923188900-85dae523342b?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "imageUrl": "https://images.tcdn.com.br/img/img_prod/650343/porta_cracha_rigido_modelo_horizontal_321_1_352cae2963b1f2a2066f52883855ec0a.png",
       "imageHint": "plastic idholder"
     },
     {
       "id": "reward-espatula",
       "name": "Espátula",
       "description": "Espátula de cozinha de plástico reciclado resistente ao calor.",
-      "imageUrl": "https://images.unsplash.com/photo-1620714270483-658273fb0b7c?q=80&w=1932&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%DD",
+      "imageUrl": "https://elastobor.vtexassets.com/arquivos/ids/199338/ESPATULA-PLASTICA-TIGRE-LISA-2160-8CM-AZUL.jpg?v=637400958708330000",
       "imageHint": "plastic spatula"
     },
     {
       "id": "reward-caneca",
       "name": "Caneca",
       "description": "Caneca de plástico reciclado para suas bebidas quentes ou frias.",
-      "imageUrl": "https://images.unsplash.com/photo-1617886944365-9a863589a101?q=80&w=1964&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "imageUrl": "https://images.tcdn.com.br/img/img_prod/641157/caneca_plastica_300_ml_zeek_linha_pop_775_1_20190529160233.jpg",
       "imageHint": "plastic mug"
     },
     {
       "id": "reward-chaveiro-id",
       "name": "Chaveiro de Identificação",
       "description": "Chaveiro de identificação personalizável feito de plástico reciclado.",
-      "imageUrl": "https://images.unsplash.com/photo-1563240602-a05d51aa427c?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "imageUrl": "https://casanarciso.cdn.magazord.com.br/img/2022/07/produto/2776/cahveiro-2.jpg?ims=fit-in/800x800/filters:fill(white)",
       "imageHint": "plastic keychain"
     },
     {
       "id": "reward-tupperware",
       "name": "Tupperware",
       "description": "Conjunto de potes Tupperware de plástico reciclado para armazenar alimentos.",
-      "imageUrl": "https://images.unsplash.com/photo-1632052443044-904d6e914a27?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "imageUrl": "https://http2.mlstatic.com/D_NQ_NP_802545-MLB70037135177_062023-O-kit-conjunto-com-5-jeitosinho-tupperware.webp",
       "imageHint": "plastic foodcontainers"
     },
     {
       "id": "reward-garrafa",
       "name": "Garrafa",
       "description": "Garrafa de água reutilizável de plástico reciclado.",
-      "imageUrl": "https://images.unsplash.com/photo-1618412651473-86b9745778a2?q=80&w=1945&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "imageUrl": "https://cdn.awsli.com.br/600x1000/1027/1027618/produto/55796243/130b4445ca.jpg",
       "imageHint": "reusable plasticbottle"
     },
     {
       "id": "reward-espremedor",
       "name": "Espremedor e Jarrinha",
       "description": "Kit de espremedor de frutas e jarrinha, ambos de plástico reciclado.",
-      "imageUrl": "https://images.unsplash.com/photo-1550623694-3a72b0320c15?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxwbGFzdGljJTIwanVpY2VyfGVufDB8fHx8MTc2MzQxMzM1NXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://minipreco.vteximg.com.br/arquivos/ids/184197/d0d1a76b-0396-4b15-9343-55bf1c5d6fef.jpg?v=638264288316130000",
       "imageHint": "plastic juicer"
-    },
-    {
-      "id": "reward-chaveiro-pers",
-      "name": "Chaveiro Personalizado",
-      "description": "Chaveiro de plástico reciclado com personalização.",
-      "imageUrl": "https://images.unsplash.com/photo-1563240602-a05d51aa427c?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
-      "imageHint": "plastic keychain"
     },
     {
       "id": "reward-cumbuca-hashi",
       "name": "Cumbuca de Hashi",
       "description": "Cumbuca com suporte para hashi, ideal para comida asiática, de plástico reciclado.",
-      "imageUrl": "https://images.unsplash.com/photo-1617886943983-1050637d7a15?q=80&w=1964&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "imageUrl": "https://images.tcdn.com.br/img/img_prod/836117/cumbuca_uno_plastico_300ml_pt_coza_5675_1_2842589cefb5ea68e278e4c4122ba188.png",
       "imageHint": "plastic bowl"
     },
     {
@@ -109,7 +102,7 @@
       "id": "reward-kit-cracha-chaveiros",
       "name": "Kit: Porta Crachá + Chaveiros",
       "description": "Kit com porta crachá, chaveiro de identificação e chaveiro personalizado.",
-      "imageUrl": "https://images.unsplash.com/photo-1563240602-a05d51aa427c?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
+      "imageUrl": "https://images.unsplash.com/photo-1589923188900-85dae523342b?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
       "imageHint": "plastic accessories"
     }
   ]
