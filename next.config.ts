@@ -107,7 +107,7 @@ pathname: '/**',
         pathname: '/**',
       },
       {
-        protocol: 'https',
+        protocol: 'https://',
         hostname: 'livrariascuritiba.vteximg.com.br',
         port: '',
         pathname: '/**',
@@ -139,6 +139,12 @@ pathname: '/**',
       {
         protocol: 'https',
         hostname: 'cdn.sistemawbuy.com.br',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'www.kitmerenda.com.br',
         port: '',
         pathname: '/**',
       }
