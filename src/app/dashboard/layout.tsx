@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -10,9 +11,11 @@ import {
   UserCircle,
   Recycle,
   BarChart,
+  ShieldCheck,
 } from "lucide-react";
-import { ReactNode, useEffect } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { getAuth, signOut } from "firebase/auth";
+import { doc, getDoc } from "firebase/firestore";
 
 import {
   SidebarProvider,
@@ -26,7 +29,7 @@ import {
   SidebarFooter,
   SidebarInset,
 } from "@/components/ui/sidebar";
-import { useUser } from "@/firebase";
+import { useUser, useFirestore } from "@/firebase";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -39,18 +42,39 @@ const navItems = [
   { href: "/dashboard/profile", icon: UserCircle, label: "Perfil" },
 ];
 
+const adminNavItem = { href: "/admin", icon: ShieldCheck, label: "Admin" };
+
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, isUserLoading } = useUser();
   const { toast } = useToast();
   const auth = getAuth();
+  const firestore = useFirestore();
+
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isCheckingAdmin, setIsCheckingAdmin] = useState(true);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.replace("/login");
     }
   }, [user, isUserLoading, router]);
+
+  useEffect(() => {
+    if (user && firestore) {
+      const checkAdminStatus = async () => {
+        setIsCheckingAdmin(true);
+        const adminRoleDoc = doc(firestore, 'roles_admin', user.uid);
+        const docSnap = await getDoc(adminRoleDoc);
+        setIsAdmin(docSnap.exists());
+        setIsCheckingAdmin(false);
+      };
+      checkAdminStatus();
+    } else if (!isUserLoading) {
+      setIsCheckingAdmin(false);
+    }
+  }, [user, firestore, isUserLoading]);
 
   const handleSignOut = async () => {
     try {
@@ -65,7 +89,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     }
   };
 
-  if (isUserLoading || !user) {
+  const allNavItems = isAdmin ? [...navItems, adminNavItem] : navItems;
+  const currentNavItem = allNavItems.find(item => item.href === pathname);
+
+  if (isUserLoading || !user || isCheckingAdmin) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-2">
@@ -91,7 +118,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
-            {navItems.map((item) => (
+            {allNavItems.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <Link href={item.href} passHref>
                   <SidebarMenuButton
@@ -118,7 +145,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <SidebarTrigger className="md:hidden" />
           <div className="flex w-full flex-1 items-center justify-end gap-4">
             <h1 className="font-headline text-xl font-semibold flex-1">
-                {navItems.find(item => item.href === pathname)?.label}
+                {currentNavItem?.label}
             </h1>
             <ThemeToggle />
             <div className="flex items-center gap-2">

@@ -1,14 +1,16 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { Loader2, ShieldCheck, AlertTriangle, KeyRound } from 'lucide-react';
 import Link from 'next/link';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function MakeAdminPage() {
   const { user, isUserLoading } = useUser();
@@ -17,10 +19,12 @@ export default function MakeAdminPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
+  const [uidToMakeAdmin, setUidToMakeAdmin] = useState('');
 
-  useState(() => {
+  useEffect(() => {
     if (user && firestore) {
       const checkAdmin = async () => {
+        setIsChecking(true);
         const adminRoleDoc = doc(firestore, 'roles_admin', user.uid);
         const docSnap = await getDoc(adminRoleDoc);
         setIsAdmin(docSnap.exists());
@@ -28,9 +32,9 @@ export default function MakeAdminPage() {
       };
       checkAdmin();
     } else if (!isUserLoading) {
-        setIsChecking(false);
+      setIsChecking(false);
     }
-  });
+  }, [user, firestore, isUserLoading]);
 
   const handleMakeAdmin = async () => {
     if (!user || !firestore) {
@@ -41,22 +45,31 @@ export default function MakeAdminPage() {
       });
       return;
     }
+    if (!uidToMakeAdmin.trim()) {
+        toast({
+            variant: 'destructive',
+            title: 'UID Inválido',
+            description: 'Por favor, insira um UID de usuário válido.',
+        });
+        return;
+    }
 
     setIsLoading(true);
-    const adminRoleDoc = doc(firestore, 'roles_admin', user.uid);
-    const adminData = { isAdmin: true };
+    const adminRoleDoc = doc(firestore, 'roles_admin', uidToMakeAdmin);
+    const adminData = { isAdmin: true, promotedBy: user.uid, promotedAt: new Date() };
 
     try {
       await setDoc(adminRoleDoc, adminData);
       toast({
         title: 'Sucesso!',
-        description: 'Você agora é um administrador. Redirecionando...',
+        description: `O usuário com UID ${uidToMakeAdmin.substring(0, 8)}... agora é um administrador.`,
       });
-      setIsAdmin(true);
-       // Optional: redirect to admin page
-      setTimeout(() => {
-        window.location.href = '/admin';
-      }, 2000);
+      
+      // If the user made themselves an admin, update their local state
+      if (uidToMakeAdmin === user.uid) {
+        setIsAdmin(true);
+      }
+      setUidToMakeAdmin('');
 
     } catch (error) {
       console.error('Error making admin:', error);
@@ -69,7 +82,7 @@ export default function MakeAdminPage() {
       toast({
         variant: 'destructive',
         title: 'Falha na Operação',
-        description: 'Você não tem permissão para se tornar um administrador.',
+        description: 'Você não tem permissão para adicionar administradores.',
       });
     } finally {
       setIsLoading(false);
@@ -104,31 +117,44 @@ export default function MakeAdminPage() {
 
   return (
     <div className="flex h-screen w-full items-center justify-center p-4">
-      <Card className="max-w-md text-center">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-center gap-2"><ShieldCheck className="h-6 w-6 text-primary" /> Configuração de Administrador</CardTitle>
+      <Card className="w-full max-w-md">
+        <CardHeader className='text-center'>
+          <div className="flex justify-center">
+            <ShieldCheck className="h-10 w-10 text-primary" />
+          </div>
+          <CardTitle className="mt-2">Promover Administrador</CardTitle>
           <CardDescription>
             {isAdmin 
-                ? 'Você já possui privilégios de administrador.' 
-                : 'Clique no botão abaixo para se tornar o primeiro administrador do sistema. Esta ação é de uso único.'
+                ? 'Você já é um administrador. Use o formulário abaixo para promover outros usuários.' 
+                : 'Insira o UID do usuário que você deseja tornar um administrador.'
             }
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          {isAdmin ? (
-             <Link href="/admin">
-                <Button>Ir para o Painel do Admin</Button>
-            </Link>
-          ) : (
-            <Button onClick={handleMakeAdmin} disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isLoading ? 'Promovendo...' : 'Tornar-me Administrador'}
-            </Button>
+        <CardContent className='space-y-4'>
+          <div className='space-y-2'>
+              <Label htmlFor="uid-input">UID do Usuário</Label>
+              <Input 
+                id="uid-input"
+                placeholder="Cole o UID do usuário aqui"
+                value={uidToMakeAdmin}
+                onChange={(e) => setUidToMakeAdmin(e.target.value)}
+              />
+          </div>
+          <Button onClick={handleMakeAdmin} disabled={isLoading} className="w-full">
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {isLoading ? 'Promovendo...' : 'Tornar Administrador'}
+          </Button>
+
+          {isAdmin && (
+            <div className="mt-4 border-t pt-4 text-center">
+                <p className="text-sm text-muted-foreground mb-2">Acesso ao seu painel:</p>
+                <Link href="/admin">
+                    <Button variant="outline">Ir para o Painel do Admin</Button>
+                </Link>
+            </div>
           )}
         </CardContent>
       </Card>
     </div>
   );
 }
-
-    
