@@ -87,10 +87,10 @@ export default function ProfilePage() {
     });
 
     useEffect(() => {
-        if (userProfile) {
+        if (user) {
             profileForm.reset({
-                username: userProfile.username || '',
-                birthday: userProfile.birthday || '',
+                username: user.displayName || '',
+                birthday: userProfile?.birthday || '',
             });
         }
     }, [user, userProfile, profileForm]);
@@ -174,7 +174,7 @@ export default function ProfilePage() {
       if (!user || !firestore) return;
 
       const userDocRef = doc(firestore, "users", user.uid);
-      const resetData = { totalPoints: 0, lifetimePoints: 0 };
+      const resetData = { totalPoints: 0 };
       try {
         await updateDoc(userDocRef, resetData);
         toast({
@@ -376,7 +376,7 @@ export default function ProfilePage() {
                 <div>
                     <p className="mb-2 text-sm font-medium">Acesso de Administrador</p>
                     <p className="text-sm text-muted-foreground mb-4">
-                        Clique no link abaixo para acessar a página de configuração de administrador.
+                        Clique no link abaixo para se tornar um administrador usando seu UID. Esta ação é de uso único.
                     </p>
                     <Link href="/make-admin" className={cn(buttonVariants({ variant: 'outline' }))}>
                         Tornar-se Administrador (uso único)
@@ -389,5 +389,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
-    
