@@ -27,26 +27,20 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import rewardsData from '@/lib/placeholder-images.json';
 
 
-const rewardsData = [
-    { id: "reward-prato", name: "Prato", requiredPoints: 5000, description: "Prato de plástico reciclado, durável e ecológico.", imageUrl: "https://picsum.photos/seed/plate/400/300", imageHint: "recycled plate" },
-    { id: "reward-vaso", name: "Vaso de Planta", requiredPoints: 5000, description: "Vaso de planta de plástico reciclado para suas plantas.", imageUrl: "https://picsum.photos/seed/plantpot/400/300", imageHint: "plant pot" },
-    { id: "reward-quebra-cabeca", name: "Quebra-cabeça Carrinho", requiredPoints: 5000, description: "Divertido quebra-cabeça 3D de um carrinho, feito de plástico reciclado.", imageUrl: "https://picsum.photos/seed/puzzlecar/400/300", imageHint: "puzzle car" },
-    { id: "reward-saboneteira", name: "Saboneteira", requiredPoints: 10000, description: "Saboneteira elegante feita de plástico reciclado para o seu banheiro.", imageUrl: "https://picsum.photos/seed/soapdish/400/300", imageHint: "soap dish" },
-    { id: "reward-porta-cracha", name: "Porta Crachá", requiredPoints: 10000, description: "Porta crachá de plástico reciclado, ideal para o trabalho ou eventos.", imageUrl: "https://picsum.photos/seed/badgeholder/400/300", imageHint: "badge holder" },
-    { id: "reward-espatula", name: "Espátula", requiredPoints: 10000, description: "Espátula de cozinha de plástico reciclado resistente ao calor.", imageUrl: "https://picsum.photos/seed/spatula/400/300", imageHint: "kitchen spatula" },
-    { id: "reward-caneca", name: "Caneca", requiredPoints: 10000, description: "Caneca de plástico reciclado para suas bebidas quentes ou frias.", imageUrl: "https://picsum.photos/seed/mug/400/300", imageHint: "recycled mug" },
-    { id: "reward-chaveiro-id", name: "Chaveiro de Identificação", requiredPoints: 15000, description: "Chaveiro de identificação personalizável feito de plástico reciclado.", imageUrl: "https://picsum.photos/seed/keychain/400/300", imageHint: "id keychain" },
-    { id: "reward-tupperware", name: "Tupperware", requiredPoints: 15000, description: "Conjunto de potes Tupperware de plástico reciclado para armazenar alimentos.", imageUrl: "https://picsum.photos/seed/tupperware/400/300", imageHint: "food container" },
-    { id: "reward-garrafa", name: "Garrafa", requiredPoints: 15000, description: "Garrafa de água reutilizável de plástico reciclado.", imageUrl: "https://picsum.photos/seed/bottle/400/300", imageHint: "water bottle" },
-    { id: "reward-espremedor", name: "Espremedor e Jarrinha", requiredPoints: 20000, description: "Kit de espremedor de frutas e jarrinha, ambos de plástico reciclado.", imageUrl: "https://picsum.photos/seed/juicer/400/300", imageHint: "juicer pitcher" },
-    { id: "reward-chaveiro-pers", name: "Chaveiro Personalizado", requiredPoints: 20000, description: "Chaveiro de plástico reciclado com personalização.", imageUrl: "https://picsum.photos/seed/customkeychain/400/300", imageHint: "custom keychain" },
-    { id: "reward-cumbuca-hashi", name: "Cumbuca de Hashi", requiredPoints: 20000, description: "Cumbuca com suporte para hashi, ideal para comida asiática, de plástico reciclado.", imageUrl: "https://picsum.photos/seed/hashibowl/400/300", imageHint: "hashi bowl" },
-    { id: "reward-kit-espatula-caneca-garrafa", name: "Kit: Espátula + Caneca + Garrafa", requiredPoints: 30000, description: "Kit completo com espátula, caneca e garrafa de plástico reciclado.", imageUrl: "https://picsum.photos/seed/kitchenset/400/300", imageHint: "recycled kitchenware" },
-    { id: "reward-kit-saboneteira-cumbuca-tupperware", name: "Kit: Saboneteira + Cumbuca + Tupperware", requiredPoints: 35000, description: "Kit com saboneteira, cumbuca de hashi e pote Tupperware de plástico reciclado.", imageUrl: "https://picsum.photos/seed/homeset/400/300", imageHint: "recycled homeware" },
-    { id: "reward-kit-cracha-chaveiros", name: "Kit: Porta Crachá + Chaveiros", requiredPoints: 40000, description: "Kit com porta crachá, chaveiro de identificação e chaveiro personalizado.", imageUrl: "https://picsum.photos/seed/holderset/400/300", imageHint: "recycled accessories" }
-];
+const allRewards = rewardsData.placeholderImages.map(reward => ({
+  ...reward,
+  requiredPoints:
+    reward.id.includes("kit-cracha-chaveiros") ? 40000 :
+    reward.id.includes("kit-saboneteira-cumbuca-tupperware") ? 35000 :
+    reward.id.includes("kit-espatula-caneca-garrafa") ? 30000 :
+    reward.id.includes("espremedor") || reward.id.includes("chaveiro-pers") || reward.id.includes("cumbuca-hashi") ? 20000 :
+    reward.id.includes("chaveiro-id") || reward.id.includes("tupperware") || reward.id.includes("garrafa") ? 15000 :
+    reward.id.includes("saboneteira") || reward.id.includes("porta-cracha") || reward.id.includes("espatula") || reward.id.includes("caneca") ? 10000 :
+    5000
+}));
 
 
 export default function RewardsPage() {
@@ -129,7 +123,7 @@ export default function RewardsPage() {
         <p>Carregando...</p>
       ) : (
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {rewardsData.map((reward) => (
+        {allRewards.map((reward) => (
           <Card key={reward.id} className="flex flex-col transform-gpu transition-all duration-300 ease-out hover:scale-105 hover:shadow-xl">
             <CardHeader className="p-0">
               {reward.imageUrl && (
@@ -180,7 +174,7 @@ export default function RewardsPage() {
             </CardFooter>
           </Card>
         ))}
-         {rewardsData.length === 0 && (
+         {allRewards.length === 0 && (
             <div className="col-span-full text-center text-muted-foreground">
               <p>Nenhum prêmio de plástico disponível no momento. Novos prêmios estão sendo adicionados!</p>
             </div>
@@ -190,3 +184,5 @@ export default function RewardsPage() {
     </div>
   );
 }
+
+    
