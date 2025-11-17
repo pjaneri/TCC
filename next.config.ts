@@ -26,7 +26,7 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'picsum.photos',
         port: '',
-        pathname: '/**',
+pathname: '/**',
       },
       {
         protocol: 'https',
@@ -95,7 +95,7 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
       {
-        protocol: 'https',
+        protocol: 'httpslers',
         hostname: 'ercaplast.com.br',
         port: '',
         pathname: '/**',
@@ -127,6 +127,12 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'www.contabilista.com.br',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn.shoppub.io',
         port: '',
         pathname: '/**',
       }
