@@ -4,105 +4,105 @@
       "id": "reward-prato",
       "name": "Prato",
       "description": "Prato de plástico reciclado, durável e ecológico.",
-      "imageUrl": "https://static.casaebar.com.br/public/casaebar/imagens/produtos/prato-plastico-24cm-azul-63d17ce58a0f0.jpg",
+      "imageUrl": "https://placehold.co/400x300/000000/22c55e?text=Prato",
       "imageHint": "plastic plate"
     },
     {
       "id": "reward-vaso",
       "name": "Vaso de Planta",
       "description": "Vaso de planta de plástico reciclado para suas plantas.",
-      "imageUrl": "https://images.tcdn.com.br/img/img_prod/1048182/vaso_planta_grande_redondo_preto_plastico_jardim_flores_arqplast_395_1_8585a2e6581575b2c896f57ce923f3fb.jpg",
+      "imageUrl": "https://placehold.co/400x300/000000/22c55e?text=Vaso",
       "imageHint": "plastic flowerpot"
     },
     {
       "id": "reward-quebra-cabeca",
-      "name": "Quebra-cabeça Carrinho",
-      "description": "Divertido quebra-cabeça 3D de um carrinho, feito de plástico reciclado.",
-      "imageUrl": "https://dfxe7ekqtze9q.cloudfront.net/produtos/produtos/09494_2.webp",
-      "imageHint": "plastic toycar"
+      "name": "Quebra-cabeça",
+      "description": "Divertido quebra-cabeça 3D, feito de plástico reciclado.",
+      "imageUrl": "https://placehold.co/400x300/000000/22c55e?text=Quebra-cabeça",
+      "imageHint": "plastic toy"
     },
     {
       "id": "reward-saboneteira",
       "name": "Saboneteira",
       "description": "Saboneteira elegante feita de plástico reciclado para o seu banheiro.",
-      "imageUrl": "https://www.arqplast.com.br/wp-content/uploads/2023/09/25687.jpg",
+      "imageUrl": "https://placehold.co/400x300/000000/22c55e?text=Saboneteira",
       "imageHint": "plastic soapdish"
     },
     {
       "id": "reward-porta-cracha",
       "name": "Porta Crachá",
       "description": "Porta crachá de plástico reciclado, ideal para o trabalho ou eventos.",
-      "imageUrl": "https://www.contabilista.com.br/media/catalog/product/cache/e7bd975ee72b2e17c1d729a77564a9f3/0/3/034098B.jpg",
+      "imageUrl": "https://placehold.co/400x300/000000/22c55e?text=Porta Crachá",
       "imageHint": "plastic idholder"
     },
     {
       "id": "reward-espatula",
       "name": "Espátula",
       "description": "Espátula de cozinha de plástico reciclado resistente ao calor.",
-      "imageUrl": "https://images.tcdn.com.br/img/img_prod/296307/espatula_plastica_lisa_8cm_atlas_1527_1_29e475ee341e0104befcd00cc38674db_20250918172810.jpg",
+      "imageUrl": "https://placehold.co/400x300/000000/22c55e?text=Espátula",
       "imageHint": "plastic spatula"
     },
     {
       "id": "reward-caneca",
       "name": "Caneca",
       "description": "Caneca de plástico reciclado para suas bebidas quentes ou frias.",
-      "imageUrl": "https://lojaplasticossantana.com.br/public/produtos/109/610-caneca-reforcada-330-ml_m.jpg",
+      "imageUrl": "https://placehold.co/400x300/000000/22c55e?text=Caneca",
       "imageHint": "plastic mug"
     },
     {
       "id": "reward-chaveiro-id",
       "name": "Chaveiro de Identificação",
       "description": "Chaveiro de identificação personalizável feito de plástico reciclado.",
-      "imageUrl": "https://casanarciso.cdn.magazord.com.br/img/2022/07/produto/2776/cahveiro-2.jpg?ims=fit-in/800x800/filters:fill(white)",
+      "imageUrl": "https://placehold.co/400x300/000000/22c55e?text=Chaveiro",
       "imageHint": "plastic keychain"
     },
     {
       "id": "reward-tupperware",
       "name": "Tupperware",
       "description": "Conjunto de potes Tupperware de plástico reciclado para armazenar alimentos.",
-      "imageUrl": "https://http2.mlstatic.com/D_NQ_NP_802545-MLB70037135177_062023-O-kit-conjunto-com-5-jeitosinho-tupperware.webp",
+      "imageUrl": "https://placehold.co/400x300/000000/22c55e?text=Tupperware",
       "imageHint": "plastic foodcontainers"
     },
     {
       "id": "reward-garrafa",
       "name": "Garrafa",
       "description": "Garrafa de água reutilizável de plástico reciclado.",
-      "imageUrl": "https://cdn.awsli.com.br/600x1000/1027/1027618/produto/55796243/130b4445ca.jpg",
+      "imageUrl": "https://placehold.co/400x300/000000/22c55e?text=Garrafa",
       "imageHint": "reusable plasticbottle"
     },
     {
       "id": "reward-espremedor",
       "name": "Espremedor e Jarrinha",
       "description": "Kit de espremedor de frutas e jarrinha, ambos de plástico reciclado.",
-      "imageUrl": "https://ercaplast.com.br/public/produtos/389/389-jarra-1-litro-com-espremedor_g.jpg",
+      "imageUrl": "https://placehold.co/400x300/000000/22c55e?text=Espremedor",
       "imageHint": "plastic juicer"
     },
     {
       "id": "reward-cumbuca-hashi",
       "name": "Cumbuca de Hashi",
       "description": "Cumbuca com suporte para hashi, ideal para comida asiática, de plástico reciclado.",
-      "imageUrl": "https://images.tcdn.com.br/img/img_prod/836117/cumbuca_uno_plastico_300ml_pt_coza_5675_1_2842589cefb5ea68e278e4c4122ba188.png",
+      "imageUrl": "https://placehold.co/400x300/000000/22c55e?text=Cumbuca",
       "imageHint": "plastic bowl"
     },
     {
       "id": "reward-kit-espatula-caneca-garrafa",
       "name": "Kit: Espátula + Caneca + Garrafa",
       "description": "Kit completo com espátula, caneca e garrafa de plástico reciclado.",
-      "imageUrl": "https://img.freepik.com/vetores-gratis/desenho-de-adesivo-com-caixa-vazia-fechada-isolada_1308-64585.jpg?semt=ais_incoming&w=740&q=80",
+      "imageUrl": "https://placehold.co/400x300/000000/22c55e?text=Kit Cozinha",
       "imageHint": "plastic kitchenset"
     },
     {
       "id": "reward-kit-saboneteira-cumbuca-tupperware",
       "name": "Kit: Saboneteira + Cumbuca + Tupperware",
       "description": "Kit com saboneteira, cumbuca de hashi e pote Tupperware de plástico reciclado.",
-      "imageUrl": "https://img.freepik.com/vetores-gratis/desenho-de-adesivo-com-caixa-vazia-fechada-isolada_1308-64585.jpg?semt=ais_incoming&w=740&q=80",
+      "imageUrl": "https://placehold.co/400x300/000000/22c55e?text=Kit Casa",
       "imageHint": "plastic homekit"
     },
     {
       "id": "reward-kit-cracha-chaveiros",
       "name": "Kit: Porta Crachá + Chaveiros",
       "description": "Kit com porta crachá, chaveiro de identificação e chaveiro personalizado.",
-      "imageUrl": "https://img.freepik.com/vetores-gratis/desenho-de-adesivo-com-caixa-vazia-fechada-isolada_1308-64585.jpg?semt=ais_incoming&w=740&q=80",
+      "imageUrl": "https://placehold.co/400x300/000000/22c55e?text=Kit Acessórios",
       "imageHint": "plastic accessories"
     }
   ]
