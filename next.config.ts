@@ -59,7 +59,7 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
       {
-        protocol: 'https',
+        protocol 'https',
         hostname: 'http2.mlstatic.com',
         port: '',
         pathname: '/**',
@@ -147,7 +147,13 @@ const nextConfig: NextConfig = {
         hostname: 'www.kitmerenda.com.br',
         port: '',
         pathname: '/**',
-      }
+      },
+      {
+        protocol: 'https',
+        hostname: 'img.cdndsgni.com',
+        port: '',
+        pathname: '/**',
+      },
     ],
   },
 };
