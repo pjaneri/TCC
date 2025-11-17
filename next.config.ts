@@ -105,6 +105,18 @@ const nextConfig: NextConfig = {
         hostname: 'dfxe7ekqtze9q.cloudfront.net',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'livrariascuritiba.vteximg.com.br',
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lojaplasticossantana.com.br',
+        port: '',
+        pathname: '/**',
       }
     ],
   },
