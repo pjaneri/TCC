@@ -80,13 +80,13 @@ export default function SignupPage() {
         username: data.username,
         email: data.email,
         registrationDate: serverTimestamp(),
-        totalPoints: 0,
-        lifetimePoints: 0,
+        totalPoints: 300,
+        lifetimePoints: 300,
       });
 
       toast({
         title: "Conta criada com sucesso!",
-        description: "Você já pode começar a reciclar e ganhar pontos.",
+        description: "Você ganhou 300 pontos de incentivo!",
       });
 
       router.push("/dashboard");

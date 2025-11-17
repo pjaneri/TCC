@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -24,36 +25,22 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useFirestore, errorEmitter, FirestorePermissionError } from '@/firebase';
 import { collection, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
-import { Loader2, Package, FileText, GlassWater, Wrench } from 'lucide-react';
+import { Loader2, Package, Bot, Popcorn } from 'lucide-react';
 
 const materialData = [
   {
-    name: 'Plástico',
-    description: 'Garrafas PET, embalagens, etc.',
-    icon: Package,
+    name: 'Garrafa',
+    description: 'Garrafas PET, embalagens plásticas.',
+    icon: Bot,
     unit: 'un',
-    points: 20,
+    points: 100,
   },
   {
-    name: 'Papel',
-    description: 'Jornais, revistas, caixas de papelão.',
-    icon: FileText,
-    unit: 'kg',
+    name: 'Tampinha + Lacre',
+    description: 'Tampinhas de garrafa e lacres.',
+    icon: Popcorn,
+    unit: 'un',
     points: 15,
-  },
-  {
-    name: 'Vidro',
-    description: 'Garrafas, potes, frascos.',
-    icon: GlassWater,
-    unit: 'un',
-    points: 10,
-  },
-  {
-    name: 'Metal',
-    description: 'Latinhas de alumínio, aço.',
-    icon: Wrench,
-    unit: 'un',
-    points: 75,
   },
 ];
 
