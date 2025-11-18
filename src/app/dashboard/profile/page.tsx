@@ -10,7 +10,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Input, PasswordInput } from "@/components/ui/input";
@@ -43,7 +42,6 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import Link from "next/link";
 
 const profileSchema = z.object({
     username: z.string().min(3, { message: "O nome de usuário deve ter pelo menos 3 caracteres." }),
@@ -371,16 +369,6 @@ export default function ProfilePage() {
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
-                </div>
-
-                <div>
-                    <p className="mb-2 text-sm font-medium">Acesso de Administrador</p>
-                    <p className="text-sm text-muted-foreground mb-4">
-                        Clique no link abaixo para se tornar um administrador usando seu UID. Esta ação é de uso único.
-                    </p>
-                    <Link href="/make-admin" className={cn(buttonVariants({ variant: 'outline' }))}>
-                        Tornar-se Administrador (uso único)
-                    </Link>
                 </div>
             </CardContent>
             </Card>
