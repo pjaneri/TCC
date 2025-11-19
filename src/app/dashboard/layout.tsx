@@ -12,6 +12,7 @@ import {
   Recycle,
   BarChart,
   ShieldCheck,
+  AreaChart,
 } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 import { getAuth, signOut } from "firebase/auth";
@@ -37,6 +38,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Visão Geral" },
   { href: "/dashboard/log", icon: PlusCircle, label: "Registrar Reciclagem" },
+  { href: "/dashboard/stats", icon: AreaChart, label: "Minhas Estatísticas" },
   { href: "/dashboard/rankings", icon: BarChart, label: "Rankings" },
   { href: "/dashboard/rewards", icon: Trophy, label: "Resgatar Prêmios" },
   { href: "/dashboard/profile", icon: UserCircle, label: "Perfil" },
