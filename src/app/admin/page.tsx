@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   collectionGroup,
   query,
@@ -113,24 +113,44 @@ export default function AdminPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [activeQuery, setActiveQuery] = useState<Query | null>(null);
 
-  const pendingQuery = useMemo(() => {
-    if (!firestore) return null;
-    return query(
-      collectionGroup(firestore, 'recycling_records'),
-      where('status', '==', 'pending'),
-      orderBy('recyclingDate', 'asc')
-    );
+  useEffect(() => {
+    // Set the initial query to 'pending' once firestore is available.
+    if (firestore) {
+      setActiveQuery(
+        query(
+          collectionGroup(firestore, 'recycling_records'),
+          where('status', '==', 'pending'),
+          orderBy('recyclingDate', 'asc')
+        )
+      );
+    }
   }, [firestore]);
 
-  const validatedQuery = useMemo(() => {
-    if (!firestore) return null;
-    return query(
-        collectionGroup(firestore, 'recycling_records'),
-        where('status', 'in', ['approved', 'rejected']),
-        orderBy('validatedAt', 'desc')
-    );
-  }, [firestore]);
+
+  const handleTabChange = (tabValue: string) => {
+    if (!firestore) return; // Guard against firestore being null
+
+    if (tabValue === 'pending') {
+      setActiveQuery(
+        query(
+          collectionGroup(firestore, 'recycling_records'),
+          where('status', '==', 'pending'),
+          orderBy('recyclingDate', 'asc')
+        )
+      );
+    } else if (tabValue === 'validated') {
+      setActiveQuery(
+        query(
+          collectionGroup(firestore, 'recycling_records'),
+          where('status', 'in', ['approved', 'rejected']),
+          orderBy('validatedAt', 'desc')
+        )
+      );
+    }
+  };
+
 
   const handleValidate = async (record: any, newStatus: 'approved' | 'rejected') => {
     if (!firestore || processingId) return;
@@ -199,7 +219,6 @@ export default function AdminPage() {
     </div>
   );
 
-  // Render a loader if firestore is not yet available
   if (!firestore) {
     return (
       <div className="flex h-64 w-full items-center justify-center">
@@ -217,16 +236,28 @@ export default function AdminPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="pending" className="w-full">
+        <Tabs defaultValue="pending" className="w-full" onValueChange={handleTabChange}>
             <TabsList className='mb-4 grid w-full grid-cols-2'>
                 <TabsTrigger value="pending">Pendentes</TabsTrigger>
                 <TabsTrigger value="validated">Histórico</TabsTrigger>
             </TabsList>
             <TabsContent value="pending">
-                <ValidationTable firestoreQuery={pendingQuery} onValidate={handleValidate} emptyState={pendingEmptyState} />
+                {activeQuery && (
+                  <ValidationTable 
+                    firestoreQuery={activeQuery} 
+                    onValidate={handleValidate} 
+                    emptyState={pendingEmptyState} 
+                  />
+                )}
             </TabsContent>
             <TabsContent value="validated">
-                 <ValidationTable firestoreQuery={validatedQuery} onValidate={handleValidate} emptyState={historyEmptyState} />
+                {activeQuery && (
+                  <ValidationTable 
+                    firestoreQuery={activeQuery} 
+                    onValidate={handleValidate} 
+                    emptyState={historyEmptyState} 
+                  />
+                )}
             </TabsContent>
         </Tabs>
       </CardContent>
