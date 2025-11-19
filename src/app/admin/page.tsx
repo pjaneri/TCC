@@ -37,7 +37,7 @@ import { Loader2, Check, X, ShieldQuestion } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
-const ValidationTable = ({ firestoreQuery, onValidate, emptyState }: { firestoreQuery: Query, onValidate: (record: any, newStatus: 'approved' | 'rejected') => void, emptyState: React.ReactNode }) => {
+const ValidationTable = ({ firestoreQuery, onValidate, emptyState }: { firestoreQuery: Query | null, onValidate: (record: any, newStatus: 'approved' | 'rejected') => void, emptyState: React.ReactNode }) => {
     const { data: records, isLoading } = useCollection(firestoreQuery);
     
     if (isLoading) {
@@ -199,6 +199,14 @@ export default function AdminPage() {
     </div>
   );
 
+  // Render a loader if firestore is not yet available
+  if (!firestore) {
+    return (
+      <div className="flex h-64 w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <Card>
@@ -215,10 +223,10 @@ export default function AdminPage() {
                 <TabsTrigger value="validated">Histórico</TabsTrigger>
             </TabsList>
             <TabsContent value="pending">
-                {pendingQuery && <ValidationTable firestoreQuery={pendingQuery} onValidate={handleValidate} emptyState={pendingEmptyState} />}
+                <ValidationTable firestoreQuery={pendingQuery} onValidate={handleValidate} emptyState={pendingEmptyState} />
             </TabsContent>
             <TabsContent value="validated">
-                 {validatedQuery && <ValidationTable firestoreQuery={validatedQuery} onValidate={handleValidate} emptyState={historyEmptyState} />}
+                 <ValidationTable firestoreQuery={validatedQuery} onValidate={handleValidate} emptyState={historyEmptyState} />
             </TabsContent>
         </Tabs>
       </CardContent>
