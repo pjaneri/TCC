@@ -72,10 +72,11 @@ service cloud.firestore {
      * @allow (create) Owner can create a new record with 'pending' status.
      * @allow (update) Admin can update the status to 'approved' or 'rejected'.
      * @allow (delete) Owner can delete their own records.
+     * @allow (list) Admins can list all records for the admin panel.
      */
     match /users/{userId}/recycling_records/{recordId} {
-      allow read: if isOwner(userId) || isAdmin();
-      allow list: if isOwner(userId) || isAdmin();
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
       allow create: if isOwner(userId) 
                     && request.resource.data.userId == userId
                     && request.resource.data.id == recordId
