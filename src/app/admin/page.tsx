@@ -113,7 +113,6 @@ export default function AdminPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('pending');
 
   const pendingQuery = useMemo(() => {
     if (!firestore) return null;
@@ -210,16 +209,16 @@ export default function AdminPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="pending" className="w-full" onValueChange={setActiveTab}>
+        <Tabs defaultValue="pending" className="w-full">
             <TabsList className='mb-4 grid w-full grid-cols-2'>
                 <TabsTrigger value="pending">Pendentes</TabsTrigger>
                 <TabsTrigger value="validated">Histórico</TabsTrigger>
             </TabsList>
             <TabsContent value="pending">
-                {firestore && activeTab === 'pending' && <ValidationTable firestoreQuery={pendingQuery} onValidate={handleValidate} emptyState={pendingEmptyState} />}
+                {firestore && <ValidationTable firestoreQuery={pendingQuery} onValidate={handleValidate} emptyState={pendingEmptyState} />}
             </TabsContent>
             <TabsContent value="validated">
-                {firestore && activeTab === 'validated' && <ValidationTable firestoreQuery={validatedQuery} onValidate={handleValidate} emptyState={historyEmptyState} />}
+                 {firestore && <ValidationTable firestoreQuery={validatedQuery} onValidate={handleValidate} emptyState={historyEmptyState} />}
             </TabsContent>
         </Tabs>
       </CardContent>
