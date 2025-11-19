@@ -14,7 +14,7 @@ import {
 } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore } from '@/firebase';
 import {
   Card,
   CardContent,
@@ -116,22 +116,22 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState('pending');
 
   const pendingQuery = useMemo(() => {
-    if (!firestore || activeTab !== 'pending') return null;
+    if (!firestore) return null;
     return query(
       collectionGroup(firestore, 'recycling_records'),
       where('status', '==', 'pending'),
       orderBy('recyclingDate', 'asc')
     );
-  }, [firestore, activeTab]);
+  }, [firestore]);
 
   const validatedQuery = useMemo(() => {
-    if (!firestore || activeTab !== 'validated') return null;
+    if (!firestore) return null;
     return query(
         collectionGroup(firestore, 'recycling_records'),
         where('status', 'in', ['approved', 'rejected']),
         orderBy('validatedAt', 'desc')
     );
-  }, [firestore, activeTab]);
+  }, [firestore]);
 
   const handleValidate = async (record: any, newStatus: 'approved' | 'rejected') => {
     if (!firestore || processingId) return;
