@@ -10,7 +10,6 @@ import {
   doc,
   runTransaction,
   serverTimestamp,
-  Query,
 } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
