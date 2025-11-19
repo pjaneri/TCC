@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import {
   collectionGroup,
   query,
@@ -35,6 +35,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Check, X, ShieldQuestion } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
+// Este componente agora recebe a consulta diretamente e só é renderizado quando a consulta é válida.
 const ValidationTable = ({
   firestoreQuery,
   onValidate,
@@ -130,28 +131,25 @@ const ValidationTable = ({
 export default function AdminPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
-  const [processingId, setProcessingId] = useState<string | null>(null);
-  
-  const [pendingQuery, setPendingQuery] = useState<Query | null>(null);
-  const [validatedQuery, setValidatedQuery] = useState<Query | null>(null);
-  
-  useEffect(() => {
-    if (firestore) {
-      setPendingQuery(
-        query(
-          collectionGroup(firestore, 'recycling_records'),
-          where('status', '==', 'pending'),
-          orderBy('recyclingDate', 'asc')
-        )
-      );
-      setValidatedQuery(
-         query(
-          collectionGroup(firestore, 'recycling_records'),
-          where('status', 'in', ['approved', 'rejected']),
-          orderBy('validatedAt', 'desc')
-        )
-      );
-    }
+
+  // As consultas são criadas com useMemo e dependem do firestore.
+  // Se o firestore for nulo, as consultas também serão nulas.
+  const pendingQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(
+      collectionGroup(firestore, 'recycling_records'),
+      where('status', '==', 'pending'),
+      orderBy('recyclingDate', 'asc')
+    );
+  }, [firestore]);
+
+  const validatedQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(
+      collectionGroup(firestore, 'recycling_records'),
+      where('status', 'in', ['approved', 'rejected']),
+      orderBy('validatedAt', 'desc')
+    );
   }, [firestore]);
 
 
@@ -159,8 +157,7 @@ export default function AdminPage() {
     record: any,
     newStatus: 'approved' | 'rejected'
   ) => {
-    if (!firestore || processingId) return;
-    setProcessingId(record.id);
+    if (!firestore) return;
 
     const recordRef = doc(
       firestore,
@@ -209,28 +206,14 @@ export default function AdminPage() {
         title: 'Erro na validação',
         description: 'Não foi possível validar o registro. Tente novamente.',
       });
-    } finally {
-      setProcessingId(null);
     }
   };
 
-  const pendingEmptyState = (
+  const emptyState = (title: string, description: string) => (
     <div className="flex flex-col items-center justify-center gap-4 p-8 text-center">
       <ShieldQuestion className="h-16 w-16 text-muted-foreground" />
-      <h3 className="text-xl font-semibold">Tudo certo por aqui!</h3>
-      <p className="text-muted-foreground">
-        Não há registros pendentes de validação no momento.
-      </p>
-    </div>
-  );
-
-  const historyEmptyState = (
-    <div className="flex flex-col items-center justify-center gap-4 p-8 text-center">
-      <ShieldQuestion className="h-16 w-16 text-muted-foreground" />
-      <h3 className="text-xl font-semibold">Nenhum registro validado.</h3>
-      <p className="text-muted-foreground">
-        O histórico de validações aparecerá aqui.
-      </p>
+      <h3 className="text-xl font-semibold">{title}</h3>
+      <p className="text-muted-foreground">{description}</p>
     </div>
   );
 
@@ -243,31 +226,30 @@ export default function AdminPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs
-          defaultValue="pending"
-          className="w-full"
-        >
+        <Tabs defaultValue="pending" className="w-full">
           <TabsList className="mb-4 grid w-full grid-cols-2">
             <TabsTrigger value="pending">Pendentes</TabsTrigger>
             <TabsTrigger value="validated">Histórico</TabsTrigger>
           </TabsList>
           <TabsContent value="pending">
+            {/* Renderiza a tabela somente se a consulta for válida */}
             {pendingQuery ? (
               <ValidationTable
                 firestoreQuery={pendingQuery}
                 onValidate={handleValidate}
-                emptyState={pendingEmptyState}
+                emptyState={emptyState("Tudo certo por aqui!", "Não há registros pendentes de validação no momento.")}
               />
             ) : (
                <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
             )}
           </TabsContent>
           <TabsContent value="validated">
+            {/* Renderiza a tabela somente se a consulta for válida */}
             {validatedQuery ? (
               <ValidationTable
                 firestoreQuery={validatedQuery}
                 onValidate={handleValidate}
-                emptyState={historyEmptyState}
+                emptyState={emptyState("Nenhum registro validado.", "O histórico de validações aparecerá aqui.")}
               />
             ) : (
                <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
