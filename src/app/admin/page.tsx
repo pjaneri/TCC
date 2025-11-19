@@ -36,7 +36,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Check, X, ShieldQuestion } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-// This component receives the query directly and only renders when the query is valid.
+// Este componente recebe a consulta diretamente e só renderiza quando a consulta é válida.
 const ValidationTable = ({
   firestoreQuery,
   onValidate,
@@ -215,6 +215,14 @@ export default function AdminPage() {
       <p className="text-muted-foreground">{description}</p>
     </div>
   );
+  
+  if (!firestore) {
+    return (
+        <div className="flex h-full w-full items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin" />
+        </div>
+    );
+  }
 
   return (
     <Card>
@@ -225,9 +233,6 @@ export default function AdminPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {!firestore ? (
-          <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
-        ) : (
           <Tabs defaultValue="pending" className="w-full">
             <TabsList className="mb-4 grid w-full grid-cols-2">
               <TabsTrigger value="pending">Pendentes</TabsTrigger>
@@ -256,8 +261,9 @@ export default function AdminPage() {
               )}
             </TabsContent>
           </Tabs>
-        )}
       </CardContent>
     </Card>
   );
 }
+
+    
