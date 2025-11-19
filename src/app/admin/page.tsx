@@ -34,20 +34,16 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Check, X, ShieldQuestion } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-// Este componente recebe a consulta diretamente e só renderiza quando a consulta é válida.
 const ValidationTable = ({
-  firestoreQuery,
+  records,
+  isLoading,
   onValidate,
-  emptyState,
 }: {
-  firestoreQuery: Query;
+  records: any[] | null;
+  isLoading: boolean;
   onValidate: (record: any, newStatus: 'approved' | 'rejected') => void;
-  emptyState: React.ReactNode;
 }) => {
-  const { data: records, isLoading } = useCollection(firestoreQuery);
-
   if (isLoading) {
     return (
       <div className="flex justify-center p-8">
@@ -57,7 +53,13 @@ const ValidationTable = ({
   }
 
   if (!records || records.length === 0) {
-    return emptyState;
+    return (
+        <div className="flex flex-col items-center justify-center gap-4 p-8 text-center">
+            <ShieldQuestion className="h-16 w-16 text-muted-foreground" />
+            <h3 className="text-xl font-semibold">Tudo certo por aqui!</h3>
+            <p className="text-muted-foreground">Não há registros pendentes de validação no momento.</p>
+        </div>
+    );
   }
 
   return (
@@ -94,33 +96,22 @@ const ValidationTable = ({
               <Badge variant="secondary">+{record.pointsEarned}</Badge>
             </TableCell>
             <TableCell className="flex justify-center gap-2">
-              {record.status === 'pending' && (
-                <>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 border-green-500 text-green-500 hover:bg-green-500 hover:text-white"
-                    onClick={() => onValidate(record, 'approved')}
-                  >
-                    <Check className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8 border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
-                    onClick={() => onValidate(record, 'rejected')}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </>
-              )}
-              {record.status !== 'pending' && (
-                <Badge
-                  variant={record.status === 'approved' ? 'default' : 'destructive'}
-                >
-                  {record.status === 'approved' ? 'Aprovado' : 'Recusado'}
-                </Badge>
-              )}
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 border-green-500 text-green-500 hover:bg-green-500 hover:text-white"
+                onClick={() => onValidate(record, 'approved')}
+              >
+                <Check className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+                onClick={() => onValidate(record, 'rejected')}
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </TableCell>
           </TableRow>
         ))}
@@ -142,15 +133,7 @@ export default function AdminPage() {
     );
   }, [firestore]);
 
-  const validatedQuery = useMemo(() => {
-    if (!firestore) return null;
-    return query(
-      collectionGroup(firestore, 'recycling_records'),
-      where('status', 'in', ['approved', 'rejected']),
-      orderBy('validatedAt', 'desc')
-    );
-  }, [firestore]);
-
+  const { data: pendingRecords, isLoading: isLoadingPending } = useCollection(pendingQuery);
 
   const handleValidate = async (
     record: any,
@@ -207,19 +190,12 @@ export default function AdminPage() {
       });
     }
   };
-
-  const emptyState = (title: string, description: string) => (
-    <div className="flex flex-col items-center justify-center gap-4 p-8 text-center">
-      <ShieldQuestion className="h-16 w-16 text-muted-foreground" />
-      <h3 className="text-xl font-semibold">{title}</h3>
-      <p className="text-muted-foreground">{description}</p>
-    </div>
-  );
   
   if (!firestore) {
     return (
         <div className="flex h-full w-full items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin" />
+            <p className="ml-2">Conectando ao banco de dados...</p>
         </div>
     );
   }
@@ -229,38 +205,15 @@ export default function AdminPage() {
       <CardHeader>
         <CardTitle>Validação de Reciclagem</CardTitle>
         <CardDescription>
-          Aprove ou recuse os registros de reciclagem enviados pelos usuários.
+          Aprove ou recuse os registros de reciclagem enviados pelos usuários que estão pendentes.
         </CardDescription>
       </CardHeader>
       <CardContent>
-          <Tabs defaultValue="pending" className="w-full">
-            <TabsList className="mb-4 grid w-full grid-cols-2">
-              <TabsTrigger value="pending">Pendentes</TabsTrigger>
-              <TabsTrigger value="validated">Histórico</TabsTrigger>
-            </TabsList>
-            <TabsContent value="pending">
-              {pendingQuery ? (
-                <ValidationTable
-                  firestoreQuery={pendingQuery}
-                  onValidate={handleValidate}
-                  emptyState={emptyState("Tudo certo por aqui!", "Não há registros pendentes de validação no momento.")}
-                />
-              ) : (
-                <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
-              )}
-            </TabsContent>
-            <TabsContent value="validated">
-              {validatedQuery ? (
-                <ValidationTable
-                  firestoreQuery={validatedQuery}
-                  onValidate={handleValidate}
-                  emptyState={emptyState("Nenhum registro validado.", "O histórico de validações aparecerá aqui.")}
-                />
-              ) : (
-                <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
-              )}
-            </TabsContent>
-          </Tabs>
+          <ValidationTable 
+            records={pendingRecords}
+            isLoading={isLoadingPending}
+            onValidate={handleValidate}
+          />
       </CardContent>
     </Card>
   );
