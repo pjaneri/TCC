@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -35,7 +36,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Check, X, ShieldQuestion } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-// Este componente agora recebe a consulta diretamente e só é renderizado quando a consulta é válida.
+// This component receives the query directly and only renders when the query is valid.
 const ValidationTable = ({
   firestoreQuery,
   onValidate,
@@ -132,8 +133,6 @@ export default function AdminPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  // As consultas são criadas com useMemo e dependem do firestore.
-  // Se o firestore for nulo, as consultas também serão nulas.
   const pendingQuery = useMemo(() => {
     if (!firestore) return null;
     return query(
@@ -226,36 +225,38 @@ export default function AdminPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="pending" className="w-full">
-          <TabsList className="mb-4 grid w-full grid-cols-2">
-            <TabsTrigger value="pending">Pendentes</TabsTrigger>
-            <TabsTrigger value="validated">Histórico</TabsTrigger>
-          </TabsList>
-          <TabsContent value="pending">
-            {/* Renderiza a tabela somente se a consulta for válida */}
-            {pendingQuery ? (
-              <ValidationTable
-                firestoreQuery={pendingQuery}
-                onValidate={handleValidate}
-                emptyState={emptyState("Tudo certo por aqui!", "Não há registros pendentes de validação no momento.")}
-              />
-            ) : (
-               <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
-            )}
-          </TabsContent>
-          <TabsContent value="validated">
-            {/* Renderiza a tabela somente se a consulta for válida */}
-            {validatedQuery ? (
-              <ValidationTable
-                firestoreQuery={validatedQuery}
-                onValidate={handleValidate}
-                emptyState={emptyState("Nenhum registro validado.", "O histórico de validações aparecerá aqui.")}
-              />
-            ) : (
-               <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
-            )}
-          </TabsContent>
-        </Tabs>
+        {!firestore ? (
+          <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+        ) : (
+          <Tabs defaultValue="pending" className="w-full">
+            <TabsList className="mb-4 grid w-full grid-cols-2">
+              <TabsTrigger value="pending">Pendentes</TabsTrigger>
+              <TabsTrigger value="validated">Histórico</TabsTrigger>
+            </TabsList>
+            <TabsContent value="pending">
+              {pendingQuery ? (
+                <ValidationTable
+                  firestoreQuery={pendingQuery}
+                  onValidate={handleValidate}
+                  emptyState={emptyState("Tudo certo por aqui!", "Não há registros pendentes de validação no momento.")}
+                />
+              ) : (
+                <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+              )}
+            </TabsContent>
+            <TabsContent value="validated">
+              {validatedQuery ? (
+                <ValidationTable
+                  firestoreQuery={validatedQuery}
+                  onValidate={handleValidate}
+                  emptyState={emptyState("Nenhum registro validado.", "O histórico de validações aparecerá aqui.")}
+                />
+              ) : (
+                <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>
+              )}
+            </TabsContent>
+          </Tabs>
+        )}
       </CardContent>
     </Card>
   );
