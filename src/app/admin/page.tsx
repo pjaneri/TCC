@@ -113,44 +113,25 @@ export default function AdminPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const [activeQuery, setActiveQuery] = useState<Query | null>(null);
-
-  useEffect(() => {
-    // Set the initial query to 'pending' once firestore is available.
-    if (firestore) {
-      setActiveQuery(
-        query(
-          collectionGroup(firestore, 'recycling_records'),
-          where('status', '==', 'pending'),
-          orderBy('recyclingDate', 'asc')
-        )
-      );
-    }
+  const [activeTab, setActiveTab] = useState('pending');
+  
+  const pendingQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(
+      collectionGroup(firestore, 'recycling_records'),
+      where('status', '==', 'pending'),
+      orderBy('recyclingDate', 'asc')
+    );
   }, [firestore]);
 
-
-  const handleTabChange = (tabValue: string) => {
-    if (!firestore) return; // Guard against firestore being null
-
-    if (tabValue === 'pending') {
-      setActiveQuery(
-        query(
-          collectionGroup(firestore, 'recycling_records'),
-          where('status', '==', 'pending'),
-          orderBy('recyclingDate', 'asc')
-        )
-      );
-    } else if (tabValue === 'validated') {
-      setActiveQuery(
-        query(
-          collectionGroup(firestore, 'recycling_records'),
-          where('status', 'in', ['approved', 'rejected']),
-          orderBy('validatedAt', 'desc')
-        )
-      );
-    }
-  };
-
+  const validatedQuery = useMemo(() => {
+    if (!firestore) return null;
+    return query(
+      collectionGroup(firestore, 'recycling_records'),
+      where('status', 'in', ['approved', 'rejected']),
+      orderBy('validatedAt', 'desc')
+    );
+  }, [firestore]);
 
   const handleValidate = async (record: any, newStatus: 'approved' | 'rejected') => {
     if (!firestore || processingId) return;
@@ -236,28 +217,28 @@ export default function AdminPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="pending" className="w-full" onValueChange={handleTabChange}>
+        <Tabs defaultValue="pending" className="w-full" onValueChange={setActiveTab}>
             <TabsList className='mb-4 grid w-full grid-cols-2'>
                 <TabsTrigger value="pending">Pendentes</TabsTrigger>
                 <TabsTrigger value="validated">Histórico</TabsTrigger>
             </TabsList>
             <TabsContent value="pending">
-                {activeQuery && (
-                  <ValidationTable 
-                    firestoreQuery={activeQuery} 
-                    onValidate={handleValidate} 
-                    emptyState={pendingEmptyState} 
-                  />
-                )}
+              {activeTab === 'pending' && (
+                <ValidationTable 
+                  firestoreQuery={pendingQuery} 
+                  onValidate={handleValidate} 
+                  emptyState={pendingEmptyState} 
+                />
+              )}
             </TabsContent>
             <TabsContent value="validated">
-                {activeQuery && (
-                  <ValidationTable 
-                    firestoreQuery={activeQuery} 
-                    onValidate={handleValidate} 
-                    emptyState={historyEmptyState} 
-                  />
-                )}
+              {activeTab === 'validated' && (
+                <ValidationTable 
+                  firestoreQuery={validatedQuery} 
+                  onValidate={handleValidate} 
+                  emptyState={historyEmptyState} 
+                />
+              )}
             </TabsContent>
         </Tabs>
       </CardContent>
