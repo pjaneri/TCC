@@ -11,7 +11,6 @@ import {
   UserCircle,
   Recycle,
   BarChart,
-  ShieldCheck,
   AreaChart,
 } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
@@ -44,8 +43,6 @@ const navItems = [
   { href: "/dashboard/profile", icon: UserCircle, label: "Perfil" },
 ];
 
-const adminNavItem = { href: "/admin", icon: ShieldCheck, label: "Admin" };
-
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -54,29 +51,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const auth = getAuth();
   const firestore = useFirestore();
 
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isCheckingAdmin, setIsCheckingAdmin] = useState(true);
-
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.replace("/login");
     }
   }, [user, isUserLoading, router]);
-
-  useEffect(() => {
-    if (user && firestore) {
-      const checkAdminStatus = async () => {
-        setIsCheckingAdmin(true);
-        const adminRoleDoc = doc(firestore, 'roles_admin', user.uid);
-        const docSnap = await getDoc(adminRoleDoc);
-        setIsAdmin(docSnap.exists());
-        setIsCheckingAdmin(false);
-      };
-      checkAdminStatus();
-    } else if (!isUserLoading) {
-      setIsCheckingAdmin(false);
-    }
-  }, [user, firestore, isUserLoading]);
 
   const handleSignOut = async () => {
     try {
@@ -91,10 +70,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     }
   };
 
-  const allNavItems = isAdmin ? [...navItems, adminNavItem] : navItems;
-  const currentNavItem = allNavItems.find(item => item.href === pathname);
+  const currentNavItem = navItems.find(item => item.href === pathname);
 
-  if (isUserLoading || !user || isCheckingAdmin) {
+  if (isUserLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-2">
@@ -120,7 +98,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
-            {allNavItems.map((item) => (
+            {navItems.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <Link href={item.href} passHref>
                   <SidebarMenuButton
