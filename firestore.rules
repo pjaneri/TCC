@@ -68,14 +68,15 @@ service cloud.firestore {
     /**
      * @description Enforces access control for recycling records.
      * @path /users/{userId}/recycling_records/{recordId}
-     * @allow (read) Owner and admins can read records. Admins can list all records.
+     * @allow (read) Owner and admins can read records.
+     * @allow (list) Owner can list their own records, Admins can list all records.
      * @allow (create) Owner can create a new record with 'pending' status.
      * @allow (update) Admin can update the status to 'approved' or 'rejected'.
      * @allow (delete) Owner can delete their own records.
      */
     match /users/{userId}/recycling_records/{recordId} {
       allow get: if isOwner(userId) || isAdmin();
-      allow list: if isAdmin();
+      allow list: if isOwner(userId) || isAdmin();
       allow create: if isOwner(userId) 
                     && request.resource.data.userId == userId
                     && request.resource.data.id == recordId
