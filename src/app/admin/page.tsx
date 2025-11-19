@@ -10,6 +10,7 @@ import {
   doc,
   runTransaction,
   serverTimestamp,
+  Query
 } from 'firebase/firestore';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -36,19 +37,15 @@ import { Loader2, Check, X, ShieldQuestion } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
-const ValidationTable = ({ records, isLoading, onValidate }: { records: any[] | null, isLoading: boolean, onValidate: (record: any, newStatus: 'approved' | 'rejected') => void }) => {
+const ValidationTable = ({ firestoreQuery, onValidate, emptyState }: { firestoreQuery: Query | null, onValidate: (record: any, newStatus: 'approved' | 'rejected') => void, emptyState: React.ReactNode }) => {
+    const { data: records, isLoading } = useCollection(firestoreQuery, { includeMetadataChanges: true });
+    
     if (isLoading) {
         return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
 
     if (!records || records.length === 0) {
-        return (
-            <div className="flex flex-col items-center justify-center gap-4 p-8 text-center">
-                <ShieldQuestion className="h-16 w-16 text-muted-foreground" />
-                <h3 className="text-xl font-semibold">Tudo certo por aqui!</h3>
-                <p className="text-muted-foreground">Não há registros pendentes de validação no momento.</p>
-            </div>
-        );
+        return emptyState;
     }
     
     return (
@@ -79,22 +76,31 @@ const ValidationTable = ({ records, isLoading, onValidate }: { records: any[] | 
                         <Badge variant="secondary">+{record.pointsEarned}</Badge>
                     </TableCell>
                     <TableCell className="flex justify-center gap-2">
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8 border-green-500 text-green-500 hover:bg-green-500 hover:text-white"
-                            onClick={() => onValidate(record, 'approved')}
-                        >
-                            <Check className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-8 w-8 border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
-                            onClick={() => onValidate(record, 'rejected')}
-                        >
-                            <X className="h-4 w-4" />
-                        </Button>
+                        {record.status === 'pending' && (
+                            <>
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-8 w-8 border-green-500 text-green-500 hover:bg-green-500 hover:text-white"
+                                    onClick={() => onValidate(record, 'approved')}
+                                >
+                                    <Check className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-8 w-8 border-red-500 text-red-500 hover:bg-red-500 hover:text-white"
+                                    onClick={() => onValidate(record, 'rejected')}
+                                >
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </>
+                        )}
+                        {record.status !== 'pending' && (
+                             <Badge variant={record.status === 'approved' ? 'default' : 'destructive'}>
+                                {record.status === 'approved' ? 'Aprovado' : 'Recusado'}
+                            </Badge>
+                        )}
                     </TableCell>
                 </TableRow>
                 ))}
@@ -126,11 +132,8 @@ export default function AdminPage() {
     );
   }, [firestore]);
 
-  const { data: pendingRecords, isLoading: pendingLoading } = useCollection(pendingQuery, { includeMetadataChanges: true });
-  const { data: validatedRecords, isLoading: validatedLoading } = useCollection(validatedQuery);
-
   const handleValidate = async (record: any, newStatus: 'approved' | 'rejected') => {
-    if (!firestore) return;
+    if (!firestore || processingId) return;
     setProcessingId(record.id);
 
     const recordRef = doc(firestore, 'users', record.userId, 'recycling_records', record.id);
@@ -179,8 +182,23 @@ export default function AdminPage() {
       setProcessingId(null);
     }
   };
+  
+  const pendingEmptyState = (
+     <div className="flex flex-col items-center justify-center gap-4 p-8 text-center">
+        <ShieldQuestion className="h-16 w-16 text-muted-foreground" />
+        <h3 className="text-xl font-semibold">Tudo certo por aqui!</h3>
+        <p className="text-muted-foreground">Não há registros pendentes de validação no momento.</p>
+    </div>
+  );
 
-  const isLoading = pendingLoading || validatedLoading;
+  const historyEmptyState = (
+     <div className="flex flex-col items-center justify-center gap-4 p-8 text-center">
+        <ShieldQuestion className="h-16 w-16 text-muted-foreground" />
+        <h3 className="text-xl font-semibold">Nenhum registro validado.</h3>
+        <p className="text-muted-foreground">O histórico de validações aparecerá aqui.</p>
+    </div>
+  );
+
 
   return (
     <Card>
@@ -191,16 +209,16 @@ export default function AdminPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="pending">
-            <TabsList className='mb-4'>
+        <Tabs defaultValue="pending" className="w-full">
+            <TabsList className='mb-4 grid w-full grid-cols-2'>
                 <TabsTrigger value="pending">Pendentes</TabsTrigger>
                 <TabsTrigger value="validated">Histórico</TabsTrigger>
             </TabsList>
             <TabsContent value="pending">
-                <ValidationTable records={pendingRecords} isLoading={pendingLoading} onValidate={handleValidate} />
+                <ValidationTable firestoreQuery={pendingQuery} onValidate={handleValidate} emptyState={pendingEmptyState} />
             </TabsContent>
             <TabsContent value="validated">
-                <ValidationTable records={validatedRecords} isLoading={validatedLoading} onValidate={handleValidate} />
+                <ValidationTable firestoreQuery={validatedQuery} onValidate={handleValidate} emptyState={historyEmptyState} />
             </TabsContent>
         </Tabs>
       </CardContent>
