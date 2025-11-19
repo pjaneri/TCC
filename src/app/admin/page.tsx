@@ -38,7 +38,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
 const ValidationTable = ({ firestoreQuery, onValidate, emptyState }: { firestoreQuery: Query | null, onValidate: (record: any, newStatus: 'approved' | 'rejected') => void, emptyState: React.ReactNode }) => {
-    const { data: records, isLoading } = useCollection(firestoreQuery, { includeMetadataChanges: true });
+    const { data: records, isLoading } = useCollection(firestoreQuery);
     
     if (isLoading) {
         return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -113,24 +113,25 @@ export default function AdminPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('pending');
 
   const pendingQuery = useMemo(() => {
-    if (!firestore) return null;
+    if (!firestore || activeTab !== 'pending') return null;
     return query(
       collectionGroup(firestore, 'recycling_records'),
       where('status', '==', 'pending'),
       orderBy('recyclingDate', 'asc')
     );
-  }, [firestore]);
+  }, [firestore, activeTab]);
 
   const validatedQuery = useMemo(() => {
-    if (!firestore) return null;
+    if (!firestore || activeTab !== 'validated') return null;
     return query(
         collectionGroup(firestore, 'recycling_records'),
         where('status', 'in', ['approved', 'rejected']),
         orderBy('validatedAt', 'desc')
     );
-  }, [firestore]);
+  }, [firestore, activeTab]);
 
   const handleValidate = async (record: any, newStatus: 'approved' | 'rejected') => {
     if (!firestore || processingId) return;
@@ -209,16 +210,16 @@ export default function AdminPage() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="pending" className="w-full">
+        <Tabs defaultValue="pending" className="w-full" onValueChange={setActiveTab}>
             <TabsList className='mb-4 grid w-full grid-cols-2'>
                 <TabsTrigger value="pending">Pendentes</TabsTrigger>
                 <TabsTrigger value="validated">Histórico</TabsTrigger>
             </TabsList>
             <TabsContent value="pending">
-                <ValidationTable firestoreQuery={pendingQuery} onValidate={handleValidate} emptyState={pendingEmptyState} />
+                {firestore && activeTab === 'pending' && <ValidationTable firestoreQuery={pendingQuery} onValidate={handleValidate} emptyState={pendingEmptyState} />}
             </TabsContent>
             <TabsContent value="validated">
-                <ValidationTable firestoreQuery={validatedQuery} onValidate={handleValidate} emptyState={historyEmptyState} />
+                {firestore && activeTab === 'validated' && <ValidationTable firestoreQuery={validatedQuery} onValidate={handleValidate} emptyState={historyEmptyState} />}
             </TabsContent>
         </Tabs>
       </CardContent>
