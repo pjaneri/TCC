@@ -108,7 +108,7 @@ export default function AdminPage() {
   const { toast } = useToast();
   const [processingId, setProcessingId] = useState<string | null>(null);
 
-  const pendingQuery = useMemoFirebase(() => {
+  const pendingQuery = useMemo(() => {
     if (!firestore) return null;
     return query(
       collectionGroup(firestore, 'recycling_records'),
@@ -117,7 +117,7 @@ export default function AdminPage() {
     );
   }, [firestore]);
 
-  const validatedQuery = useMemoFirebase(() => {
+  const validatedQuery = useMemo(() => {
     if (!firestore) return null;
     return query(
         collectionGroup(firestore, 'recycling_records'),
