@@ -131,12 +131,10 @@ export default function AdminPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [processingId, setProcessingId] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('pending');
   
   const [pendingQuery, setPendingQuery] = useState<Query | null>(null);
   const [validatedQuery, setValidatedQuery] = useState<Query | null>(null);
   
-  // Effect to create queries only when firestore is available
   useEffect(() => {
     if (firestore) {
       setPendingQuery(
@@ -180,13 +178,11 @@ export default function AdminPage() {
           throw new Error('User not found!');
         }
 
-        // Update the record's status
         transaction.update(recordRef, {
           status: newStatus,
           validatedAt: serverTimestamp(),
         });
 
-        // If approved, update user's points
         if (newStatus === 'approved') {
           const currentTotalPoints = userDoc.data().totalPoints || 0;
           const currentLifetimePoints = userDoc.data().lifetimePoints || 0;
@@ -250,7 +246,6 @@ export default function AdminPage() {
         <Tabs
           defaultValue="pending"
           className="w-full"
-          onValueChange={setActiveTab}
         >
           <TabsList className="mb-4 grid w-full grid-cols-2">
             <TabsTrigger value="pending">Pendentes</TabsTrigger>
