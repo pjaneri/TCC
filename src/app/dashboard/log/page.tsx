@@ -144,7 +144,7 @@ function MaterialLogCard({ material }: MaterialLogCardProps) {
   const Icon = material.icon;
 
   return (
-    <Card className="flex h-full flex-col">
+    <Card className="flex flex-col">
       <CardHeader>
         <div className="flex items-center gap-4">
           <Icon className="h-8 w-8 text-primary" />
@@ -154,7 +154,7 @@ function MaterialLogCard({ material }: MaterialLogCardProps) {
           </div>
         </div>
       </CardHeader>
-      <CardContent className="flex-1">
+      <CardContent className="flex flex-1 flex-col justify-end">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
