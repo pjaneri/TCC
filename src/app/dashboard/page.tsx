@@ -77,12 +77,6 @@ const materialIcons: { [key: string]: React.ElementType } = {
   Outros: Package,
 };
 
-const statusConfig: { [key: string]: { icon: React.ElementType, label: string, color: string } } = {
-    pending: { icon: Clock, label: 'Pendente', color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300' },
-    approved: { icon: CheckCircle2, label: 'Aprovado', color: 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300' },
-    rejected: { icon: XCircle, label: 'Recusado', color: 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300' },
-};
-
 // Helper function to convert Firestore Timestamp or ISO String to Date
 const toDate = (date: any): Date | null => {
   if (!date) return null;
@@ -183,29 +177,21 @@ export default function DashboardPage() {
       if (activity.type === 'log') {
         activityDocRef = doc(firestore, 'users', user.uid, 'recycling_records', activity.id);
         
-        // Only adjust points if the record was already approved
-        if (activity.status === 'approved') {
-          await runTransaction(firestore, async (transaction) => {
-            const userDoc = await transaction.get(userDocRef);
-            if (!userDoc.exists()) throw 'Usuário não encontrado.';
-            
-            const currentPoints = userDoc.data().totalPoints || 0;
-            const currentLifetimePoints = userDoc.data().lifetimePoints || 0;
-            const newTotalPoints = currentPoints - activity.pointsEarned;
-            const newLifetimePoints = currentLifetimePoints - activity.pointsEarned;
-            
-            transaction.update(userDocRef, { 
-              totalPoints: newTotalPoints < 0 ? 0 : newTotalPoints, 
-              lifetimePoints: newLifetimePoints < 0 ? 0 : newLifetimePoints 
-            });
-            transaction.delete(activityDocRef);
+        await runTransaction(firestore, async (transaction) => {
+          const userDoc = await transaction.get(userDocRef);
+          if (!userDoc.exists()) throw 'Usuário não encontrado.';
+          
+          const currentPoints = userDoc.data().totalPoints || 0;
+          const currentLifetimePoints = userDoc.data().lifetimePoints || 0;
+          const newTotalPoints = currentPoints - activity.pointsEarned;
+          const newLifetimePoints = currentLifetimePoints - activity.pointsEarned;
+          
+          transaction.update(userDocRef, { 
+            totalPoints: newTotalPoints < 0 ? 0 : newTotalPoints, 
+            lifetimePoints: newLifetimePoints < 0 ? 0 : newLifetimePoints 
           });
-        } else {
-          // If not approved, just delete the record without changing points
-          await runTransaction(firestore, async (transaction) => {
-            transaction.delete(activityDocRef);
-          });
-        }
+          transaction.delete(activityDocRef);
+        });
   
       } else { // redemption
         activityDocRef = doc(firestore, 'users', user.uid, 'redemptions', activity.id);
@@ -372,9 +358,6 @@ export default function DashboardPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Item</TableHead>
-                  <TableHead className="hidden sm:table-cell">
-                    Status
-                  </TableHead>
                   <TableHead className="hidden md:table-cell">Data</TableHead>
                   <TableHead className="text-right">Pontos</TableHead>
                   <TableHead className="w-[50px] text-right">Ação</TableHead>
@@ -389,7 +372,6 @@ export default function DashboardPage() {
                     if (activity.type === 'log') {
                       const Icon =
                         materialIcons[activity.materialType] || Package;
-                      const currentStatus = statusConfig[activity.status] || statusConfig.pending;
                       return (
                         <TableRow
                           key={`log-${activity.id}`}
@@ -407,12 +389,6 @@ export default function DashboardPage() {
                                 </span>
                               </div>
                             </div>
-                          </TableCell>
-                          <TableCell className="hidden sm:table-cell">
-                            <Badge variant="outline" className={cn("gap-1", currentStatus.color)}>
-                                <currentStatus.icon className="h-3 w-3" />
-                                {currentStatus.label}
-                            </Badge>
                           </TableCell>
                           <TableCell className="hidden md:table-cell">
                             {isPending
@@ -470,12 +446,6 @@ export default function DashboardPage() {
                               </span>
                             </div>
                           </TableCell>
-                          <TableCell className="hidden sm:table-cell">
-                             <Badge variant="outline" className={cn("gap-1", statusConfig.approved.color)}>
-                                <statusConfig.approved.icon className="h-3 w-3" />
-                                Concluído
-                            </Badge>
-                          </TableCell>
                           <TableCell className="hidden md:table-cell">
                              {isPending
                               ? 'Agora mesmo'
@@ -523,7 +493,7 @@ export default function DashboardPage() {
                 {!isLoading &&
                   (!combinedActivities || combinedActivities.length === 0) && (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center">
+                      <TableCell colSpan={4} className="text-center">
                         Nenhuma atividade recente.
                       </TableCell>
                     </TableRow>

@@ -1,21 +1,20 @@
 
 /**
  * @file Overview
- * This ruleset enforces a strict user-ownership model for most data, with public read access for rewards
- * and admin-only access for validation.
+ * This ruleset enforces a strict user-ownership model for most data, with public read access for rewards.
+ * Points are awarded immediately upon logging a recycling record.
  *
  * Data Structure:
  * - /users/{userId}: Stores user profile information. Users can only read/write their own profile.
- * - /users/{userId}/recycling_records/{recordId}: Stores recycling records. Owner can create, admins can update for validation.
+ * - /users/{userId}/recycling_records/{recordId}: Stores recycling records. Owner can create and delete.
  * - /users/{userId}/redemptions/{redemptionId}: Stores redemption records. Only the owner can read/write.
- * - /rewards/{rewardId}: Stores reward information. Publicly readable, admin-only write access.
- * - /roles_admin/{userId}: Indicates admin privileges.
+ * - /rewards/{rewardId}: Stores reward information. Publicly readable.
  *
  * Key Security Decisions:
  * - User data is private. Listing other users is not allowed.
  * - The /rewards collection is publicly readable.
- * - Admin privileges are managed via the /roles_admin collection.
- * - Admins can update recycling records to approve/reject them.
+ * - Admin roles have been removed for simplicity.
+ * - Recycling records grant points immediately, removing the need for an approval/validation step.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -41,95 +40,59 @@ service cloud.firestore {
     function isExistingOwner(userId) {
         return isOwner(userId) && resource != null;
     }
-    
-    /**
-     * @description Checks if the user is an administrator.
-     */
-    function isAdmin() {
-      return exists(/databases/(default)/documents/roles_admin/$(request.auth.uid));
-    }
 
     /**
      * @description Enforces user-level access control for profiles.
      * @path /users/{userId}
      * @allow (get) User can read their own profile.
      * @allow (create) User can create their own profile.
-     * @allow (update) User can update their own profile. Admins can update points.
+     * @allow (update) User can update their own profile.
      * @deny Reading, listing, or writing profiles of other users.
      */
     match /users/{userId} {
-      allow get: if isOwner(userId) || isAdmin();
-      allow list: if isAdmin();
+      allow get, list: if isOwner(userId);
       allow create: if isOwner(userId) && request.resource.data.id == userId;
-      allow update: if isExistingOwner(userId) || isAdmin();
-      allow delete: if isExistingOwner(userId);
+      allow update, delete: if isExistingOwner(userId);
     }
 
     /**
      * @description Enforces access control for recycling records.
      * @path /users/{userId}/recycling_records/{recordId}
-     * @allow (read) Owner and admins can read records.
-     * @allow (list) Owner can list their own records, Admins can list all records.
-     * @allow (create) Owner can create a new record with 'pending' status.
-     * @allow (update) Admin can update the status to 'approved' or 'rejected'.
-     * @allow (delete) Owner can delete their own records.
+     * @allow (read, list, create, delete) Owner can manage their own records.
+     * @deny (update) Records are immutable after creation.
      */
     match /users/{userId}/recycling_records/{recordId} {
-      allow get: if isOwner(userId) || isAdmin();
-      allow list: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId) 
-                    && request.resource.data.userId == userId
-                    && request.resource.data.id == recordId
-                    && request.resource.data.status == 'pending'
-                    && request.resource.data.recyclingDate == request.time;
-      allow update: if isAdmin()
-                    && request.resource.data.status != resource.data.status
-                    && (request.resource.data.status == 'approved' || request.resource.data.status == 'rejected')
-                    && request.resource.data.validatedAt == request.time;
-      allow delete: if isOwner(userId);
+      allow get, list, create, delete: if isOwner(userId);
+      allow update: if false;
     }
 
     /**
-     * @description Allows public read access to rewards, but restricts writes to admins.
+     * @description Allows public read access to rewards.
      * @path /rewards/{rewardId}
      * @allow (get, list) Any user can read rewards.
-     * @allow (create, update, delete) Only admins can manage rewards.
+     * @deny (write) Rewards are read-only for clients.
      */
     match /rewards/{rewardId} {
       allow get, list: if true;
-      allow create, update, delete: if isAdmin();
+      allow write: if false;
     }
 
     /**
      * @description Enforces user-level access control for redemptions.
      * @path /users/{userId}/redemptions/{redemptionId}
-     * @allow (get, list, create, update, delete) Only the owner can manage their redemptions.
+     * @allow (read, create, delete) Only the owner can manage their redemptions.
+     * @deny (update) Redemptions are immutable.
      */
     match /users/{userId}/redemptions/{redemptionId} {
-      allow read, create: if isOwner(userId);
-      allow delete: if isOwner(userId);
-      allow update: if false;
+      allow read, create, delete: if isOwner(userId);
       allow list: if isOwner(userId);
+      allow update: if false;
     }
 
-    /**
-     * @description Controls access to admin role documents.
-     * @path /roles_admin/{userId}
-     * @allow (get, create, delete) Only admins or the user themselves can manage admin roles (within limits).
-     * @deny (list, update) Listing or updating roles is restricted.
-     */
-    match /roles_admin/{userId} {
-        allow get: if isAdmin() || isOwner(userId);
-        allow list: if isAdmin();
-        allow create: if isAdmin();
-        allow update: if false;
-        allow delete: if isAdmin();
+    // Deprecated collections - deny all access
+    match /roles_admin/{doc=**} {
+      allow read, write: if false;
     }
-    
-    /**
-     * @description  Denies all access to the recycling_records_all collection.  There is no such collection in the data model.
-     * @path /recycling_records_all
-     */
     match /recycling_records_all/{doc=**} {
       allow read, write: if false;
     }

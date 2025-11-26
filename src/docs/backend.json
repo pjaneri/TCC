@@ -81,17 +81,7 @@
         },
         "pointsEarned": {
           "type": "number",
-          "description": "Points to be earned for this recycling activity upon approval."
-        },
-        "status": {
-          "type": "string",
-          "description": "The validation status of the record.",
-          "enum": ["pending", "approved", "rejected"]
-        },
-        "validatedAt": {
-          "type": "string",
-          "description": "Date and time when the record was validated by an admin.",
-          "format": "date-time"
+          "description": "Points earned for this recycling activity."
         }
       },
       "required": [
@@ -101,8 +91,7 @@
         "materialType",
         "quantity",
         "recyclingDate",
-        "pointsEarned",
-        "status"
+        "pointsEarned"
       ]
     },
     "Reward": {
