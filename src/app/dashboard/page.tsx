@@ -253,15 +253,11 @@ export default function DashboardPage() {
         const redemptionsSnapshot = await getDocs(redemptionsCollectionRef);
         redemptionsSnapshot.forEach(doc => batch.delete(doc.ref));
         
-        // Reset user points
-        const userDocRef = doc(firestore, 'users', user.uid);
-        batch.update(userDocRef, { totalPoints: 0, lifetimePoints: 0 });
-
         await batch.commit();
 
         toast({
             title: "Tudo limpo!",
-            description: "Seu histórico de atividades e seus pontos foram zerados.",
+            description: "Seu histórico de atividades foi zerado.",
         });
 
     } catch (error) {
@@ -330,20 +326,20 @@ export default function DashboardPage() {
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" size="sm" disabled={isDeletingAll}>
                   {isDeletingAll ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Trash2 className="mr-2 h-4 w-4" />}
-                  Excluir Tudo
+                  Excluir Histórico
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle className="flex items-center gap-2"><AlertTriangle className="text-destructive"/>Tem certeza absoluta?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    Esta ação não pode ser desfeita. Isso excluirá permanentemente <strong>todas</strong> as suas atividades (reciclagens e resgates) e irá zerar sua pontuação.
+                    Esta ação não pode ser desfeita. Isso excluirá permanentemente <strong>todo</strong> o seu histórico de atividades (reciclagens e resgates), mas sua pontuação será mantida.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancelar</AlertDialogCancel>
                   <AlertDialogAction onClick={handleDeleteAllActivities} className={cn(buttonVariants({variant: "destructive"}))}>
-                    Sim, excluir tudo
+                    Sim, excluir histórico
                   </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
