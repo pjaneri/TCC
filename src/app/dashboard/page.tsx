@@ -14,7 +14,8 @@ import {
   AlertTriangle,
   Clock,
   CheckCircle2,
-  XCircle
+  XCircle,
+  Trophy,
 } from 'lucide-react';
 import {
   Card,
@@ -300,7 +301,7 @@ export default function DashboardPage() {
             <CardTitle className="text-sm font-medium">
               Pontos para Ranking
             </CardTitle>
-            <Coins className="h-5 w-5 text-muted-foreground" />
+            <Trophy className="h-5 w-5 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold">
@@ -502,3 +503,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    

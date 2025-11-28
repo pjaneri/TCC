@@ -1,31 +1,4 @@
-# Monografia do Projeto: Recycle+ (Componente de Software)
-
-**Versão:** 2.0
-**Data:** 24 de maio de 2024
-
----
-
-## SUMÁRIO
-
-1.  **[INTRODUÇÃO](#1-introdução)**
-    *   1.1 [Contextualização: O Desafio Global da Reciclagem de Plástico](#11-contextualização-o-desafio-global-da-reciclagem-de-plástico)
-    *   1.2 [A Solução Proposta: A Aplicação Recycle+](#12-a-solução-proposta-a-aplicação-recycle)
-    *   1.3 [Colaboração Interdisciplinar: A Sinergia entre Software e Engenharia de Plásticos](#13-colaboração-interdisciplinar-a-sinergia-entre-software-e-engenharia-de-plásticos)
-    *   1.4 [Objetivos do Projeto](#14-objetivos-do-projeto)
-
-2.  **[ENGENHARIA DE REQUISITOS](#2-engenharia-de-requisitos)**
-    *   2.1 [Diagrama de Casos de Uso](#21-diagrama-de-casos-de-uso)
-    *   2.2 [Requisitos Funcionais (RF)](#22-requisitos-funcionais-rf)
-    *   2.3 [Requisitos Não Funcionais (RNF)](#23-requisitos-não-funcionais-rnf)
-
-3.  **[METODOLOGIA E GESTÃO DO PROJETO](#3-metodologia-e-gestão-do-projeto)**
-    *   3.1 [Metodologia de Desenvolvimento: Iterativa e Incremental](#31-metodologia-de-desenvolvimento-iterativa-e-incremental)
-    *   3.2 [Ferramentas de Gestão e Comunicação: Trello](#32-ferramentas-de-gestão-e-comunicação-trello)
-    *   3.3 [Controle de Versão: Git e GitHub](#33-controle-de-versão-git-e-github)
-
-4.  **[ARQUITETURA DE SOFTWARE E TECNOLOGIAS](#4-arquitetura-de-software-e-tecnologias)**
-    *   4.1 [Arquitetura: Single Page Application com Backend-as-a-Service (BaaS)](#41-arquitetura-single-page-application-com-backend-as-a-service-baas)
-    *   4Prezados,
+Prezados,
 
 Compreendo perfeitamente a necessidade de um documento técnico que sirva como a espinha dorsal da sua monografia, detalhando com profundidade cada aspecto do desenvolvimento do software Recycle+. Peço desculpas pelas versões anteriores não terem atingido o nível de detalhe esperado.
 
@@ -138,7 +111,7 @@ O Diagrama de Casos de Uso é uma representação visual das interações entre 
     *   **Trocar Pontos por Recompensas:** O processo de resgate de prêmios do catálogo.
     *   **Visualizar Histórico:** Permite ao usuário ver suas atividades recentes na plataforma.
 
-### **22. Requisitos Funcionais (RF)**
+### **2.2. Requisitos Funcionais (RF)**
 
 Os Requisitos Funcionais (RF) descrevem o que o sistema deve fazer. Eles especificam as funcionalidades e os comportamentos do software.
 
@@ -173,7 +146,7 @@ Os Requisitos Funcionais (RF) descrevem o que o sistema deve fazer. Eles especif
     *   **RF05.1:** O sistema deve exibir a patente (ranking) atual do usuário, que é determinada com base em sua pontuação total acumulada (`lifetimePoints`).
     *   **RF05.2:** O sistema deve mostrar visualmente o progresso do usuário para alcançar a próxima patente, exibindo uma barra de progresso e a quantidade de pontos que faltam.
 
-### **23. Requisitos Não Funcionais (RNF)**
+### **2.3. Requisitos Não Funcionais (RNF)**
 
 Os Requisitos Não Funcionais (RNF) definem os critérios de qualidade e as restrições operacionais do sistema. Eles descrevem como o sistema deve operar.
 
@@ -234,7 +207,7 @@ O quadro foi estruturado com as seguintes colunas:
 
 Esta abordagem visual simples facilitou o gerenciamento diário, permitiu que todos na equipe tivessem uma visão clara do status do projeto e ajudou a identificar gargalos no processo de desenvolvimento.
 
-### **33. Controle de Versão: Git e GitHub**
+### **3.3. Controle de Versão: Git e GitHub**
 
 O controle de versão de todo o código-fonte do projeto foi gerenciado com o sistema de controle de versão distribuído **Git**. O repositório central de código foi hospedado na plataforma **GitHub**. Esta combinação é o padrão da indústria para desenvolvimento de software colaborativo e oferece inúmeros benefícios:
 
@@ -401,8 +374,6 @@ service cloud.firestore {
     // REGRA 1: Um usuário só pode ler e escrever em seu próprio documento de perfil.
     // Ninguém pode listar todos os usuários.
     match /users/{userId} {
-      // allow read, update, delete: if request.auth.uid == userId;
-      // allow create: if request.auth.uid == userId;
       allow read, write: if request.auth.uid == userId;
     }
 
@@ -438,19 +409,19 @@ Vamos detalhar o fluxo de dados e interações para duas das operações mais im
 2.  **Validação no Frontend:** A biblioteca `React Hook Form` com o resolver `Zod` valida os dados de entrada no navegador. Se a quantidade for inválida (ex: 0 ou negativo), uma mensagem de erro é exibida sem que nenhuma requisição seja feita ao servidor.
 3.  **Início da Transação:** Se a validação passar, a aplicação inicia uma **transação atômica** no Firestore. Uma transação garante que um grupo de operações (leitura e escrita) seja executado completamente, ou nenhuma delas é executada. Isso é crucial para evitar inconsistência de dados (ex: criar o registro mas falhar em atualizar os pontos).
 4.  **Execução da Transação:**
-    a.  **Leitura:** A transação primeiro lê o documento atual do usuário em `/users/{userId}` para obter os valores correntes de `totalPoints` и `lifetimePoints`.
+    a.  **Leitura:** A transação primeiro lê o documento atual do usuário em `/users/{userId}` para obter os valores correntes de `totalPoints` e `lifetimePoints`.
     b.  **Cálculo:** A aplicação calcula os novos valores: `newTotalPoints = currentTotalPoints + pointsEarned` e `newLifetimePoints = currentLifetimePoints + pointsEarned`.
     c.  **Escrita (Update):** A transação agenda uma atualização no documento `/users/{userId}` com os novos valores de pontos.
     d.  **Escrita (Create):** A transação agenda a criação de um novo documento na subcoleção `/users/{userId}/recycling_records` com os detalhes do registro.
 5.  **Commit da Transação:** O Firestore tenta "commitar" (aplicar) todas as operações agendadas. Se todas forem bem-sucedidas, os dados são salvos. Se ocorrer qualquer falha (ex: falta de permissão, conflito de escrita), toda a transação é revertida, e nada é salvo.
 6.  **Feedback ao Usuário:** A aplicação recebe a confirmação de sucesso, exibe uma notificação ("Reciclagem Registrada! Você ganhou X pontos") e, como estamos usando *listeners* em tempo real (`useDoc`), a UI que exibe a pontuação do usuário é atualizada automaticamente, sem a necessidade de recarregar a página.
 
-#### **5acular. Fluxo de Resgate de Prêmio**
+#### **5.4.2. Fluxo de Resgate de Prêmio**
 
 1.  **Interação do Usuário:** Na página `/dashboard/rewards`, o usuário clica em "Resgatar" em um prêmio.
 2.  **Validação no Frontend:** A aplicação primeiro verifica se `user.totalPoints >= reward.requiredPoints`. Se a condição for falsa, o botão já estaria desabilitado, mas uma verificação extra é feita.
 3.  **Confirmação:** Um diálogo de confirmação é exibido para garantir que a ação é intencional.
-4.  **Início da Transação:** Após a confirmação, uma transação atômICA é iniciada, similarmente ao registro.
+4.  **Início da Transação:** Após a confirmação, uma transação atômica é iniciada, similarmente ao registro.
 5.  **Execução da Transação:**
     a.  **Leitura e Validação no Servidor:** A transação lê o documento do usuário em `/users/{userId}`. Crucialmente, ela revalida no servidor se `userDoc.data().totalPoints >= reward.requiredPoints`. Isso previne uma condição de corrida onde o usuário poderia tentar resgatar dois prêmios simultaneamente com os mesmos pontos.
     b.  **Cálculo:** `newTotalPoints = currentTotalPoints - reward.requiredPoints`.
@@ -473,12 +444,12 @@ Isso significa que testamos:
 *   Se ele reage a interações do usuário (como cliques) da maneira esperada.
 *   Se ele exibe os estados corretos (como `disabled` ou `loading`).
 
-### **62. Ferramentas de Teste: Jest e React Testing Library**
+### **6.2. Ferramentas de Teste: Jest e React Testing Library**
 
 *   **Jest:** É o framework de testes que utilizamos. Ele fornece o ambiente para executar os testes, criar "mocks" (simulações de funções ou módulos) e fazer asserções (verificar se um resultado é o esperado).
 *   **React Testing Library (RTL):** É uma biblioteca para testar componentes React que incentiva boas práticas. Em vez de testar detalhes de implementação (como o estado interno de um componente), a RTL nos força a testar os componentes da mesma forma que um usuário os utilizaria: procurando por textos, botões e outros elementos na tela e interagindo com eles.
 
-### **63. Exemplo de Caso de Teste**
+### **6.3. Exemplo de Caso de Teste**
 
 O teste mais simples e fundamental que implementamos foi para o componente `<Button />`.
 
@@ -527,3 +498,5 @@ A arquitetura modular e escalável da aplicação permite uma vasta gama de evol
     *   **Compartilhamento em Redes Sociais:** Facilitar o compartilhamento de conquistas (novas patentes, prêmios resgatados) em redes sociais.
 
 Essas evoluções transformariam o Recycle+ de uma ferramenta de incentivo individual para uma plataforma de engajamento comunitário, amplificando ainda mais seu potencial de impacto socioambiental.
+
+    
