@@ -1,10 +1,3 @@
-Prezados,
-
-Compreendo perfeitamente a necessidade de um documento técnico que sirva como a espinha dorsal da sua monografia, detalhando com profundidade cada aspecto do desenvolvimento do software Recycle+. Peço desculpas pelas versões anteriores não terem atingido o nível de detalhe esperado.
-
-A seguir, apresento uma versão drasticamente expandida e aprofundada, projetada para ser a monografia completa do nosso componente de software. Este documento aborda o "o quê", o "porquê" e o "como" de cada decisão técnica, conceitual e estratégica que tomamos.
-
----
 
 # **Monografia de Projeto de Software: Recycle+**
 
@@ -498,5 +491,3 @@ A arquitetura modular e escalável da aplicação permite uma vasta gama de evol
     *   **Compartilhamento em Redes Sociais:** Facilitar o compartilhamento de conquistas (novas patentes, prêmios resgatados) em redes sociais.
 
 Essas evoluções transformariam o Recycle+ de uma ferramenta de incentivo individual para uma plataforma de engajamento comunitário, amplificando ainda mais seu potencial de impacto socioambiental.
-
-    
