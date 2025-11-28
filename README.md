@@ -445,7 +445,7 @@ Esta é a porta de entrada da aplicação, projetada para atrair e informar novo
     *   **Logo e Nome (`Recycle+`):** Estabelece a identidade da marca. Clicável, leva de volta para a própria landing page.
     *   **Botão `Entrar`:** Um botão com estilo `ghost` (transparente), de menor destaque, destinado a usuários que já possuem conta. Leva para a página de login (`/login`).
     *   **Botão `Criar Conta`:** Botão principal (com cor de destaque), com um apelo claro à ação (Call to Action - CTA) para novos usuários. Leva para a página de cadastro (`/signup`).
-    *   **Seletor de Tema (Sol/Lua):** Permite ao usuário alternar entre os temas claro e escuro, respeitando sua preferência visual.
+    *   **Seletor de Tema (Sol/Lua):** Permite ao usuário alternar entre os temas claro e escuro, respeitando sua preferência visual e melhorando o conforto de leitura em diferentes ambientes de iluminação.
 
 *   **Seção Hero:**
     *   **Título Principal:** "Transforme lixo em recompensas com o Recycle+". Frase de impacto que resume a proposta de valor.
@@ -471,7 +471,7 @@ Interface focada e sem distrações para que o usuário acesse sua conta.
     *   **Botão `Voltar ao Início`:** Permite que o usuário retorne facilmente para a landing page.
 *   **Card de Login:**
     *   **Campo `Email`:** Input de texto para o e-mail do usuário.
-    *   **Campo `Senha`:** Input de senha (tipo `password`) que oculta os caracteres digitados. Inclui um ícone de olho para permitir ao usuário visualizar a senha, melhorando a usabilidade.
+    *   **Campo `Senha`:** Input de senha (tipo `password`) que oculta os caracteres digitados. Inclui um ícone de olho (`<Eye />`/`<EyeOff />`) que, ao ser clicado, alterna a visibilidade da senha. Essa funcionalidade melhora a usabilidade, permitindo que o usuário verifique o que digitou e reduza erros de digitação.
     *   **Botão `Entrar`:** Botão principal para submeter o formulário. Fica em estado de "carregando" durante a autenticação.
     *   **Separador "Ou continue com":** Divide as opções de login.
     *   **Botão `Google`:** Permite o login com um clique via OAuth, uma alternativa de baixa fricção ao login tradicional.
@@ -484,7 +484,7 @@ Similar à página de login, mas com campos adicionais para a criação de uma n
 *   **Card de Cadastro:**
     *   **Campo `Email`:** Para o novo usuário inserir seu e-mail.
     *   **Campo `Nome de usuário`:** Para definir um nome de exibição na plataforma.
-    *   **Campo `Senha`:** Para definir a senha da nova conta.
+    *   **Campo `Senha`:** Para definir a senha da nova conta, também equipado com o ícone de olho para alternar a visibilidade.
     *   **Botão `Criar Conta`:** Submete o formulário, cria a conta no Firebase Authentication e o perfil no Firestore.
     *   **Link `Faça login`:** Para usuários que já têm conta e clicaram em "Criar Conta" por engano.
 
@@ -502,7 +502,7 @@ Este é o esqueleto que envolve todas as telas autenticadas.
     *   **Menu Inferior:** Contém um botão `Sair` (logout) e um atalho para a `Página Inicial`.
 *   **Header (Cabeçalho Superior):**
     *   **Título da Página:** Exibe o nome da seção atual (ex: "Visão Geral", "Perfil").
-    *   **Seletor de Tema:** Permite a troca de tema claro/escuro.
+    *   **Seletor de Tema:** Um botão com ícone de sol/lua que permite ao usuário alternar entre o tema claro e escuro a qualquer momento, proporcionando maior conforto visual.
     *   **Avatar e Nome do Usuário:** Mostra a foto (se disponível) e o nome do usuário, confirmando sua identidade e oferecendo um toque de personalização.
 
 #### **6.2.2. Visão Geral (`/dashboard`)**
@@ -519,7 +519,7 @@ A página principal do dashboard, oferecendo um resumo das informações mais im
         *   `Item`: Mostra o nome do material reciclado ou do prêmio resgatado, com um ícone correspondente.
         *   `Data`: Exibe há quanto tempo a atividade ocorreu (ex: "há 5 minutos"), de forma amigável.
         *   `Pontos`: Uma "badge" (etiqueta) colorida. Verde com `+` para ganhos (reciclagem) e vermelha com `-` para gastos (resgate).
-        *   `Ação`: Um ícone de lixeira que permite ao usuário excluir uma atividade. Esta ação abre um diálogo de confirmação.
+        *   `Ação`: Um ícone de lixeira (`<Trash2 />`) que permite ao usuário excluir uma atividade. Esta ação abre um diálogo de confirmação para evitar exclusões acidentais.
     *   **Botão `Excluir Histórico`:** Uma ação mais drástica que apaga todos os registros de atividades, também protegida por um diálogo de confirmação.
 
 #### **6.2.3. Registrar Reciclagem (`/dashboard/log`)**
@@ -564,7 +564,7 @@ A vitrine de recompensas, onde os pontos se transformam em valor tangível.
         *   **Formulário:** Contém campos para alterar `Nome de usuário` e `Data de Nascimento`.
         *   **Botão `Salvar Alterações`:** Persiste as mudanças no Firebase.
     *   **Aba `Segurança`:**
-        *   **Formulário de Alteração de Senha:** Contém campos para `Senha Atual` e `Nova Senha`. Este formulário só é exibido se o usuário não estiver logado com o Google. Se for um usuário do Google, uma mensagem informativa é exibida.
+        *   **Formulário de Alteração de Senha:** Contém campos para `Senha Atual` e `Nova Senha`. Este formulário só é exibido se o usuário não estiver logado com o Google. Se for um usuário do Google, uma mensagem informativa é exibida. O campo de senha também possui a funcionalidade de "ver senha".
     *   **Aba `Zona de Perigo`:**
         *   **Ações Destrutivas:** Contém botões para ações que não podem ser desfeitas, como `Resetar Meus Pontos`.
         *   **Diálogo de Confirmação:** Cada botão nesta aba abre uma caixa de diálogo que força o usuário a confirmar a ação, explicando as consequências.
