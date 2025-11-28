@@ -1,4 +1,3 @@
-
 # Projeto de Conclusão de Curso: Aplicação Web Recycle+
 
 ## Resumo
