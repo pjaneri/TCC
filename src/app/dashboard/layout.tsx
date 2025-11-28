@@ -12,6 +12,7 @@ import {
   Recycle,
   BarChart,
   AreaChart,
+  Home,
 } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 import { getAuth, signOut } from "firebase/auth";
@@ -113,10 +114,22 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
-          <SidebarMenuButton tooltip="Sair" onClick={handleSignOut}>
-            <LogOut />
-            <span>Sair</span>
-          </SidebarMenuButton>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <Link href="/" passHref>
+                <SidebarMenuButton tooltip="Página Inicial">
+                  <Home />
+                  <span>Página Inicial</span>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton tooltip="Sair" onClick={handleSignOut}>
+                <LogOut />
+                <span>Sair</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
         </SidebarFooter>
       </Sidebar>
       <SidebarInset className="md:rounded-none">
