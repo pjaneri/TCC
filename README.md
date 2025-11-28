@@ -18,7 +18,8 @@ Neste documento, exploramos:
 3.  A **metodologia de gestão e desenvolvimento** ágil que permitiu a entrega iterativa e incremental de valor.
 4.  Uma análise profunda da **arquitetura de software** e do **stack tecnológico** escolhido, justificando cada decisão técnica.
 5.  Uma dissecção da **implementação técnica**, detalhando a estrutura de pastas, o modelo de dados no Cloud Firestore, as regras de segurança e os fluxos de funcionalidades críticas.
-6.  A estratégia de **testes e validação** para garantir a qualidade e robustez do software.
+6.  Uma **análise detalhada da interface do usuário**, descrevendo cada tela e cada componente interativo da aplicação.
+7.  A estratégia de **testes e validação** para garantir a qualidade e robustez do software.
 
 Este trabalho representa a consolidação de todo o esforço de engenharia de software empregado para criar uma solução digital que não apenas funciona, mas que também é escalável, segura e projetada para causar um impacto socioambiental positivo.
 
@@ -32,19 +33,25 @@ A proliferação de resíduos plásticos representa uma das mais graves e visív
 
 O Brasil ocupa uma posição crítica nesse cenário. Segundo o relatório "Atlas do Plástico", o país é o 4º maior produtor de lixo plástico do mundo, gerando cerca de 11,3 milhões de toneladas por ano. Destes, apenas uma fração mínima, estimada em **1,28%**, é efetivamente reciclada. Este índice alarmantemente baixo coloca o Brasil muito atrás da média global de 9%.
 
-A raiz do problema não reside na falta de tecnologia para o reprocessamento do material. As tecnologias de reciclagem mecânica e química estão bem estabelecidas. A principal barreira é socioeconômica e cultural, centrada na **baixa adesão da população ao processo de separação e descarte seletivo**. As causas para essa baixa adesão são multifatoriais:
+A raiz do problema não reside na falta de tecnologia para o reprocessamento do material. As tecnologias de reciclagem mecânica e química estão bem estabelecidas. A principal barreira é socioeconômica e cultural, centrada na **baixa adesão da população ao processo de separação e descarte seletivo**.
 
-*   **Falta de Incentivo Direto e Tangível:** Para o cidadão comum, o ato de separar o lixo muitas vezes é percebido como um esforço sem recompensa imediata ou visível. A ausência de um ciclo de feedback positivo torna a ação abstrata e desmotivadora.
+### **1.2. Justificativa**
+
+A baixa adesão à reciclagem no Brasil é um problema complexo com causas multifatoriais:
+
+*   **Falta de Incentivo Direto e Tangível:** Para o cidadão comum, o ato de separar o lixo muitas vezes é percebido como um esforço sem recompensa imediata ou visível. A ausência de um ciclo de feedback positivo torna a ação abstrata e desmotivadora. O esforço é real e imediato, mas o benefício é difuso e de longo prazo.
 *   **Desinformação Estrutural:** Existe uma confusão generalizada sobre quais tipos de plástico são recicláveis, como devem ser limpos e onde devem ser descartados. A falta de padronização na comunicação e a infraestrutura de coleta seletiva, muitas vezes insuficiente, agravam o problema.
-*   **Desconexão de Impacto:** O esforço individual de reciclagem parece insignificante diante da magnitude do problema. O cidadão não consegue visualizar como sua pequena ação contribui para um resultado coletivo significativo, gerando um sentimento de apatia.
+*   **Desconexão de Impacto:** O esforço individual de reciclagem parece insignificante diante da magnitude do problema. O cidadão não consegue visualizar como sua pequena ação contribui para um resultado coletivo significativo, gerando um sentimento de apatia e impotência.
 
-É nesse ponto de inflexão — a necessidade de mudar o comportamento humano em larga escala — que a tecnologia da informação, especificamente a engenharia de software, emerge como um vetor estratégico de transformação.
+É nesse ponto de inflexão — a necessidade de mudar o comportamento humano em larga escala — que a tecnologia da informação, especificamente a engenharia de software, emerge como um vetor estratégico de transformação. A engenharia de software permite criar sistemas que podem alcançar milhões de pessoas, oferecendo interfaces interativas e personalizadas que podem influenciar o comportamento de forma escalável.
 
-### **1.2. A Solução Proposta: A Aplicação Gamificada Recycle+**
+O projeto **Recycle+** se justifica por atacar diretamente essa lacuna. Ele propõe o uso da **gamificação** — a aplicação de elementos de jogos em contextos não lúdicos — para transformar a prática cívica da reciclagem em uma experiência engajadora, mensurável e, acima de tudo, recompensadora. A plataforma de software não é apenas uma ferramenta, mas o catalisador que cria o incentivo que falta no ciclo tradicional da reciclagem.
+
+Ao converter uma ação física (separar plástico) em um ativo digital (pontos) que pode ser trocado por um bem tangível (prêmios feitos do próprio material reciclado), o sistema fecha o ciclo de feedback e dá um valor imediato e pessoal ao ato de reciclar. Portanto, este projeto justifica-se pela sua abordagem inovadora de aplicar princípios de engenharia de software e design de jogos para resolver um problema socioambiental crônico, fomentando um modelo de economia circular sustentável e participativo.
+
+### **1.3. A Solução Proposta: A Aplicação Gamificada Recycle+**
 
 Para atacar diretamente a barreira do engajamento populacional, foi concebido o projeto de software **Recycle+**. Trata-se de uma aplicação web (Single Page Application) que emprega o conceito de **gamificação** para transformar a prática cívica da reciclagem em uma experiência interativa, mensurável e recompensadora.
-
-A **gamificação** é a aplicação de elementos de design de jogos e mecânicas lúdicas (como pontos, níveis, rankings e recompensas) em contextos não relacionados a jogos, com o objetivo de motivar e engajar pessoas a atingirem determinados objetivos. No caso do Recycle+, o objetivo é incentivar o descarte correto de resíduos plásticos.
 
 A premissa da aplicação é converter o ciclo de reciclagem em um ciclo de feedback positivo:
 
@@ -56,7 +63,7 @@ A premissa da aplicação é converter o ciclo de reciclagem em um ciclo de feed
 
 Este ciclo fecha a lacuna de incentivo e impacto, transformando um resíduo sem valor aparente (lixo) em um ativo digital (pontos) que pode ser convertido em um bem de consumo real (recompensa).
 
-### **1.3. Colaboração Interdisciplinar: A Sinergia entre Software e Engenharia de Plásticos**
+### **1.4. Colaboração Interdisciplinar: A Sinergia entre Software e Engenharia de Plásticos**
 
 O projeto Recycle+ é um exemplo paradigmático de colaboração interdisciplinar, criando uma simbiose entre o mundo digital da **Engenharia de Software** e o mundo físico da **Engenharia de Plásticos**. A solução só é completa e viável através da interdependência dessas duas frentes.
 
@@ -66,13 +73,13 @@ O projeto Recycle+ é um exemplo paradigmático de colaboração interdisciplina
 
 Esse fluxo cria um modelo de **economia circular** em microescala, onde o resíduo gerado por uma ponta (o cidadão) é transformado em matéria-prima para outra (a Engenharia de Plásticos), que por sua vez gera um produto de valor que retorna para a ponta inicial, fechando o ciclo.
 
-### **1.4. Objetivos do Projeto**
+### **1.5. Objetivos do Projeto**
 
-#### **1.4.1. Objetivo Geral**
+#### **1.5.1. Objetivo Geral**
 
 Desenvolver e implantar uma aplicação web funcional, escalável e segura que utilize a gamificação como ferramenta estratégica para incentivar e aumentar a adesão da população à prática da reciclagem de plástico, servindo como a ponte digital que conecta o esforço individual do cidadão ao processo de transformação física do material, validando o ciclo de economia circular proposto.
 
-#### **1.4.2. Objetivos Específicos (Componente de Software)**
+#### **1.5.2. Objetivos Específicos (Componente de Software)**
 
 *   **Implementar um Sistema de Autenticação Robusto:** Construir um módulo de gestão de identidade seguro e flexível, que suporte cadastro por e-mail/senha e login federado via provedor OAuth (Google), garantindo o controle de acesso e a personalização da experiência.
 *   **Construir um Módulo de Registro de Atividades Intuitivo:** Desenvolver uma interface clara e de baixa fricção para que o usuário possa registrar suas atividades de reciclagem, com feedback imediato de pontuação para reforçar positivamente o comportamento.
@@ -424,11 +431,151 @@ Vamos detalhar o fluxo de dados e interações para duas das operações mais im
 
 ---
 
-## **6. TESTES E VALIDAÇÃO**
+## **6. ANÁLISE DETALHADA DA INTERFACE DO USUÁRIO**
+
+Esta seção descreve em detalhes cada tela da aplicação Recycle+, explicando o propósito de cada componente de interface e como eles se combinam para criar um fluxo de usuário coeso e intuitivo.
+
+### **6.1. Telas Públicas (Acesso Não Autenticado)**
+
+#### **6.1.1. Landing Page (`/`)**
+
+Esta é a porta de entrada da aplicação, projetada para atrair e informar novos usuários.
+
+*   **Header (Cabeçalho):**
+    *   **Logo e Nome (`Recycle+`):** Estabelece a identidade da marca. Clicável, leva de volta para a própria landing page.
+    *   **Botão `Entrar`:** Um botão com estilo `ghost` (transparente), de menor destaque, destinado a usuários que já possuem conta. Leva para a página de login (`/login`).
+    *   **Botão `Criar Conta`:** Botão principal (com cor de destaque), com um apelo claro à ação (Call to Action - CTA) para novos usuários. Leva para a página de cadastro (`/signup`).
+    *   **Seletor de Tema (Sol/Lua):** Permite ao usuário alternar entre os temas claro e escuro, respeitando sua preferência visual.
+
+*   **Seção Hero:**
+    *   **Título Principal:** "Transforme lixo em recompensas com o Recycle+". Frase de impacto que resume a proposta de valor.
+    *   **Subtítulo:** Explica brevemente o que o aplicativo faz: registrar, acumular pontos e trocar por prêmios.
+    *   **Botões de Ação (`Comece a Reciclar` e `Saber Mais`):** O primeiro é o CTA principal, levando ao cadastro. O segundo é um link interno (`#como-funciona`) para usuários que desejam mais informações antes de se comprometer.
+
+*   **Seção "Como Funciona":**
+    *   **Três Cards:** "Registre", "Ganhe Pontos", "Resgate Prêmios". Cada card possui um ícone, um título e uma descrição curta, explicando o ciclo de gamificação de forma visual e rápida.
+
+*   **Seção "Prêmios em Destaque":**
+    *   **Grid de Imagens:** Mostra uma prévia dos prêmios disponíveis para resgate. As imagens são atraentes e servem como um forte incentivo visual.
+    *   **Botão "Ver todos os prêmios":** Outro CTA que leva o usuário para a página de cadastro, criando um senso de curiosidade.
+
+*   **Footer (Rodapé):**
+    *   **Copyright:** Informação padrão de direitos autorais.
+
+#### **6.1.2. Página de Login (`/login`)**
+
+Interface focada e sem distrações para que o usuário acesse sua conta.
+
+*   **Layout de Autenticação:**
+    *   **Logo e Slogan:** Reforça a identidade visual e o propósito da plataforma.
+    *   **Botão `Voltar ao Início`:** Permite que o usuário retorne facilmente para a landing page.
+*   **Card de Login:**
+    *   **Campo `Email`:** Input de texto para o e-mail do usuário.
+    *   **Campo `Senha`:** Input de senha (tipo `password`) que oculta os caracteres digitados. Inclui um ícone de olho para permitir ao usuário visualizar a senha, melhorando a usabilidade.
+    *   **Botão `Entrar`:** Botão principal para submeter o formulário. Fica em estado de "carregando" durante a autenticação.
+    *   **Separador "Ou continue com":** Divide as opções de login.
+    *   **Botão `Google`:** Permite o login com um clique via OAuth, uma alternativa de baixa fricção ao login tradicional.
+    *   **Link `Crie uma agora`:** Para usuários que chegaram a esta página por engano e ainda não têm uma conta. Leva para `/signup`.
+
+#### **6.1.3. Página de Cadastro (`/signup`)**
+
+Similar à página de login, mas com campos adicionais para a criação de uma nova conta.
+
+*   **Card de Cadastro:**
+    *   **Campo `Email`:** Para o novo usuário inserir seu e-mail.
+    *   **Campo `Nome de usuário`:** Para definir um nome de exibição na plataforma.
+    *   **Campo `Senha`:** Para definir a senha da nova conta.
+    *   **Botão `Criar Conta`:** Submete o formulário, cria a conta no Firebase Authentication e o perfil no Firestore.
+    *   **Link `Faça login`:** Para usuários que já têm conta e clicaram em "Criar Conta" por engano.
+
+### **6.2. Telas do Dashboard (Acesso Autenticado)**
+
+Após o login, o usuário entra no ambiente privado da aplicação, que possui um layout consistente.
+
+#### **6.2.1. Layout do Dashboard (`/dashboard/*`)**
+
+Este é o esqueleto que envolve todas as telas autenticadas.
+
+*   **Sidebar (Barra Lateral):**
+    *   **Logo e Nome:** Mantém a identidade visual.
+    *   **Menu de Navegação:** Uma lista vertical de botões com ícones e texto: `Visão Geral`, `Registrar Reciclagem`, `Rankings`, `Resgatar Prêmios`, `Perfil`. O item correspondente à página atual fica destacado. Em telas menores (mobile), a sidebar é recolhida e pode ser aberta por um botão "hambúrguer".
+    *   **Menu Inferior:** Contém um botão `Sair` (logout) e um atalho para a `Página Inicial`.
+*   **Header (Cabeçalho Superior):**
+    *   **Título da Página:** Exibe o nome da seção atual (ex: "Visão Geral", "Perfil").
+    *   **Seletor de Tema:** Permite a troca de tema claro/escuro.
+    *   **Avatar e Nome do Usuário:** Mostra a foto (se disponível) e o nome do usuário, confirmando sua identidade e oferecendo um toque de personalização.
+
+#### **6.2.2. Visão Geral (`/dashboard`)**
+
+A página principal do dashboard, oferecendo um resumo das informações mais importantes.
+
+*   **Cards de Estatísticas:**
+    *   **`Pontos para Resgate`:** Card de maior destaque, mostrando o saldo atual de `totalPoints`. Usa a cor primária para chamar a atenção.
+    *   **`Pontos para Ranking`:** Mostra o total de `lifetimePoints`, ajudando o usuário a entender a base para sua patente.
+*   **Tabela de "Atividade Recente":**
+    *   **Propósito:** Fornece um feedback imediato sobre as últimas ações do usuário.
+    *   **Linhas da Tabela:** Cada linha representa um registro de reciclagem ou um resgate de prêmio.
+    *   **Colunas:**
+        *   `Item`: Mostra o nome do material reciclado ou do prêmio resgatado, com um ícone correspondente.
+        *   `Data`: Exibe há quanto tempo a atividade ocorreu (ex: "há 5 minutos"), de forma amigável.
+        *   `Pontos`: Uma "badge" (etiqueta) colorida. Verde com `+` para ganhos (reciclagem) e vermelha com `-` para gastos (resgate).
+        *   `Ação`: Um ícone de lixeira que permite ao usuário excluir uma atividade. Esta ação abre um diálogo de confirmação.
+    *   **Botão `Excluir Histórico`:** Uma ação mais drástica que apaga todos os registros de atividades, também protegida por um diálogo de confirmação.
+
+#### **6.2.3. Registrar Reciclagem (`/dashboard/log`)**
+
+O coração da funcionalidade do aplicativo.
+
+*   **Cards de Material:** A tela é dividida em cards, um para cada tipo de material reciclável (ex: "Garrafa", "Tampinha"). Cada card contém:
+    *   **Ícone e Nome do Material:** Identificação visual clara.
+    *   **Descrição:** Explica o que se enquadra naquela categoria.
+    *   **Campo `Quantidade`:** Um input numérico para o usuário inserir a quantidade de itens que reciclou.
+    *   **Botão `Registrar Reciclagem`:** Submete o formulário para aquele material específico. O botão mostra um estado de "carregando" para dar feedback durante o envio.
+
+#### **6.2.4. Rankings (`/dashboard/rankings`)**
+
+Tela dedicada à gamificação e ao progresso a longo prazo.
+
+*   **Card de Patente Atual:**
+    *   **Ícone e Nome da Patente:** Exibe de forma proeminente a patente atual do usuário (ex: "Aprendiz", "Guardião").
+    *   **Pontuação Total:** Mostra os `lifetimePoints` do usuário.
+    *   **Barra de Progresso:** Um elemento visual que mostra o quão perto o usuário está de alcançar a próxima patente.
+    *   **Texto de Incentivo:** Informa quantos pontos faltam para o próximo nível.
+*   **Lista "Todas as Patentes":**
+    *   Mostra todas as patentes possíveis no sistema, da mais baixa à mais alta, com seus respectivos ícones e a pontuação necessária. Isso funciona como um "mapa" para o usuário, mostrando a jornada de progressão.
+
+#### **6.2.5. Resgatar Prêmios (`/dashboard/rewards`)**
+
+A vitrine de recompensas, onde os pontos se transformam em valor tangível.
+
+*   **Grid de Prêmios:** Os prêmios são exibidos em um grid de cards. Cada card de prêmio contém:
+    *   **Imagem do Prêmio:** O principal apelo visual.
+    *   **Nome e Descrição:** Informações sobre o produto.
+    *   **Custo em Pontos:** Uma "badge" com o ícone de moedas, mostrando claramente o valor do prêmio.
+    *   **Botão `Resgatar`:** O botão principal da ação. Crucialmente, **este botão é desabilitado e muda de cor/texto para "Pontos insuficientes"** se o usuário não tiver saldo (`totalPoints`) para resgatar aquele prêmio. Ao clicar, um diálogo de confirmação previne resgates acidentais.
+
+#### **6.2.6. Perfil (`/dashboard/profile`)**
+
+Área para gerenciamento de dados pessoais e configurações da conta.
+
+*   **Banner de Perfil:** Uma seção visualmente destacada com o avatar, nome e e-mail do usuário.
+*   **Sistema de Abas:** Organiza as configurações em seções para não sobrecarregar o usuário.
+    *   **Aba `Perfil`:**
+        *   **Formulário:** Contém campos para alterar `Nome de usuário` e `Data de Nascimento`.
+        *   **Botão `Salvar Alterações`:** Persiste as mudanças no Firebase.
+    *   **Aba `Segurança`:**
+        *   **Formulário de Alteração de Senha:** Contém campos para `Senha Atual` e `Nova Senha`. Este formulário só é exibido se o usuário não estiver logado com o Google. Se for um usuário do Google, uma mensagem informativa é exibida.
+    *   **Aba `Zona de Perigo`:**
+        *   **Ações Destrutivas:** Contém botões para ações que não podem ser desfeitas, como `Resetar Meus Pontos`.
+        *   **Diálogo de Confirmação:** Cada botão nesta aba abre uma caixa de diálogo que força o usuário a confirmar a ação, explicando as consequências.
+
+---
+
+## **7. TESTES E VALIDAÇÃO**
 
 Para garantir a qualidade e a robustez da aplicação, uma estratégia de testes focada na validação do comportamento dos componentes da interface do usuário foi adotada.
 
-### **6.1. Estratégia de Testes: Testes de Unidade de Componentes**
+### **7.1. Estratégia de Testes: Testes de Unidade de Componentes**
 
 A estratégia principal foi a de **testes de unidade automatizados** para os componentes React. O objetivo não era testar a lógica de negócio inteira, mas sim validar que cada peça da UI (componente) se comporta como esperado de forma isolada.
 
@@ -437,12 +584,12 @@ Isso significa que testamos:
 *   Se ele reage a interações do usuário (como cliques) da maneira esperada.
 *   Se ele exibe os estados corretos (como `disabled` ou `loading`).
 
-### **6.2. Ferramentas de Teste: Jest e React Testing Library**
+### **7.2. Ferramentas de Teste: Jest e React Testing Library**
 
 *   **Jest:** É o framework de testes que utilizamos. Ele fornece o ambiente para executar os testes, criar "mocks" (simulações de funções ou módulos) e fazer asserções (verificar se um resultado é o esperado).
 *   **React Testing Library (RTL):** É uma biblioteca para testar componentes React que incentiva boas práticas. Em vez de testar detalhes de implementação (como o estado interno de um componente), a RTL nos força a testar os componentes da mesma forma que um usuário os utilizaria: procurando por textos, botões e outros elementos na tela e interagindo com eles.
 
-### **6.3. Exemplo de Caso de Teste**
+### **7.3. Exemplo de Caso de Teste**
 
 O teste mais simples e fundamental que implementamos foi para o componente `<Button />`.
 
@@ -463,15 +610,15 @@ Embora simples, esses testes garantem que uma das peças mais fundamentais da no
 
 ---
 
-## **7. CONCLUSÃO**
+## **8. CONCLUSÃO**
 
-### **7.1. Resultados Alcançados**
+### **8.1. Resultados Alcançados**
 
 O componente de software do projeto Recycle+ foi concluído com sucesso, resultando em uma aplicação web totalmente funcional, segura, escalável e que atende a todos os requisitos funcionais e não funcionais definidos na fase de engenharia. A plataforma representa uma prova de conceito robusta para a hipótese central do projeto: a de que a gamificação pode ser uma ferramenta poderosa para catalisar a mudança de comportamento e fomentar práticas sustentáveis.
 
 Conseguimos construir uma ponte digital eficiente entre o esforço individual do cidadão e o processo de economia circular gerenciado pela equipe de Engenharia de Plásticos, validando a sinergia interdisciplinar que fundamenta o projeto.
 
-### **7.2. Limitações do Projeto na Versão Atual**
+### **8.2. Limitações do Projeto na Versão Atual**
 
 É importante reconhecer as limitações do estado atual do sistema, que abrem caminho para trabalhos futuros:
 
@@ -479,7 +626,7 @@ Conseguimos construir uma ponte digital eficiente entre o esforço individual do
 *   **Logística de Entrega de Prêmios:** A aplicação gerencia o resgate de pontos, mas não a logística de entrega dos prêmios físicos, que precisaria ser coordenada manualmente nesta fase.
 *   **Gerenciamento de Conteúdo Estático:** O catálogo de prêmios é atualmente gerenciado através de um arquivo JSON estático, o que exige uma alteração no código-fonte para ser atualizado.
 
-### **7.3. Trabalhos Futuros e Propostas de Evolução**
+### **8.3. Trabalhos Futuros e Propostas de Evolução**
 
 A arquitetura modular e escalável da aplicação permite uma vasta gama de evoluções futuras. Algumas das propostas mais impactantes incluem:
 
