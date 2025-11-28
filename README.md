@@ -37,13 +37,15 @@ A raiz do problema não reside na falta de tecnologia para o reprocessamento do 
 
 ### **1.2. Justificativa**
 
-A baixa adesão à reciclagem no Brasil é um problema complexo com causas multifatoriais:
+A baixa adesão à reciclagem no Brasil é um problema complexo com causas multifatoriais que este projeto visa endereçar diretamente:
 
-*   **Falta de Incentivo Direto e Tangível:** Para o cidadão comum, o ato de separar o lixo muitas vezes é percebido como um esforço sem recompensa imediata ou visível. A ausência de um ciclo de feedback positivo torna a ação abstrata e desmotivadora. O esforço é real e imediato, mas o benefício é difuso e de longo prazo.
-*   **Desinformação Estrutural:** Existe uma confusão generalizada sobre quais tipos de plástico são recicláveis, como devem ser limpos e onde devem ser descartados. A falta de padronização na comunicação e a infraestrutura de coleta seletiva, muitas vezes insuficiente, agravam o problema.
-*   **Desconexão de Impacto:** O esforço individual de reciclagem parece insignificante diante da magnitude do problema. O cidadão não consegue visualizar como sua pequena ação contribui para um resultado coletivo significativo, gerando um sentimento de apatia e impotência.
+*   **Falta de Incentivo Direto e Tangível:** Para o cidadão comum, o ato de separar o lixo muitas vezes é percebido como um esforço sem recompensa imediata ou visível. A ausência de um ciclo de feedback positivo torna a ação abstrata e desmotivadora. O esforço é real e imediato, mas o benefício é difuso e de longo prazo. A plataforma Recycle+ justifica-se por criar este ciclo de feedback que falta, oferecendo uma recompensa imediata (pontos) para uma ação concreta (reciclagem).
 
-É nesse ponto de inflexão — a necessidade de mudar o comportamento humano em larga escala — que a tecnologia da informação, especificamente a engenharia de software, emerge como um vetor estratégico de transformação. A engenharia de software permite criar sistemas que podem alcançar milhões de pessoas, oferecendo interfaces interativas e personalizadas que podem influenciar o comportamento de forma escalável.
+*   **Desinformação Estrutural:** Existe uma confusão generalizada sobre quais tipos de plástico são recicláveis, como devem ser limpos e onde devem ser descartados. A falta de padronização na comunicação e a infraestrutura de coleta seletiva, muitas vezes insuficiente, agravam o problema. O aplicativo ajuda a mitigar isso, apresentando categorias claras de materiais recicláveis, educando indiretamente o usuário.
+
+*   **Desconexão de Impacto:** O esforço individual de reciclagem parece insignificante diante da magnitude do problema. O cidadão não consegue visualizar como sua pequena ação contribui para um resultado coletivo significativo, gerando um sentimento de apatia e impotência. A gamificação, com sistemas de ranking e progresso, justifica-se por dar visibilidade e significado a cada ação individual, inserindo o usuário em um contexto de comunidade e progresso coletivo.
+
+É nesse ponto de inflexão — a necessidade de mudar o comportamento humano em larga escala — que a engenharia de software emerge como um vetor estratégico de transformação. A engenharia de software permite criar sistemas que podem alcançar milhões de pessoas, oferecendo interfaces interativas e personalizadas que podem influenciar o comportamento de forma escalável.
 
 O projeto **Recycle+** se justifica por atacar diretamente essa lacuna. Ele propõe o uso da **gamificação** — a aplicação de elementos de jogos em contextos não lúdicos — para transformar a prática cívica da reciclagem em uma experiência engajadora, mensurável e, acima de tudo, recompensadora. A plataforma de software não é apenas uma ferramenta, mas o catalisador que cria o incentivo que falta no ciclo tradicional da reciclagem.
 
@@ -445,7 +447,7 @@ Esta é a porta de entrada da aplicação, projetada para atrair e informar novo
     *   **Logo e Nome (`Recycle+`):** Estabelece a identidade da marca. Clicável, leva de volta para a própria landing page.
     *   **Botão `Entrar`:** Um botão com estilo `ghost` (transparente), de menor destaque, destinado a usuários que já possuem conta. Leva para a página de login (`/login`).
     *   **Botão `Criar Conta`:** Botão principal (com cor de destaque), com um apelo claro à ação (Call to Action - CTA) para novos usuários. Leva para a página de cadastro (`/signup`).
-    *   **Seletor de Tema (Sol/Lua):** Um botão com ícone que permite ao usuário alternar entre os temas claro e escuro. Essa funcionalidade de experiência do usuário (UX) oferece maior conforto visual, especialmente em ambientes com pouca luz, e permite a personalização da interface conforme a preferência do usuário.
+    *   **Seletor de Tema (Sol/Lua):** Um botão com ícone que permite ao usuário alternar entre os temas claro e escuro.
 
 *   **Seção Hero:**
     *   **Título Principal:** "Transforme lixo em recompensas com o Recycle+". Frase de impacto que resume a proposta de valor.
@@ -472,7 +474,6 @@ Interface focada e sem distrações para que o usuário acesse sua conta.
 *   **Card de Login:**
     *   **Campo `Email`:** Input de texto para o e-mail do usuário.
     *   **Campo `Senha`:** Input de senha (tipo `password`) que, por padrão, oculta os caracteres digitados. 
-        *   **Funcionalidade "Ver Senha":** Dentro do campo, há um ícone de olho (`<Eye />`/`<EyeOff />`). Ao clicar neste ícone, a visibilidade da senha é alternada, permitindo que o usuário verifique o que digitou. Isso melhora significativamente a usabilidade, reduzindo a frustração e os erros de digitação durante a autenticação.
     *   **Botão `Entrar`:** Botão principal para submeter o formulário. Fica em estado de "carregando" durante a autenticação.
     *   **Separador "Ou continue com":** Divide as opções de login.
     *   **Botão `Google`:** Permite o login com um clique via OAuth, uma alternativa de baixa fricção ao login tradicional.
@@ -485,7 +486,7 @@ Similar à página de login, mas com campos adicionais para a criação de uma n
 *   **Card de Cadastro:**
     *   **Campo `Email`:** Para o novo usuário inserir seu e-mail.
     *   **Campo `Nome de usuário`:** Para definir um nome de exibição na plataforma.
-    *   **Campo `Senha`:** Input para definir a senha da nova conta. Assim como na tela de login, este campo é equipado com o ícone de olho para alternar a visibilidade da senha, facilitando a criação de senhas complexas sem erros.
+    *   **Campo `Senha`:** Input para definir a senha da nova conta.
     *   **Botão `Criar Conta`:** Submete o formulário, cria a conta no Firebase Authentication e o perfil no Firestore.
     *   **Link `Faça login`:** Para usuários que já têm conta e clicaram em "Criar Conta" por engano.
 
@@ -503,7 +504,7 @@ Este é o esqueleto que envolve todas as telas autenticadas.
     *   **Menu Inferior:** Contém um botão `Sair` (logout) e um atalho para a `Página Inicial`.
 *   **Header (Cabeçalho Superior):**
     *   **Título da Página:** Exibe o nome da seção atual (ex: "Visão Geral", "Perfil").
-    *   **Seletor de Tema:** Um botão com ícone de sol/lua que permite ao usuário logado alternar entre o tema claro e escuro a qualquer momento. A preferência do usuário é mantida durante a navegação, proporcionando uma experiência consistente e personalizada.
+    *   **Seletor de Tema:** Um botão com ícone de sol/lua que permite ao usuário logado alternar entre o tema claro e escuro a qualquer momento.
     *   **Avatar e Nome do Usuário:** Mostra a foto (se disponível) e o nome do usuário, confirmando sua identidade e oferecendo um toque de personalização.
 
 #### **6.2.2. Visão Geral (`/dashboard`)**
@@ -565,10 +566,35 @@ A vitrine de recompensas, onde os pontos se transformam em valor tangível.
         *   **Formulário:** Contém campos para alterar `Nome de usuário` e `Data de Nascimento`.
         *   **Botão `Salvar Alterações`:** Persiste as mudanças no Firebase.
     *   **Aba `Segurança`:**
-        *   **Formulário de Alteração de Senha:** Contém campos para `Senha Atual` e `Nova Senha`. Este formulário só é exibido se o usuário não estiver logado com o Google. Se for um usuário do Google, uma mensagem informativa é exibida. O campo de senha também possui a funcionalidade de "ver senha" para garantir que o usuário digite a nova senha corretamente.
+        *   **Formulário de Alteração de Senha:** Contém campos para `Senha Atual` e `Nova Senha`. Este formulário só é exibido se o usuário não estiver logado com o Google. Se for um usuário do Google, uma mensagem informativa é exibida.
     *   **Aba `Zona de Perigo`:**
         *   **Ações Destrutivas:** Contém botões para ações que não podem ser desfeitas, como `Resetar Meus Pontos`.
         *   **Diálogo de Confirmação:** Cada botão nesta aba abre uma caixa de diálogo que força o usuário a confirmar a ação, explicando as consequências.
+
+### **6.3. Funcionalidade Transversal: Seletor de Tema (Modo Claro/Escuro)**
+
+Uma funcionalidade de experiência do usuário (UX) presente em toda a aplicação é a capacidade de alternar entre um tema visual claro e um escuro.
+
+*   **Localização:** O componente de alternância de tema, representado por um ícone de Sol/Lua, está estrategicamente posicionado no cabeçalho tanto da página pública (`Landing Page`) quanto do layout do dashboard (`Dashboard Layout`), garantindo que o usuário possa acessá-lo a qualquer momento, esteja ele logado ou não.
+*   **Propósito e Importância:**
+    *   **Conforto Visual:** O modo escuro é projetado para reduzir a emissão de luz da tela, o que diminui o cansaço visual, especialmente em ambientes com pouca iluminação. Isso torna o uso prolongado da aplicação mais confortável.
+    *   **Acessibilidade:** Para alguns usuários com sensibilidade à luz ou certas deficiências visuais, um tema escuro pode melhorar significativamente a legibilidade.
+    *   **Preferência do Usuário:** Oferecer essa escolha é um padrão em aplicações modernas, permitindo que o usuário personalize a interface de acordo com sua preferência pessoal, o que aumenta a satisfação geral com o produto.
+*   **Implementação:** Utilizamos a biblioteca `next-themes`, que se integra perfeitamente com o Next.js e o Tailwind CSS. A biblioteca gerencia o estado do tema (claro ou escuro) e aplica a classe CSS `.dark` ao elemento `<html>` do documento. O nosso arquivo `globals.css` contém as variáveis de cor para ambos os temas, que são aplicadas automaticamente quando a classe `.dark` está presente.
+
+### **6.4. Funcionalidade de Usabilidade: Visualização de Senha**
+
+Para melhorar a experiência do usuário durante a autenticação e o gerenciamento de senhas, foi implementada uma funcionalidade que permite visualizar a senha digitada.
+
+*   **Localização:** Esta funcionalidade está presente em todos os campos de entrada de senha da aplicação:
+    *   Página de Login (`/login`)
+    *   Página de Cadastro (`/signup`)
+    *   Página de Perfil (`/dashboard/profile`), na aba de Segurança.
+*   **Propósito e Importância:**
+    *   **Redução de Erros:** A digitação de senhas em campos mascarados (com asteriscos ou pontos) é uma fonte comum de erros. Permitir que o usuário visualize o que digitou antes de submeter o formulário reduz drasticamente as falhas de login por erro de digitação.
+    *   **Melhora da Confiança:** O usuário se sente mais seguro e no controle ao poder verificar se a senha (especialmente senhas complexas) foi inserida corretamente.
+    *   **Usabilidade em Dispositivos Móveis:** Em teclados de dispositivos móveis, a chance de erro de digitação é maior. Esta funcionalidade é particularmente útil nesses cenários.
+*   **Implementação:** O componente `PasswordInput`, construído sobre o componente base `Input`, gerencia um estado interno para controlar a visibilidade da senha. Um ícone de olho (`<Eye />` e `<EyeOff />`) é posicionado dentro do campo. Ao ser clicado, este ícone alterna o estado de visibilidade e, consequentemente, o `type` do campo de input entre `password` (oculto) e `text` (visível).
 
 ---
 
