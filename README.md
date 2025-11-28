@@ -509,30 +509,29 @@ Este é o esqueleto que envolve todas as telas autenticadas.
 
 #### **6.2.2. Visão Geral (`/dashboard`)**
 
-A página principal do dashboard, oferecendo um resumo das informações mais importantes.
+A página principal do dashboard, oferecendo um resumo das informações mais importantes. Esta tela funciona como o centro de feedback para o usuário, mostrando o resultado direto de suas ações.
 
 *   **Cards de Estatísticas:**
-    *   **`Pontos para Resgate`:** Card de maior destaque, mostrando o saldo atual de `totalPoints`. Usa a cor primária para chamar a atenção.
-    *   **`Pontos para Ranking`:** Mostra o total de `lifetimePoints`, ajudando o usuário a entender a base para sua patente.
+    *   **`Pontos para Resgate`:** Card de maior destaque, mostrando o saldo atual de `totalPoints`. Este é o "dinheiro" do usuário dentro do jogo, o resultado direto do acúmulo de pontos de reciclagem e do gasto com prêmios.
+    *   **`Pontos para Ranking`:** Mostra o total de `lifetimePoints`. Este número nunca diminui e serve para dar ao usuário um senso de progresso e conquista a longo prazo.
 *   **Tabela de "Atividade Recente":**
-    *   **Propósito:** Fornece um feedback imediato sobre as últimas ações do usuário.
-    *   **Linhas da Tabela:** Cada linha representa um registro de reciclagem ou um resgate de prêmio.
+    *   **Propósito:** Fornece um *feedback loop* imediato e transparente sobre as últimas ações. É aqui que o usuário vê a consequência de seus registros e resgates.
     *   **Colunas:**
         *   `Item`: Mostra o nome do material reciclado ou do prêmio resgatado, com um ícone correspondente.
         *   `Data`: Exibe há quanto tempo a atividade ocorreu (ex: "há 5 minutos"), de forma amigável.
-        *   `Pontos`: Uma "badge" (etiqueta) colorida. Verde com `+` para ganhos (reciclagem) e vermelha com `-` para gastos (resgate).
-        *   `Ação`: Um ícone de lixeira (`<Trash2 />`) que permite ao usuário excluir uma atividade. Esta ação abre um diálogo de confirmação para evitar exclusões acidentais e, ao confirmar, reverte a pontuação associada àquela atividade.
+        *   `Pontos`: Uma "badge" (etiqueta) colorida, que é o feedback visual mais importante. Verde com `+` para ganhos (reciclagem), reforçando positivamente a ação. Vermelha com `-` para gastos (resgate), mostrando o custo da recompensa.
+        *   `Ação`: Um ícone de lixeira (`<Trash2 />`) que permite ao usuário excluir uma atividade. Esta ação abre um diálogo de confirmação para evitar exclusões acidentais e, ao confirmar, reverte a pontuação associada àquela atividade, atualizando os cards de estatísticas em tempo real.
     *   **Botão `Excluir Histórico`:** Uma ação mais drástica que apaga todos os registros de atividades, também protegida por um diálogo de confirmação.
 
 #### **6.2.3. Registrar Reciclagem (`/dashboard/log`)**
 
-O coração da funcionalidade do aplicativo.
+O coração da funcionalidade do aplicativo e a principal ação para o ganho de pontos. A interface é projetada para ser de baixa fricção, incentivando o uso frequente.
 
 *   **Cards de Material:** A tela é dividida em cards, um para cada tipo de material reciclável (ex: "Garrafa", "Tampinha"). Cada card contém:
     *   **Ícone e Nome do Material:** Identificação visual clara.
     *   **Descrição:** Explica o que se enquadra naquela categoria.
     *   **Campo `Quantidade`:** Um input numérico para o usuário inserir a quantidade de itens que reciclou.
-    *   **Botão `Registrar Reciclagem`:** Submete o formulário para aquele material específico. O botão mostra um estado de "carregando" para dar feedback durante o envio.
+    *   **Botão `Registrar Reciclagem`:** Ao ser clicado, este botão dispara o fluxo de registro descrito na seção 5.4.1. O sistema calcula os pontos e os adiciona à conta do usuário. O botão mostra um estado de "carregando" para dar feedback durante o envio, e uma notificação de sucesso é exibida ao final, confirmando a quantidade de pontos ganhos e reforçando o comportamento positivo.
 
 #### **6.2.4. Rankings (`/dashboard/rankings`)**
 
@@ -548,13 +547,15 @@ Tela dedicada à gamificação e ao progresso a longo prazo.
 
 #### **6.2.5. Resgatar Prêmios (`/dashboard/rewards`)**
 
-A vitrine de recompensas, onde os pontos se transformam em valor tangível.
+A vitrine de recompensas, onde os pontos se transformam em valor tangível. Esta tela representa a recompensa final do ciclo de gamificação.
 
 *   **Grid de Prêmios:** Os prêmios são exibidos em um grid de cards. Cada card de prêmio contém:
     *   **Imagem do Prêmio:** O principal apelo visual.
     *   **Nome e Descrição:** Informações sobre o produto.
     *   **Custo em Pontos:** Uma "badge" com o ícone de moedas, mostrando claramente o valor do prêmio.
-    *   **Botão `Resgatar`:** O botão principal da ação. Crucialmente, **este botão é desabilitado e muda de cor/texto para "Pontos insuficientes"** se o usuário não tiver saldo (`totalPoints`) para resgatar aquele prêmio. Ao clicar, um diálogo de confirmação previne resgates acidentais.
+    *   **Botão `Resgatar`:** Este é o componente-chave da tela. Sua aparência e funcionalidade são diretamente controladas pelo saldo de `totalPoints` do usuário.
+        *   **Estado Habilitado:** Se o usuário possui pontos suficientes, o botão está ativo e com a cor de destaque (`accent`). Ao clicar, ele abre um diálogo de confirmação e, se confirmado, dispara o fluxo de resgate descrito na seção 5.4.2, deduzindo os pontos da conta.
+        *   **Estado Desabilitado:** Se o usuário não tem saldo suficiente, o botão é visualmente desabilitado (esmaecido) e seu texto muda para "Pontos insuficientes". Isso fornece um feedback claro e imediato sobre o porquê da ação não estar disponível, incentivando o usuário a registrar mais reciclagens.
 
 #### **6.2.6. Perfil (`/dashboard/profile`)**
 
