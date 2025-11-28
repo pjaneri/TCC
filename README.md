@@ -403,39 +403,42 @@ service cloud.firestore {
 
 ### **5.4. Fluxos de Funcionalidades Críticas**
 
-Vamos detalhar o fluxo de dados e interações para duas das operações mais importantes.
+Esta seção detalha o fluxo de dados e interações para as duas operações que formam o coração do ciclo de gamificação do Recycle+: o registro de uma reciclagem para ganhar pontos e o resgate de um prêmio usando esses pontos.
 
-#### **5.4.1. Fluxo de Registro de Reciclagem**
+#### **5.4.1. Fluxo de Registro de Reciclagem (Ganho de Pontos)**
 
-1.  **Interação do Usuário:** Na página `/dashboard/log`, o usuário preenche o formulário (ex: "Garrafa", quantidade "10") e clica em "Registrar".
-2.  **Validação no Frontend:** A biblioteca `React Hook Form` com o resolver `Zod` valida os dados de entrada no navegador. Se a quantidade for inválida (ex: 0 ou negativo), uma mensagem de erro é exibida sem que nenhuma requisição seja feita ao servidor.
-3.  **Início da Transação:** Se a validação passar, a aplicação inicia uma **transação atômica** no Firestore. Uma transação garante que um grupo de operações (leitura e escrita) seja executado completamente, ou nenhuma delas é executada. Isso é crucial para evitar inconsistência de dados (ex: criar o registro mas falhar em atualizar os pontos).
-4.  **Execução da Transação:**
-    a.  **Leitura:** A transação primeiro lê o documento atual do usuário em `/users/{userId}` para obter os valores correntes de `totalPoints` e `lifetimePoints`.
-    b.  **Cálculo:** A aplicação calcula os novos valores: `newTotalPoints = currentTotalPoints + pointsEarned` e `newLifetimePoints = currentLifetimePoints + pointsEarned`.
-    c.  **Escrita (Update):** A transação agenda uma atualização no documento `/users/{userId}` com os novos valores de pontos.
-    d.  **Escrita (Create):** A transação agenda a criação de um novo documento na subcoleção `/users/{userId}/recycling_records` com os detalhes do registro.
-5.  **Commit da Transação:** O Firestore tenta "commitar" (aplicar) todas as operações agendadas. Se todas forem bem-sucedidas, os dados são salvos. Se ocorrer qualquer falha (ex: falta de permissão, conflito de escrita), toda a transação é revertida, e nada é salvo.
-6.  **Feedback ao Usuário:** A aplicação recebe a confirmação de sucesso, exibe uma notificação ("Reciclagem Registrada! Você ganhou X pontos") e, como estamos usando *listeners* em tempo real (`useDoc`), a UI que exibe a pontuação do usuário é atualizada automaticamente, sem a necessidade de recarregar a página.
+Esta é a ação principal que o usuário realiza para progredir no sistema. A interface e a lógica de backend são projetadas para tornar este processo rápido, recompensador e seguro.
 
-#### **5.4.2. Fluxo de Resgate de Prêmio**
+1.  **Interação do Usuário (Frontend):** Na página `/dashboard/log`, o usuário se depara com os cards de materiais recicláveis. Ele insere a quantidade de um item (ex: "10" no card "Garrafa") e clica no botão "Registrar Reciclagem".
+2.  **Validação no Frontend:** Antes de qualquer comunicação com o servidor, a biblioteca `React Hook Form` com o resolvedor `Zod` valida a entrada no navegador. Se a quantidade for inválida (ex: 0, negativo ou não for um número), uma mensagem de erro é exibida imediatamente abaixo do campo, prevenindo uma requisição desnecessária e fornecendo feedback instantâneo.
+3.  **Início da Transação Atômica (Backend):** Se a validação for bem-sucedida, a aplicação chama o Firestore para iniciar uma **transação atômica**. Uma transação é um conjunto de operações de leitura e escrita que são tratadas como uma única unidade: ou todas são bem-sucedidas, ou nenhuma delas é aplicada. Isso é fundamental para garantir a consistência dos dados. Sem uma transação, seria possível, por exemplo, criar o registro da reciclagem mas falhar ao atualizar a pontuação do usuário, deixando os dados inconsistentes.
+4.  **Execução da Transação no Servidor:**
+    a.  **Leitura Segura:** A transação primeiro lê o documento do usuário em `/users/{userId}` para obter os valores atuais dos campos `totalPoints` e `lifetimePoints`.
+    b.  **Cálculo:** A aplicação calcula os novos valores de pontuação com base no tipo de material e na quantidade registrada. Ex: `pontosGanhos = 10 (quantidade) * 100 (pontos por garrafa) = 1000`. Em seguida, calcula os novos totais: `newTotalPoints = currentTotalPoints + pontosGanhos` e `newLifetimePoints = currentLifetimePoints + pontosGanhos`.
+    c.  **Escrita (Atualização do Perfil):** A transação agenda uma operação de `update` no documento `/users/{userId}` para substituir os valores de `totalPoints` e `lifetimePoints` pelos novos totais calculados.
+    d.  **Escrita (Criação do Registro):** Simultaneamente, a transação agenda uma operação de `create` para adicionar um novo documento na subcoleção `/users/{userId}/recycling_records`, contendo os detalhes da atividade (material, quantidade, pontos ganhos, data).
+5.  **Commit da Transação:** O Firestore tenta "commitar" (confirmar e aplicar) todas as operações agendadas. Se todas forem bem-sucedidas e as regras de segurança permitirem, os dados são salvos de forma permanente. Se qualquer parte falhar (ex: usuário não tem permissão, o documento do usuário foi deletado), toda a transação é revertida, e o banco de dados permanece no estado em que estava, garantindo a integridade dos dados.
+6.  **Feedback ao Usuário (Frontend):** A aplicação recebe a confirmação de sucesso do backend. Imediatamente, uma notificação (toast) é exibida no canto da tela com a mensagem "Reciclagem Registrada! Você ganhou 1000 pontos". Graças aos listeners em tempo real do Firestore (`useDoc` e `useCollection`), a interface do usuário (como os cards de pontuação e a tabela de atividades recentes no dashboard) é atualizada automaticamente para refletir os novos dados, sem a necessidade de recarregar a página.
 
-1.  **Interação do Usuário:** Na página `/dashboard/rewards`, o usuário clica em "Resgatar" em um prêmio.
-2.  **Validação no Frontend:** A aplicação primeiro verifica se `user.totalPoints >= reward.requiredPoints`. Se a condição for falsa, o botão já estaria desabilitado, mas uma verificação extra é feita.
-3.  **Confirmação:** Um diálogo de confirmação é exibido para garantir que a ação é intencional.
-4.  **Início da Transação:** Após a confirmação, uma transação atômica é iniciada, similarmente ao registro.
-5.  **Execução da Transação:**
-    a.  **Leitura e Validação no Servidor:** A transação lê o documento do usuário em `/users/{userId}`. Crucialmente, ela revalida no servidor se `userDoc.data().totalPoints >= reward.requiredPoints`. Isso previne uma condição de corrida onde o usuário poderia tentar resgatar dois prêmios simultaneamente com os mesmos pontos.
-    b.  **Cálculo:** `newTotalPoints = currentTotalPoints - reward.requiredPoints`.
-    c.  **Escrita (Update):** A transação agenda a atualização do campo `totalPoints` no documento do usuário.
-    d.  **Escrita (Create):** A transação agenda a criação de um novo documento em `/users/{userId}/redemptions` para registrar o resgate.
-6.  **Commit e Feedback:** O processo de commit e feedback ao usuário é idêntico ao do fluxo de registro.
+#### **5.4.2. Fluxo de Resgate de Prêmio (Gasto de Pontos)**
+
+Este fluxo completa o ciclo de gamificação, permitindo que o usuário transforme seus pontos virtuais em uma recompensa tangível.
+
+1.  **Interação do Usuário (Frontend):** Na página `/dashboard/rewards`, o usuário visualiza o catálogo de prêmios. Ao lado de cada prêmio, há um botão "Resgatar". O estado deste botão (habilitado ou desabilitado) é controlado em tempo real pela pontuação do usuário. Se `user.totalPoints >= reward.requiredPoints`, o botão está ativo. Caso contrário, ele fica desabilitado e com o texto "Pontos insuficientes". O usuário clica no botão "Resgatar" de um prêmio que ele pode pagar.
+2.  **Confirmação:** Para evitar cliques acidentais, um diálogo de confirmação (`AlertDialog`) é exibido, perguntando: "Você tem certeza que quer resgatar 'Nome do Prêmio' por X pontos?".
+3.  **Início da Transação Atômica (Backend):** Após a confirmação, uma transação atômica é iniciada, de forma semelhante ao fluxo de registro.
+4.  **Execução da Transação no Servidor:**
+    a.  **Leitura e Validação Segura:** A transação lê o documento do usuário `/users/{userId}`. Um passo crucial aqui é que ela **revalida no servidor** se `userDoc.data().totalPoints >= reward.requiredPoints`. Esta validação no backend é essencial para prevenir uma condição de corrida (*race condition*), onde um usuário mal-intencionado poderia tentar resgatar múltiplos prêmios simultaneamente com os mesmos pontos antes que a interface fosse atualizada.
+    b.  **Cálculo:** O sistema calcula a nova pontuação: `newTotalPoints = currentTotalPoints - reward.requiredPoints`. Note que o campo `lifetimePoints` **não é alterado**, pois ele representa o total de pontos já ganhos e serve apenas para o ranking.
+    c.  **Escrita (Atualização do Perfil):** A transação agenda uma operação de `update` no documento do usuário, atualizando apenas o campo `totalPoints`.
+    d.  **Escrita (Criação do Registro):** A transação agenda a criação de um novo documento na subcoleção `/users/{userId}/redemptions` para armazenar o histórico do resgate.
+5.  **Commit e Feedback:** O processo é idêntico ao do registro. Após o commit bem-sucedido, o usuário recebe uma notificação de sucesso ("Prêmio resgatado!"), e sua pontuação na interface é atualizada em tempo real, fazendo com que os botões de resgate de outros prêmios sejam reavaliados (possivelmente desabilitados) com base no novo saldo de pontos.
 
 ---
 
 ## **6. ANÁLISE DETALHADA DA INTERFACE DO USUÁRIO**
 
-Esta seção descreve em detalhes cada tela da aplicação Recycle+, explicando o propósito de cada componente de interface e como eles se combinam para criar um fluxo de usuário coeso e intuitivo.
+Esta seção descreve em detalhes cada tela da aplicação Recycle+, explicando o propósito de cada componente de interface e como eles se combinam para criar um fluxo de usuário coeso e intuitivo, com foco especial nas funcionalidades de registro de reciclagem e resgate de prêmios.
 
 ### **6.1. Telas Públicas (Acesso Não Autenticado)**
 
@@ -447,20 +450,15 @@ Esta é a porta de entrada da aplicação, projetada para atrair e informar novo
     *   **Logo e Nome (`Recycle+`):** Estabelece a identidade da marca. Clicável, leva de volta para a própria landing page.
     *   **Botão `Entrar`:** Um botão com estilo `ghost` (transparente), de menor destaque, destinado a usuários que já possuem conta. Leva para a página de login (`/login`).
     *   **Botão `Criar Conta`:** Botão principal (com cor de destaque), com um apelo claro à ação (Call to Action - CTA) para novos usuários. Leva para a página de cadastro (`/signup`).
-    *   **Seletor de Tema (Sol/Lua):** Um botão com ícone que permite ao usuário alternar entre os temas claro e escuro.
-
 *   **Seção Hero:**
     *   **Título Principal:** "Transforme lixo em recompensas com o Recycle+". Frase de impacto que resume a proposta de valor.
     *   **Subtítulo:** Explica brevemente o que o aplicativo faz: registrar, acumular pontos e trocar por prêmios.
-    *   **Botões de Ação (`Comece a Reciclar` e `Saber Mais`):** O primeiro é o CTA principal, levando ao cadastro. O segundo é um link interno (`#como-funciona`) para usuários que desejam mais informações antes de se comprometer.
-
+    *   **Botões de Ação (`Comece a Reciclar` e `Saber Mais`):** O primeiro é o CTA principal, levando ao cadastro. O segundo é um link interno (`#como-funciona`) para usuários que desejam more informações antes de se comprometer.
 *   **Seção "Como Funciona":**
     *   **Três Cards:** "Registre", "Ganhe Pontos", "Resgate Prêmios". Cada card possui um ícone, um título e uma descrição curta, explicando o ciclo de gamificação de forma visual e rápida.
-
 *   **Seção "Prêmios em Destaque":**
     *   **Grid de Imagens:** Mostra uma prévia dos prêmios disponíveis para resgate. As imagens são atraentes e servem como um forte incentivo visual.
     *   **Botão "Ver todos os prêmios":** Outro CTA que leva o usuário para a página de cadastro, criando um senso de curiosidade.
-
 *   **Footer (Rodapé):**
     *   **Copyright:** Informação padrão de direitos autorais.
 
@@ -473,11 +471,11 @@ Interface focada e sem distrações para que o usuário acesse sua conta.
     *   **Botão `Voltar ao Início`:** Permite que o usuário retorne facilmente para a landing page.
 *   **Card de Login:**
     *   **Campo `Email`:** Input de texto para o e-mail do usuário.
-    *   **Campo `Senha`:** Input de senha (tipo `password`) que, por padrão, oculta os caracteres digitados. 
+    *   **Campo `Senha`:** Input de senha (tipo `password`) com a funcionalidade de visualização de senha.
     *   **Botão `Entrar`:** Botão principal para submeter o formulário. Fica em estado de "carregando" durante a autenticação.
     *   **Separador "Ou continue com":** Divide as opções de login.
-    *   **Botão `Google`:** Permite o login com um clique via OAuth, uma alternativa de baixa fricção ao login tradicional.
-    *   **Link `Crie uma agora`:** Para usuários que chegaram a esta página por engano e ainda não têm uma conta. Leva para `/signup`.
+    *   **Botão `Google`:** Permite o login com um clique via OAuth, uma alternativa de baixa fricção.
+    *   **Link `Crie uma agora`:** Para usuários que chegaram a esta página por engano. Leva para `/signup`.
 
 #### **6.1.3. Página de Cadastro (`/signup`)**
 
@@ -486,95 +484,57 @@ Similar à página de login, mas com campos adicionais para a criação de uma n
 *   **Card de Cadastro:**
     *   **Campo `Email`:** Para o novo usuário inserir seu e-mail.
     *   **Campo `Nome de usuário`:** Para definir um nome de exibição na plataforma.
-    *   **Campo `Senha`:** Input para definir a senha da nova conta.
-    *   **Botão `Criar Conta`:** Submete o formulário, cria a conta no Firebase Authentication e o perfil no Firestore.
-    *   **Link `Faça login`:** Para usuários que já têm conta e clicaram em "Criar Conta" por engano.
+    *   **Campo `Senha`:** Input para definir a senha da nova conta, com funcionalidade de visualização.
+    *   **Botão `Criar Conta`:** Submete o formulário.
+    *   **Link `Faça login`:** Para usuários que já têm conta.
 
 ### **6.2. Telas do Dashboard (Acesso Autenticado)**
 
-Após o login, o usuário entra no ambiente privado da aplicação, que possui um layout consistente.
+Após o login, o usuário entra no ambiente privado da aplicação, onde as funcionalidades centrais de gamificação acontecem.
 
-#### **6.2.1. Layout do Dashboard (`/dashboard/*`)**
+#### **6.2.1. Registrar Reciclagem (`/dashboard/log`) - Onde os Pontos São Ganhos**
 
-Este é o esqueleto que envolve todas as telas autenticadas.
+Esta é a tela principal de ação do usuário, projetada para ser o mais simples e rápida possível, incentivando o registro frequente de atividades de reciclagem.
 
-*   **Sidebar (Barra Lateral):**
-    *   **Logo e Nome:** Mantém a identidade visual.
-    *   **Menu de Navegação:** Uma lista vertical de botões com ícones e texto: `Visão Geral`, `Registrar Reciclagem`, `Rankings`, `Resgatar Prêmios`, `Perfil`. O item correspondente à página atual fica destacado. Em telas menores (mobile), a sidebar é recolhida e pode ser aberta por um botão "hambúrguer".
-    *   **Menu Inferior:** Contém um botão `Sair` (logout) e um atalho para a `Página Inicial`.
-*   **Header (Cabeçalho Superior):**
-    *   **Título da Página:** Exibe o nome da seção atual (ex: "Visão Geral", "Perfil").
-    *   **Seletor de Tema:** Um botão com ícone de sol/lua que permite ao usuário logado alternar entre o tema claro e escuro a qualquer momento.
-    *   **Avatar e Nome do Usuário:** Mostra a foto (se disponível) e o nome do usuário, confirmando sua identidade e oferecendo um toque de personalização.
+*   **Título e Descrição:** A tela começa com um título claro, "Registrar Reciclagem", e uma descrição motivacional: "Adicione os itens que você reciclou para ganhar pontos instantaneamente."
+*   **Cards de Material:** A funcionalidade é apresentada através de uma série de "cards", cada um representando um tipo de material reciclável (ex: "Garrafa", "Tampinha + Lacre"). Cada card contém:
+    *   **Identificação Visual:** Um ícone e o nome do material para fácil reconhecimento.
+    *   **Descrição:** Uma breve explicação do que se enquadra na categoria.
+    *   **Campo `Quantidade`:** Um input numérico simples onde o usuário insere a quantidade de itens que reciclou. A interface é otimizada para ser rápida: o usuário apenas digita um número.
+    *   **Botão `Registrar Reciclagem`:** Este é o gatilho da ação. Ao ser clicado, ele dispara o fluxo de registro descrito na seção 5.4.1. O botão fornece feedback visual, mostrando um estado de "carregando" (`Loader2`) para informar ao usuário que a ação está sendo processada. Após o sucesso, uma notificação de "toast" aparece na tela, confirmando o registro e, crucialmente, informando quantos pontos foram ganhos (ex: "Você ganhou 1000 pontos!"). Este feedback positivo imediato é um elemento chave da gamificação, reforçando o comportamento desejado.
 
-#### **6.2.2. Visão Geral (`/dashboard`)**
+#### **6.2.2. Resgatar Prêmios (`/dashboard/rewards`) - Onde os Pontos São Usados**
 
-A página principal do dashboard, oferecendo um resumo das informações mais importantes. Esta tela funciona como o centro de feedback para o usuário, mostrando o resultado direto de suas ações.
+Esta tela é a vitrine de recompensas e representa o objetivo final do ciclo de gamificação, onde o esforço do usuário se materializa em um prêmio tangível.
+
+*   **Título e Descrição:** A página introduz seu propósito com a frase: "Use seus pontos para resgatar prêmios incríveis feitos de plástico!".
+*   **Grid de Prêmios:** Os prêmios são exibidos em um layout de grid, com cada prêmio apresentado em um card atraente. Cada card de prêmio contém:
+    *   **Imagem do Prêmio:** O principal apelo visual para despertar o desejo do usuário.
+    *   **Nome e Descrição:** Informações claras sobre o produto.
+    *   **Custo em Pontos:** Uma etiqueta (`Badge`) com o ícone de moedas mostra de forma clara o valor do prêmio em pontos.
+    *   **Botão `Resgatar`:** Este é o componente mais dinâmico da tela. Sua aparência e funcionalidade são controladas diretamente pelo saldo de `totalPoints` do usuário, atualizado em tempo real.
+        *   **Estado Habilitado:** Se o usuário possui pontos suficientes (`user.totalPoints >= reward.requiredPoints`), o botão está ativo, com cor de destaque (`accent`), e é clicável. Ao ser clicado, ele abre um diálogo de confirmação para evitar resgates acidentais e, se confirmado, dispara o fluxo de resgate descrito na seção 5.4.2, deduzindo os pontos da conta.
+        *   **Estado Desabilitado:** Se o usuário não tem saldo suficiente, o botão é visualmente desabilitado (esmaecido, sem interação) e seu texto muda para **"Pontos insuficientes"**. Este feedback direto e contextual é fundamental: ele informa ao usuário exatamente por que a ação não está disponível e o motiva implicitamente a voltar para a tela de "Registrar Reciclagem" para ganhar mais pontos.
+
+#### **6.2.3. Visão Geral (`/dashboard`) - O Centro de Feedback**
+
+Esta é a página principal do dashboard, oferecendo um resumo das informações mais importantes e servindo como o centro de feedback para o usuário, mostrando o resultado direto de suas ações de registro e resgate.
 
 *   **Cards de Estatísticas:**
-    *   **`Pontos para Resgate`:** Card de maior destaque, mostrando o saldo atual de `totalPoints`. Este é o "dinheiro" do usuário dentro do jogo, o resultado direto do acúmulo de pontos de reciclagem e do gasto com prêmios.
-    *   **`Pontos para Ranking`:** Mostra o total de `lifetimePoints`. Este número nunca diminui e serve para dar ao usuário um senso de progresso e conquista a longo prazo.
+    *   **`Pontos para Resgate`:** Card principal, mostrando o saldo atual de `totalPoints`. Este é o "dinheiro" do usuário no jogo.
+    *   **`Pontos para Ranking`:** Mostra o `lifetimePoints`, um número que nunca diminui e serve como um medidor de progresso a longo prazo.
 *   **Tabela de "Atividade Recente":**
-    *   **Propósito:** Fornece um *feedback loop* imediato e transparente sobre as últimas ações. É aqui que o usuário vê a consequência de seus registros e resgates.
-    *   **Colunas:**
-        *   `Item`: Mostra o nome do material reciclado ou do prêmio resgatado, com um ícone correspondente.
-        *   `Data`: Exibe há quanto tempo a atividade ocorreu (ex: "há 5 minutos"), de forma amigável.
-        *   `Pontos`: Uma "badge" (etiqueta) colorida, que é o feedback visual mais importante. Verde com `+` para ganhos (reciclagem), reforçando positivamente a ação. Vermelha com `-` para gastos (resgate), mostrando o custo da recompensa.
-        *   `Ação`: Um ícone de lixeira (`<Trash2 />`) que permite ao usuário excluir uma atividade. Esta ação abre um diálogo de confirmação para evitar exclusões acidentais e, ao confirmar, reverte a pontuação associada àquela atividade, atualizando os cards de estatísticas em tempo real.
-    *   **Botão `Excluir Histórico`:** Uma ação mais drástica que apaga todos os registros de atividades, também protegida por um diálogo de confirmação.
+    *   **Propósito:** Fornece um *feedback loop* imediato e transparente. É aqui que o usuário vê, de forma consolidada, as consequências de suas ações.
+    *   **Feedback Visual de Pontos:** A coluna `Pontos` é o elemento de feedback mais importante:
+        *   **Ganhos:** Uma etiqueta verde com um sinal de `+` (ex: `+10000`) aparece para cada registro de reciclagem, reforçando positivamente a ação.
+        *   **Gastos:** Uma etiqueta vermelha com um sinal de `-` (ex: `-5000`) aparece para cada resgate de prêmio, mostrando claramente o "custo" da recompensa obtida.
+    *   **Ação de Exclusão:** Ao lado de cada atividade, um ícone de lixeira (`<Trash2 />`) permite ao usuário reverter uma ação. Clicar nele abre um diálogo de confirmação e, se confirmado, a pontuação correspondente é atomicamente revertida, e a interface (cards de pontos e a própria tabela) é atualizada em tempo real.
 
-#### **6.2.3. Registrar Reciclagem (`/dashboard/log`)**
-
-O coração da funcionalidade do aplicativo e a principal ação para o ganho de pontos. A interface é projetada para ser de baixa fricção, incentivando o uso frequente.
-
-*   **Cards de Material:** A tela é dividida em cards, um para cada tipo de material reciclável (ex: "Garrafa", "Tampinha"). Cada card contém:
-    *   **Ícone e Nome do Material:** Identificação visual clara.
-    *   **Descrição:** Explica o que se enquadra naquela categoria.
-    *   **Campo `Quantidade`:** Um input numérico para o usuário inserir a quantidade de itens que reciclou.
-    *   **Botão `Registrar Reciclagem`:** Ao ser clicado, este botão dispara o fluxo de registro descrito na seção 5.4.1. O sistema calcula os pontos e os adiciona à conta do usuário. O botão mostra um estado de "carregando" para dar feedback durante o envio, e uma notificação de sucesso é exibida ao final, confirmando a quantidade de pontos ganhos e reforçando o comportamento positivo.
-
-#### **6.2.4. Rankings (`/dashboard/rankings`)**
-
-Tela dedicada à gamificação e ao progresso a longo prazo.
-
-*   **Card de Patente Atual:**
-    *   **Ícone e Nome da Patente:** Exibe de forma proeminente a patente atual do usuário (ex: "Aprendiz", "Guardião").
-    *   **Pontuação Total:** Mostra os `lifetimePoints` do usuário.
-    *   **Barra de Progresso:** Um elemento visual que mostra o quão perto o usuário está de alcançar a próxima patente.
-    *   **Texto de Incentivo:** Informa quantos pontos faltam para o próximo nível.
-*   **Lista "Todas as Patentes":**
-    *   Mostra todas as patentes possíveis no sistema, da mais baixa à mais alta, com seus respectivos ícones e a pontuação necessária. Isso funciona como um "mapa" para o usuário, mostrando a jornada de progressão.
-
-#### **6.2.5. Resgatar Prêmios (`/dashboard/rewards`)**
-
-A vitrine de recompensas, onde os pontos se transformam em valor tangível. Esta tela representa a recompensa final do ciclo de gamificação.
-
-*   **Grid de Prêmios:** Os prêmios são exibidos em um grid de cards. Cada card de prêmio contém:
-    *   **Imagem do Prêmio:** O principal apelo visual.
-    *   **Nome e Descrição:** Informações sobre o produto.
-    *   **Custo em Pontos:** Uma "badge" com o ícone de moedas, mostrando claramente o valor do prêmio.
-    *   **Botão `Resgatar`:** Este é o componente-chave da tela. Sua aparência e funcionalidade são diretamente controladas pelo saldo de `totalPoints` do usuário.
-        *   **Estado Habilitado:** Se o usuário possui pontos suficientes, o botão está ativo e com a cor de destaque (`accent`). Ao clicar, ele abre um diálogo de confirmação e, se confirmado, dispara o fluxo de resgate descrito na seção 5.4.2, deduzindo os pontos da conta.
-        *   **Estado Desabilitado:** Se o usuário não tem saldo suficiente, o botão é visualmente desabilitado (esmaecido) e seu texto muda para "Pontos insuficientes". Isso fornece um feedback claro e imediato sobre o porquê da ação não estar disponível, incentivando o usuário a registrar mais reciclagens.
-
-#### **6.2.6. Perfil (`/dashboard/profile`)**
-
-Área para gerenciamento de dados pessoais e configurações da conta.
-
-*   **Banner de Perfil:** Uma seção visualmente destacada com o avatar, nome e e-mail do usuário.
-*   **Sistema de Abas:** Organiza as configurações em seções para não sobrecarregar o usuário.
-    *   **Aba `Perfil`:**
-        *   **Formulário:** Contém campos para alterar `Nome de usuário` e `Data de Nascimento`.
-        *   **Botão `Salvar Alterações`:** Persiste as mudanças no Firebase.
-    *   **Aba `Segurança`:**
-        *   **Formulário de Alteração de Senha:** Contém campos para `Senha Atual` e `Nova Senha`. Este formulário só é exibido se o usuário não estiver logado com o Google. Se for um usuário do Google, uma mensagem informativa é exibida.
-    *   **Aba `Zona de Perigo`:**
-        *   **Ações Destrutivas:** Contém botões para ações que não podem ser desfeitas, como `Resetar Meus Pontos`.
-        *   **Diálogo de Confirmação:** Cada botão nesta aba abre uma caixa de diálogo que força o usuário a confirmar a ação, explicando as consequências.
+As demais telas, como **Rankings** (`/dashboard/rankings`) e **Perfil** (`/dashboard/profile`), servem como funcionalidades de suporte que enriquecem a experiência de gamificação e personalização, mas o núcleo da interação do usuário reside no ciclo entre as telas de **Registrar Reciclagem** e **Resgatar Prêmios**.
 
 ### **6.3. Funcionalidade Transversal: Seletor de Tema (Modo Claro/Escuro)**
 
-Uma funcionalidade de experiência do usuário (UX) presente em toda a aplicação é a capacidade de alternar entre um tema visual claro e um escuro.
+Uma funcionalidade de experiência do usuário (UX) presente em toda a aplicação é a capacidade de alternar entre um tema visual claro и um escuro.
 
 *   **Localização:** O componente de alternância de tema, representado por um ícone de Sol/Lua, está estrategicamente posicionado no cabeçalho tanto da página pública (`Landing Page`) quanto do layout do dashboard (`Dashboard Layout`), garantindo que o usuário possa acessá-lo a qualquer momento, esteja ele logado ou não.
 *   **Propósito e Importância:**
