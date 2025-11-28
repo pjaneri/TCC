@@ -534,7 +534,7 @@ As demais telas, como **Rankings** (`/dashboard/rankings`) e **Perfil** (`/dashb
 
 ### **6.3. Funcionalidade Transversal: Seletor de Tema (Modo Claro/Escuro)**
 
-Uma funcionalidade de experiência do usuário (UX) presente em toda a aplicação é a capacidade de alternar entre um tema visual claro и um escuro.
+Uma funcionalidade de experiência do usuário (UX) presente em toda a aplicação é a capacidade de alternar entre um tema visual claro e um escuro.
 
 *   **Localização:** O componente de alternância de tema, representado por um ícone de Sol/Lua, está estrategicamente posicionado no cabeçalho tanto da página pública (`Landing Page`) quanto do layout do dashboard (`Dashboard Layout`), garantindo que o usuário possa acessá-lo a qualquer momento, esteja ele logado ou não.
 *   **Propósito e Importância:**
