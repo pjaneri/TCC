@@ -71,10 +71,8 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
 const materialIcons: { [key: string]: React.ElementType } = {
-  Plástico: Package,
-  Papel: FileText,
-  Vidro: GlassWater,
-  Metal: Wrench,
+  Garrafa: GlassWater,
+  'Tampinha + Lacre': Package,
   Outros: Package,
 };
 
@@ -113,8 +111,9 @@ export default function DashboardPage() {
 
   const recentActivitiesQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
+    const recordsRef = collection(firestore, 'users', user.uid, 'recycling_records');
     return query(
-      collection(firestore, 'users', user.uid, 'recycling_records'),
+      recordsRef,
       orderBy('recyclingDate', 'desc'),
       limit(5)
     );
@@ -127,8 +126,9 @@ export default function DashboardPage() {
 
   const redemptionsQuery = useMemoFirebase(() => {
     if (!user || !firestore) return null;
+    const redemptionsRef = collection(firestore, 'users', user.uid, 'redemptions');
     return query(
-      collection(firestore, 'users', user.uid, 'redemptions'),
+      redemptionsRef,
       orderBy('redemptionDate', 'desc'),
       limit(5)
     );
@@ -217,7 +217,6 @@ export default function DashboardPage() {
       });
   
     } catch (error) {
-        // Fallback for activityDocRef if it was not set in the try block
         const path = activity.type === 'log'
             ? `users/${user.uid}/recycling_records/${activity.id}`
             : `users/${user.uid}/redemptions/${activity.id}`;
@@ -349,7 +348,12 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent>
           {isLoading && !hasActivities ? (
-            <p>Carregando atividades...</p>
+            <p className="text-center text-muted-foreground">Carregando atividades...</p>
+          ) : !hasActivities ? (
+             <div className="text-center text-muted-foreground py-8">
+              <p>Nenhuma atividade recente.</p>
+              <p className="text-sm">Comece a registrar sua reciclagem para ver suas atividades aqui!</p>
+            </div>
           ) : (
             <Table>
               <TableHeader>
@@ -361,8 +365,7 @@ export default function DashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {combinedActivities &&
-                  combinedActivities.map((activity) => {
+                {combinedActivities.map((activity) => {
                     const activityDate = activity.date;
                     const isPending = activity.metadata?.hasPendingWrites;
 
@@ -461,7 +464,7 @@ export default function DashboardPage() {
                               -{activity.pointsDeducted}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right">
+                           <TableCell className="text-right">
                            <AlertDialog>
                              <AlertDialogTrigger asChild>
                                <Button variant="ghost" size="icon" className="h-8 w-8" disabled={isDeleting === activity.id}>
@@ -487,14 +490,6 @@ export default function DashboardPage() {
                     }
                     return null;
                   })}
-                {!isLoading &&
-                  (!combinedActivities || combinedActivities.length === 0) && (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center">
-                        Nenhuma atividade recente.
-                      </TableCell>
-                    </TableRow>
-                  )}
               </TableBody>
             </Table>
           )}
