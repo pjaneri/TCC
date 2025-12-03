@@ -89,7 +89,7 @@ Desenvolver e implantar uma aplicação web funcional, escalável e segura que u
 *   **Criar um Catálogo de Recompensas Funcional:** Desenvolver uma vitrine de prêmios onde os usuários possam visualizar os produtos disponíveis (fabricados pela equipe de Plásticos) e resgatá-los utilizando seus pontos.
 *   **Garantir a Privacidade e a Segurança dos Dados:** Implementar um modelo de segurança robusto no backend (utilizando Firebase Security Rules) que assegure que cada usuário só possa acessar e manipular seus próprios dados.
 *   **Assegurar uma Arquitetura de Software Escalável e Manutenível:** Projetar o software de forma modular e utilizando tecnologias modernas para permitir a fácil adição de novas funcionalidades e suportar um crescimento no número de usuários sem degradação de performance.
-*   **Validar a Qualidade do Software:** Implementar uma estratégia de testes de unidade para validar o comportamento dos componentes críticos da interface, garantindo a robustez e a confiabilidade da aplicação.
+*   **Validar a Qualidade do Software:** Implementar uma estratégia de testes para validar o comportamento dos componentes críticos da interface, garantindo a robustez e a confiabilidade da aplicação.
 
 ---
 
@@ -561,40 +561,39 @@ Para melhorar a experiência do usuário durante a autenticação e o gerenciame
 
 ## **7. TESTES E VALIDAÇÃO**
 
-Para garantir a qualidade e a robustez da aplicação, uma estratégia de testes focada na validação do comportamento dos componentes da interface do usuário foi adotada.
+Para garantir a qualidade e a robustez da aplicação, uma estratégia de validação focada nos Requisitos Não Funcionais de Performance (RNF02) foi adotada. Em vez de testes de unidade de componentes isolados, a abordagem priorizou a análise da performance da aplicação como um todo, da perspectiva do usuário final.
 
-### **7.1. Estratégia de Testes: Testes de Unidade de Componentes**
+### **7.1. Estratégia: Teste de Performance com Simulação de Usuário**
 
-A estratégia principal foi a de **testes de unidade automatizados** para os componentes React. O objetivo não era testar a lógica de negócio inteira, mas sim validar que cada peça da UI (componente) se comporta como esperado de forma isolada.
+A estratégia principal foi a de **teste de performance automatizado** utilizando ferramentas padrão da indústria para simular e medir a experiência real do usuário ao carregar e interagir com a aplicação. O objetivo é validar se a aplicação atende aos critérios de performance definidos nos requisitos.
 
-Isso significa que testamos:
-*   Se o componente é renderizado corretamente com as propriedades (props) fornecidas.
-*   Se ele reage a interações do usuário (como cliques) da maneira esperada.
-*   Se ele exibe os estados corretos (como `disabled` ou `loading`).
+Isso significa que medimos:
+*   O tempo que a aplicação leva para se tornar visualmente pronta e utilizável.
+*   A fluidez das interações após o carregamento inicial.
 
-### **7.2. Ferramentas de Teste: Jest e React Testing Library**
+### **7.2. Ferramenta de Teste: Google Lighthouse**
 
-*   **Jest:** É o framework de testes que utilizamos. Ele fornece o ambiente para executar os testes, criar "mocks" (simulações de funções ou módulos) e fazer asserções (verificar se um resultado é o esperado).
-*   **React Testing Library (RTL):** É uma biblioteca para testar componentes React que incentiva boas práticas. Em vez de testar detalhes de implementação (como o estado interno de um componente), a RTL nos força a testar os componentes da mesma forma que um usuário os utilizaria: procurando por textos, botões e outros elementos na tela e interagindo com eles.
+*   **O que é?** O Google Lighthouse é uma ferramenta de código aberto e automatizada para melhorar a qualidade de páginas web. Ela é integrada diretamente às Ferramentas de Desenvolvedor do navegador Google Chrome.
+*   **Por que usamos?** O Lighthouse audita a performance, acessibilidade, e outros aspectos de uma página, fornecendo um relatório detalhado com uma pontuação de 0 a 100 e sugestões de melhoria. É a ferramenta ideal para validar os requisitos de performance de forma rápida e consistente.
 
-### **7.3. Exemplo de Caso de Teste**
+### **7.3. Exemplo de Caso de Teste de Performance**
 
-O teste mais simples e fundamental que implementamos foi para o componente `<Button />`.
+*   **ID do Teste:** CT-PERF-01
+*   **Requisito Associado:** RNF02.1 (Tempo de Carregamento)
+*   **Descrição:** Medir a performance de carregamento da página principal do dashboard (`/dashboard`) em condições de rede e hardware simuladas (ex: "Celular de médio desempenho com 4G rápido").
+*   **Procedimento (Manual):**
+    1. Abrir o navegador Google Chrome em uma janela anônima (para evitar interferência de extensões).
+    2. Navegar para a página de login e autenticar-se para estabelecer uma sessão.
+    3. Navegar para a página `/dashboard`.
+    4. Abrir as Ferramentas de Desenvolvedor (F12) e selecionar a aba "Lighthouse".
+    5. Configurar o Lighthouse para gerar um relatório na categoria "Performance" para o dispositivo "Mobile".
+    6. Clicar em "Analisar carregamento da página".
+*   **Métricas e Critérios de Aceite:**
+    *   **Pontuação Geral de Performance:** O resultado geral deve ser superior a 90/100, indicando uma aplicação altamente otimizada.
+    *   **First Contentful Paint (FCP):** A métrica FCP, que mede o tempo até que o primeiro conteúdo seja renderizado, deve ser **inferior a 2.0 segundos**, conforme definido no RNF02.1.
+    *   **Time to Interactive (TTI):** O tempo até a página se tornar totalmente interativa deve ser **inferior a 3.8 segundos**, um padrão recomendado para boas experiências de usuário.
 
-*   **Arquivo:** `src/components/ui/__tests__/Button.test.tsx`
-*   **Descrição:** Este arquivo contém um conjunto de testes (test suite) para o componente `Button`.
-*   **Caso de Teste 1 (CT01): Renderização com Sucesso**
-    *   **Cenário:** Queremos garantir que o botão é renderizado na tela com o texto correto.
-    *   **Ação (Automatizada):** O teste renderiza o componente `<Button>` passando um texto como filho (ex: "Clique Aqui").
-    *   **Verificação (Automatizada):** A RTL procura na tela por um elemento com o `role` "button" e o nome acessível "Clique Aqui".
-    *   **Critério de Aceite:** A asserção `expect(buttonElement).toBeInTheDocument()` deve ser verdadeira. Se o botão não for encontrado, o teste falha.
-*   **Caso de Teste 2 (CT02): Estado Desabilitado**
-    *   **Cenário:** Queremos garantir que o botão pode ser desabilitado.
-    *   **Ação (Automatizada):** O teste renderiza o componente `<Button>` com a propriedade `disabled`.
-    *   **Verificação (Automatizada):** A RTL encontra o botão e verifica seu estado.
-    *   **Critério de Aceite:** A asserção `expect(buttonElement).toBeDisabled()` deve ser verdadeira.
-
-Embora simples, esses testes garantem que uma das peças mais fundamentais da nossa UI funcione corretamente e que futuras alterações não quebrem seu comportamento esperado.
+A execução deste teste valida que as otimizações implementadas pelo Next.js (como Server-Side Rendering e Code Splitting) estão funcionando como esperado, garantindo que o usuário tenha uma experiência de carregamento rápida e responsiva.
 
 ---
 
@@ -683,5 +682,3 @@ A arquitetura modular e escalável da aplicação permite uma vasta gama de evol
     *   **Compartilhamento em Redes Sociais:** Facilitar o compartilhamento de conquistas (novas patentes, prêmios resgatados) em redes sociais.
 
 Essas evoluções transformariam o Recycle+ de uma ferramenta de incentivo individual para uma plataforma de engajamento comunitário, amplificando ainda mais seu potencial de impacto socioambiental.
-
-    
