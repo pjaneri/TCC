@@ -64,7 +64,6 @@ export default function LoginPage() {
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
-  const firestore = useFirestore();
   const [isProcessingGoogle, setIsProcessingGoogle] = useState(false);
 
   const form = useForm<LoginFormValues>({
@@ -75,29 +74,12 @@ export default function LoginPage() {
     },
   });
 
-  const checkAndCreateUserProfile = async (user: User) => {
-    if (!firestore) return;
-    const userDocRef = doc(firestore, "users", user.uid);
-    const userDoc = await getDoc(userDocRef);
-
-    if (!userDoc.exists()) {
-      await setDoc(userDocRef, {
-        id: user.uid,
-        username: user.displayName || 'Usuário Google',
-        email: user.email,
-        registrationDate: serverTimestamp(),
-        totalPoints: 0,
-        lifetimePoints: 0,
-      });
-    }
-  };
-
   const handleGoogleSignIn = async () => {
     if (!auth) return;
     setIsProcessingGoogle(true);
     try {
-      const result = await signInWithPopup(auth, provider);
-      await checkAndCreateUserProfile(result.user);
+      await signInWithPopup(auth, provider);
+      // The profile check and creation will be handled by the dashboard layout now
     } catch (error: any) {
       console.error("Popup Sign-In Error:", error);
       let description = "Não foi possível completar o login com o Google.";

@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import { ReactNode, useEffect, useState } from "react";
 import { getAuth, signOut } from "firebase/auth";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 
 import {
   SidebarProvider,
@@ -54,8 +54,38 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!isUserLoading && !user) {
       router.replace("/login");
+      return;
     }
-  }, [user, isUserLoading, router]);
+
+    const checkAndCreateUserProfile = async () => {
+      if (user && firestore) {
+        const userDocRef = doc(firestore, "users", user.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (!userDoc.exists()) {
+          try {
+            await setDoc(userDocRef, {
+              id: user.uid,
+              username: user.displayName || 'Usuário Anônimo',
+              email: user.email,
+              registrationDate: serverTimestamp(),
+              totalPoints: 300,
+              lifetimePoints: 300,
+            });
+             toast({
+              title: "Bem-vindo(a) ao Recycle+!",
+              description: "Você ganhou 300 pontos de incentivo!",
+            });
+          } catch (error) {
+             console.error("Failed to create user profile:", error);
+          }
+        }
+      }
+    };
+    if (user) {
+      checkAndCreateUserProfile();
+    }
+  }, [user, isUserLoading, router, firestore, toast]);
 
   const handleSignOut = async () => {
     try {
@@ -158,3 +188,5 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     </SidebarProvider>
   );
 }
+
+    
