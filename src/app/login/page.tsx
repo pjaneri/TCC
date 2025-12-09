@@ -4,12 +4,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@radix-ui/resolvers/zod";
 import { z } from "zod";
 import {
   signInWithEmailAndPassword,
   AuthError,
-  signInWithRedirect,
+  signInWithPopup, // Alterado de signInWithRedirect
   GoogleAuthProvider,
   getRedirectResult,
 } from "firebase/auth";
@@ -61,49 +61,15 @@ export default function LoginPage() {
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
-  const [isLoading, setIsLoading] = useState(true); // Start as true to handle redirect check
-
-  const form = useForm<LoginFormValues>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
-  });
-
-  // Handle Google Sign-In Redirect
-  useEffect(() => {
-    if (!auth) return;
-    
-    getRedirectResult(auth)
-      .then((result) => {
-        if (result) {
-          // User has just signed in via redirect.
-          // The onAuthStateChanged listener in the layout will handle redirection to dashboard.
-        }
-      })
-      .catch((error) => {
-        console.error("Redirect Result Error:", error);
-        toast({
-          variant: "destructive",
-          title: "Erro de autenticação com Google",
-          description: "Não foi possível completar o login. Tente novamente.",
-        });
-      })
-      .finally(() => {
-         // Only set loading to false after checking for redirect result
-         if (!user) { // Don't stop loading if user is already found
-            setIsLoading(false);
-         }
-      });
-  }, [auth, toast]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isPageLoading, setIsPageLoading] = useState(true);
 
   // Redirect if user is already logged in
   useEffect(() => {
     if (!isUserLoading && user) {
       router.replace("/dashboard");
     } else if (!isUserLoading && !user) {
-      setIsLoading(false);
+      setIsPageLoading(false);
     }
   }, [user, isUserLoading, router]);
 
@@ -111,8 +77,20 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     if (!auth) return;
     setIsLoading(true);
-    // Use signInWithRedirect instead of signInWithPopup
-    await signInWithRedirect(auth, provider);
+    try {
+      // Usando signInWithPopup em vez de signInWithRedirect
+      await signInWithPopup(auth, provider);
+      // O useEffect acima irá lidar com o redirecionamento para o dashboard
+    } catch (error) {
+      console.error("Google Sign-In Error:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro de autenticação com Google",
+        description: "Não foi possível completar o login. Verifique se os pop-ups estão habilitados.",
+      });
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   const onSubmit = async (data: LoginFormValues) => {
@@ -136,11 +114,12 @@ export default function LoginPage() {
         title: "Erro de autenticação",
         description: message,
       });
+    } finally {
       setIsLoading(false);
     }
   };
   
-  if (isLoading || isUserLoading || user) {
+  if (isPageLoading) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-2">
@@ -201,9 +180,9 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
-               <Button type="submit" className="w-full font-bold" disabled={isLoading || !auth} style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }}>
-                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {isLoading ? "Aguarde..." : "Entrar"}
+               <Button type="submit" className="w-full font-bold" disabled={isLoading || form.formState.isSubmitting} style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }}>
+                {(isLoading || form.formState.isSubmitting) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Entrar
               </Button>
             </CardContent>
           </form>
@@ -222,6 +201,7 @@ export default function LoginPage() {
         
         <CardContent>
              <Button variant="outline" className="w-full font-bold" onClick={handleGoogleSignIn} disabled={isLoading || !auth}>
+                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 <GoogleIcon className="mr-2 h-4 w-4" />
                 Google
               </Button>
