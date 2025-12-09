@@ -9,13 +9,10 @@ import { z } from "zod";
 import {
   signInWithEmailAndPassword,
   AuthError,
-  signInWithPopup,
+  signInWithRedirect,
   GoogleAuthProvider,
-  User,
+  getRedirectResult,
 } from "firebase/auth";
-import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
-
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -35,10 +32,11 @@ import {
 import { Input, PasswordInput } from "@/components/ui/input";
 import { AuthLayout } from "@/components/auth-layout";
 import { useToast } from "@/hooks/use-toast";
-import { useUser, useFirestore, useAuth } from "@/firebase";
+import { useUser, useAuth } from "@/firebase";
 import { useEffect, useState } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Por favor, insira um email válido." }),
@@ -52,10 +50,9 @@ const GoogleIcon = (props: React.SVGProps<SVGSVGElement>) => (
         <path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z" />
         <path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z" />
         <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.222,0-9.658-3.317-11.28-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z" />
--        <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C42.021,35.846,44,30.138,44,24C44,22.659,43.862,21.35,43.611,20.083z" />
-+        <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C42.021,35.846,44,30.138,44,24C44,22.659,43.862,21.35,43.611,20.083z" />
+        <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C42.021,35.846,44,30.138,44,24C44,22.659,43.862,21.35,43.611,20.083z" />
      </svg>
- );
+);
 
 const provider = new GoogleAuthProvider();
 
@@ -64,7 +61,7 @@ export default function LoginPage() {
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
-  const [isProcessingGoogle, setIsProcessingGoogle] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Start as true to handle redirect check
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -74,43 +71,56 @@ export default function LoginPage() {
     },
   });
 
-  const handleGoogleSignIn = async () => {
+  // Handle Google Sign-In Redirect
+  useEffect(() => {
     if (!auth) return;
-    setIsProcessingGoogle(true);
-    try {
-      await signInWithPopup(auth, provider);
-      // The profile check and creation will be handled by the dashboard layout now
-    } catch (error: any) {
-      console.error("Popup Sign-In Error:", error);
-      let description = "Não foi possível completar o login com o Google.";
-      if (error.code === 'auth/popup-closed-by-user') {
-        description = "A janela de login foi fechada antes da conclusão.";
-      } else if (error.code === 'auth/network-request-failed') {
-          description = "Falha na rede. Verifique sua conexão e tente novamente."
-      } else if (error.code === 'auth/cancelled-popup-request') {
-        description = "Múltiplas solicitações de login abertas. Por favor, complete uma."
-      }
-      toast({
-        variant: "destructive",
-        title: "Erro de autenticação com Google",
-        description: description,
+    
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result) {
+          // User has just signed in via redirect.
+          // The onAuthStateChanged listener in the layout will handle redirection to dashboard.
+        }
+      })
+      .catch((error) => {
+        console.error("Redirect Result Error:", error);
+        toast({
+          variant: "destructive",
+          title: "Erro de autenticação com Google",
+          description: "Não foi possível completar o login. Tente novamente.",
+        });
+      })
+      .finally(() => {
+         // Only set loading to false after checking for redirect result
+         if (!user) { // Don't stop loading if user is already found
+            setIsLoading(false);
+         }
       });
-    } finally {
-      setIsProcessingGoogle(false);
-    }
-  };
+  }, [auth, toast]);
 
-
+  // Redirect if user is already logged in
   useEffect(() => {
     if (!isUserLoading && user) {
       router.replace("/dashboard");
+    } else if (!isUserLoading && !user) {
+      setIsLoading(false);
     }
   }, [user, isUserLoading, router]);
 
+
+  const handleGoogleSignIn = async () => {
+    if (!auth) return;
+    setIsLoading(true);
+    // Use signInWithRedirect instead of signInWithPopup
+    await signInWithRedirect(auth, provider);
+  };
+
   const onSubmit = async (data: LoginFormValues) => {
     if (!auth) return;
+    setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, data.email, data.password);
+      // The useEffect will handle redirecting to /dashboard
     } catch (error) {
       const authError = error as AuthError;
       let message = "Ocorreu um erro ao fazer login. Tente novamente.";
@@ -126,10 +136,11 @@ export default function LoginPage() {
         title: "Erro de autenticação",
         description: message,
       });
+      setIsLoading(false);
     }
   };
   
-  if (isUserLoading || user) {
+  if (isLoading || isUserLoading || user) {
     return (
       <div className="flex h-screen w-full items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-2">
@@ -139,8 +150,6 @@ export default function LoginPage() {
       </div>
     );
   }
-
-  const isLoading = form.formState.isSubmitting || isProcessingGoogle;
 
   return (
     <AuthLayout>
@@ -193,8 +202,8 @@ export default function LoginPage() {
                 )}
               />
                <Button type="submit" className="w-full font-bold" disabled={isLoading || !auth} style={{ backgroundColor: 'hsl(var(--accent))', color: 'hsl(var(--accent-foreground))' }}>
-                {form.formState.isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                {isLoading && !isProcessingGoogle ? "Aguarde..." : "Entrar"}
+                {form.formState.isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isLoading ? "Aguarde..." : "Entrar"}
               </Button>
             </CardContent>
           </form>
@@ -213,8 +222,8 @@ export default function LoginPage() {
         
         <CardContent>
              <Button variant="outline" className="w-full font-bold" onClick={handleGoogleSignIn} disabled={isLoading || !auth}>
-                {isProcessingGoogle ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
-                 {isLoading && isProcessingGoogle ? "Aguarde..." : "Google"}
+                <GoogleIcon className="mr-2 h-4 w-4" />
+                Google
               </Button>
         </CardContent>
 
@@ -232,5 +241,3 @@ export default function LoginPage() {
     </AuthLayout>
   );
 }
-
-    
