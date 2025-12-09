@@ -69,24 +69,17 @@ export default function SignupPage() {
       );
       const user = userCredential.user;
 
+      // Only update the auth profile display name here
       await updateProfile(user, {
         displayName: data.username,
       });
 
-      // Create a user profile document in Firestore
-      const userDocRef = doc(firestore, "users", user.uid);
-      await setDoc(userDocRef, {
-        id: user.uid,
-        username: data.username,
-        email: data.email,
-        registrationDate: serverTimestamp(),
-        totalPoints: 300,
-        lifetimePoints: 300,
-      });
+      // The user profile in Firestore will be created by the dashboard layout
+      // This simplifies the signup flow and centralizes profile creation.
 
       toast({
         title: "Conta criada com sucesso!",
-        description: "Você ganhou 300 pontos de incentivo!",
+        description: "Você será redirecionado para o seu painel.",
       });
 
       router.push("/dashboard");

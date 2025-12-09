@@ -82,6 +82,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         }
       }
     };
+    
     if (user) {
       checkAndCreateUserProfile();
     }
@@ -188,5 +189,3 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     </SidebarProvider>
   );
 }
-
-    
