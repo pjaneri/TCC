@@ -1,8 +1,6 @@
 
 # **Monografia de Projeto de Software: Recycle+**
 
-**Versão 3.0 (Detalhada)**
-**Data:** 24 de Maio de 2024
 
 ---
 
