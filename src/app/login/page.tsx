@@ -4,14 +4,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@radix-ui/resolvers/zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
   signInWithEmailAndPassword,
   AuthError,
-  signInWithPopup, // Alterado de signInWithRedirect
+  signInWithPopup,
   GoogleAuthProvider,
-  getRedirectResult,
 } from "firebase/auth";
 import {
   Card,
@@ -63,6 +62,14 @@ export default function LoginPage() {
   const auth = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [isPageLoading, setIsPageLoading] = useState(true);
+
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
 
   // Redirect if user is already logged in
   useEffect(() => {
